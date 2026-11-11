@@ -1,0 +1,22 @@
+{
+  "id": "10_medium_scan",
+  "synthetic": true,
+  "file": "10_medium_scan.pdf",
+  "source": "OCR",
+  "readable": true,
+  "text": "Jobcenter Musterstadt\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: JC-2026-1010\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte reichen Sie den Mietvertrag ein.\nBitte antworten Sie bis zum 11.12.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Jobcenter Musterstadt",
+    "caseNumber": "JC-2026-1010",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte reichen Sie den Mietvertrag ein."
+    ],
+    "deadlines": [
+      "2026-12-11"
+    ]
+  },
+  "userMessage": "Скан получился немного размытым.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

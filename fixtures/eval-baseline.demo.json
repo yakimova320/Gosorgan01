@@ -1,0 +1,197 @@
+{
+  "at": "2026-11-11T12:00:11.758Z",
+  "providerMode": "demo",
+  "model": "deterministic-demo-v1",
+  "note": "Offline demo regression, NOT an LLM quality benchmark. OCR is real.",
+  "promptVersions": {
+    "extract": 1,
+    "dialogue": 1,
+    "draft": 1
+  },
+  "metrics": {
+    "TEXT_LAYER": {
+      "count": 11,
+      "authority": 1,
+      "caseNumber": 1,
+      "deadlines": 1,
+      "quoteValidity": 1,
+      "draftPassRate": 1,
+      "readabilityAccuracy": 1
+    },
+    "OCR": {
+      "count": 4,
+      "authority": 1,
+      "caseNumber": 1,
+      "deadlines": 1,
+      "quoteValidity": 1,
+      "draftPassRate": 1,
+      "readabilityAccuracy": 1
+    }
+  },
+  "rows": [
+    {
+      "id": "01_jobcenter_request",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "02_jobcenter_repeat",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "03_jobcenter_receipt",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "04_buergeramt",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "05_missing_reference",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "06_multiple_deadlines",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "07_no_deadline",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "08_photo",
+      "source": "OCR",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "09_scan",
+      "source": "OCR",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "10_medium_scan",
+      "source": "OCR",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "11_bad_photo",
+      "source": "OCR",
+      "readable": false,
+      "readabilityCorrect": true,
+      "error": "Плохое качество изображения, загрузите более чёткий снимок или скан"
+    },
+    {
+      "id": "12_past_deadline",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "13_other_case",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "14_prompt_injection",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    },
+    {
+      "id": "15_relative_deadline",
+      "source": "TEXT_LAYER",
+      "readable": true,
+      "readabilityCorrect": true,
+      "authority": true,
+      "caseNumber": true,
+      "deadlines": true,
+      "quotes": true,
+      "draftPassed": true
+    }
+  ],
+  "meanCallLatencyMs": 0.25,
+  "meanTokens": null,
+  "calls": 28
+}

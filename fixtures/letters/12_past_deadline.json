@@ -1,0 +1,22 @@
+{
+  "id": "12_past_deadline",
+  "synthetic": true,
+  "file": "12_past_deadline.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Finanzamt Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: FA-2026-5012\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte reichen Sie die Einkommensnachweise ein.\nBitte antworten Sie bis zum 01.10.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Finanzamt Beispielhausen",
+    "caseNumber": "FA-2026-5012",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte reichen Sie die Einkommensnachweise ein."
+    ],
+    "deadlines": [
+      "2026-10-01"
+    ]
+  },
+  "userMessage": "Срок уже прошёл.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

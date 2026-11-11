@@ -1,0 +1,22 @@
+{
+  "id": "09_scan",
+  "synthetic": true,
+  "file": "09_scan.pdf",
+  "source": "OCR",
+  "readable": true,
+  "text": "Sozialamt Musterstadt\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: SA-2026-8810\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte reichen Sie die Einkommensnachweise ein.\nBitte antworten Sie bis zum 09.12.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Sozialamt Musterstadt",
+    "caseNumber": "SA-2026-8810",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte reichen Sie die Einkommensnachweise ein."
+    ],
+    "deadlines": [
+      "2026-12-09"
+    ]
+  },
+  "userMessage": "Это скан без текстового слоя.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

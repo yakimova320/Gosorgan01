@@ -1,0 +1,20 @@
+{
+  "id": "07_no_deadline",
+  "synthetic": true,
+  "file": "07_no_deadline.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Familienkasse Musterstadt\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: FK-2026-7712\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte senden Sie die Geburtsurkunde Ihres Kindes.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Familienkasse Musterstadt",
+    "caseNumber": "FK-2026-7712",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte senden Sie die Geburtsurkunde Ihres Kindes."
+    ],
+    "deadlines": []
+  },
+  "userMessage": "До какого числа отвечать?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

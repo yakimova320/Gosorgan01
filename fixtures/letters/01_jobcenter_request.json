@@ -1,0 +1,22 @@
+{
+  "id": "01_jobcenter_request",
+  "synthetic": true,
+  "file": "01_jobcenter_request.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Jobcenter Musterstadt\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: JC-2026-1001\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte reichen Sie die Kontoauszüge für September ein.\nBitte antworten Sie bis zum 30.11.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Jobcenter Musterstadt",
+    "caseNumber": "JC-2026-1001",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte reichen Sie die Kontoauszüge für September ein."
+    ],
+    "deadlines": [
+      "2026-11-30"
+    ]
+  },
+  "userMessage": "Я отправил выписки из банка по почте, но подтверждения у меня нет.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

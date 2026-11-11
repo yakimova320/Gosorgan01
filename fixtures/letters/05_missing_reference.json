@@ -1,0 +1,22 @@
+{
+  "id": "05_missing_reference",
+  "synthetic": true,
+  "file": "05_missing_reference.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Ausländerbehörde Musterstadt\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte senden Sie eine Kopie Ihres Reisepasses.\nBitte antworten Sie bis zum 04.12.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Ausländerbehörde Musterstadt",
+    "caseNumber": null,
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte senden Sie eine Kopie Ihres Reisepasses."
+    ],
+    "deadlines": [
+      "2026-12-04"
+    ]
+  },
+  "userMessage": "Я не нашёл номер дела.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

@@ -1,132 +1,239 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Разберёмся — бэкенд
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+MVP на NestJS 12 для переписки с немецкими ведомствами, реализованный по техническому заданию `workflow/261111/03_ТЗ…md`. Приложение рассчитано на одного пользователя и включает локальное хранение данных, распознавание текста (OCR), извлечение сведений с проверкой источников, историю дела, подтверждение человеком, проверку черновиков и журнал вызовов LLM. Приложение не отправляет письма.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Быстрый запуск
 
-## Description
+Необходимы Node.js **24 LTS** (минимум 22.13) и pnpm **11.25.0**. Для PDF со сканами дополнительно нужен **Poppler** (`pdftoppm`): установка в macOS — `brew install poppler`, в Ubuntu/Debian — `sudo apt-get install poppler-utils`. Распознавание немецкого текста выполняется локально через tesseract.js; устанавливать системный Tesseract не нужно.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Если команда `pnpm` не найдена
 
-## Project setup
+Сообщение `zsh: command not found: pnpm` означает, что оболочка не находит pnpm. Сначала проверьте наличие Node.js и npm:
 
-```bash
-$ npm install
+```sh
+node --version
+npm --version
 ```
 
-## Compile and run the project
+Если этих команд нет, сначала установите Node.js 24 LTS вместе с npm. Затем один раз установите именно ту версию pnpm, которая закреплена в `package.json`:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```sh
+npm install -g pnpm@11.25.0
+pnpm --version
 ```
 
-## Run tests
+Ожидаемая версия — `11.25.0`. Установка через npm описана в [официальной инструкции pnpm](https://pnpm.io/installation#using-npm).
 
-```bash
-# unit tests
-$ npm run test
+Если глобальная установка возвращает ошибку прав доступа `EACCES` или команда `pnpm` по-прежнему не находится, можно работать без глобальной установки:
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```sh
+npx --yes pnpm@11.25.0 install
 ```
 
-## Deployment
+В таком случае во всех последующих командах заменяйте `pnpm` на `npx --yes pnpm@11.25.0`. Например: `npx --yes pnpm@11.25.0 start:dev`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Установка зависимостей и запуск приложения
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Выполните команды из корневой папки проекта:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```sh
+pnpm install
+cp .env.example .env
+pnpm db:generate
+pnpm db:push
+pnpm ocr:setup
+pnpm start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Адрес API: `http://127.0.0.1:3000/cases`. Интерактивная документация Swagger: [открыть документацию](http://127.0.0.1:3000/docs). Спецификация OpenAPI: [открыть JSON](http://127.0.0.1:3000/docs-json).
 
-## Observability
+Команда `pnpm db:push` создаёт пустой файл SQLite и синхронизирует схему. Данные сохраняются в `prisma/dev.db`. Команда `pnpm ocr:setup` один раз загружает немецкую языковую модель в `.cache/tessdata`; затем OCR использует локальные данные. PDF с текстовым слоем обрабатываются без настройки OCR и без Poppler.
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+Без API-ключа приложение запускается в режиме **`LLM_MODE=demo`**. Это явно обозначенный демонстрационный обработчик с фиксированными правилами, который распознаёт только простые шаблоны писем. Его результаты не подтверждают качество настоящей языковой модели. Обработка PDF, OCR, база данных, валидация, последовательность действий и проверка черновиков работают и в демонстрационном режиме.
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+Для вызова настоящей модели измените `.env`:
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project, run this and approve the code it prints at [observe.nestjs.com/link](https://observe.nestjs.com/link) - signing up for free if you have no account:
-
-```bash
-$ npx @nestjs/observe link
+```dotenv
+LLM_MODE=openai
+LLM_API_KEY=<ваш API-ключ>
+LLM_MODEL=<идентификатор доступной модели>
+LLM_BASE_URL=https://api.openai.com/v1
 ```
 
-It installs `@nestjs/observe`, wires it into `AppModule` and `main.ts`, and writes the app key and secret into `.env`, which every `nest start` script (`start`, `start:dev`, `start:debug`) then loads. In production, set `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment instead.
+Адаптер использует JSON-ответы сервиса, совместимого с Chat Completions. Выбранная модель должна поддерживать `response_format: json_object`. Обращения к модели выполняются исключительно через модуль LLM; все ответы затем проверяются схемами Zod. Для демонстрации используйте только синтетические персональные данные.
 
-Or do it by hand:
+### Бесплатный API-ключ Google Gemini
 
-```bash
-$ npm install @nestjs/observe
+Для ключа из Google AI Studio можно использовать совместимый с OpenAI API-адрес Gemini. В `.env` укажите:
+
+```dotenv
+LLM_MODE=openai
+LLM_API_KEY=<ваш API-ключ Gemini из Google AI Studio>
+LLM_MODEL=gemini-3.8-flash
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/sdk) - it takes a single import and an app key.
+Значение `LLM_MODE=openai` здесь означает режим совместимого адаптера. Запросы отправляются в Google по адресу `LLM_BASE_URL`, ключ OpenAI не нужен. Не добавляйте `/chat/completions` к адресу: адаптер добавляет этот путь самостоятельно.
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+Адрес и формат подключения описаны в [документации Google](https://aistudio.google.com/docs/openai). Для `gemini-3.8-flash` указан [бесплатный уровень API](https://aistudio.google.com/docs/pricing#gemini-3.8-flash); доступность и квоты зависят от проекта. При необходимости укажите идентификатор другой доступной вашему проекту текстовой модели Gemini.
 
-## Resources
+После изменения `.env` полностью перезапустите сервер: остановите его через Ctrl+C и выполните `pnpm start:dev`. Затем можно запускать ту же Postman-коллекцию. Ошибка Google HTTP 429 обычно означает исчерпание квоты или превышение частоты запросов; в текущем API приложения сбой провайдера после повторов возвращается как 502, а исходный HTTP-код виден в журнале `/cases/:id/trace`. Для первого запуска проверяйте один сценарий, а не весь `pnpm eval`.
 
-Check out a few resources that may come in handy when working with NestJS:
+Запуск собранной версии:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```sh
+pnpm build
+pnpm start:prod
+```
 
-## Support
+## Импорт и проверка в Postman
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+1. Импортируйте `postman/Razberemsya.postman_collection.json`.
+2. При необходимости импортируйте и выберите окружение `postman/Local.postman_environment.json`. По умолчанию переменная `baseUrl` равна `http://127.0.0.1:3000`.
+3. В настройках Postman укажите корневую папку этого репозитория как рабочую папку и разрешите доступ к файлам. Если Postman не подхватил локальные файлы после импорта, в запросах загрузки откройте **Body → form-data → file** и вручную выберите указанный файл из `fixtures/letters`.
+4. Запустите коллекцию **по порядку через Collection Runner**. Идентификаторы передаются между запросами автоматически. Запросы подтверждения 06 и 14 повторяются, пока не будут подтверждены все сведения из синтетических документов.
 
-## Stay in touch
+Автоматическое подтверждение предусмотрено только для тестирования синтетических писем. При обычном использовании человек должен прочитать и подтвердить каждую показанную цитату из документа.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Коллекция содержит 19 запросов с автоматическими проверками, включая циклы подтверждения. Сценарий: создание дела → загрузка письма → слова пользователя → ожидаемый ответ 409 без подтверждённых фактов → проверка источников → черновик → журнал LLM → повторный запрос документов в другом деле → подтверждение связи → подтверждение получения документов → объяснённый переход в `SUPERSEDED` → новый черновик → проверки ошибочных запросов. Ни один запрос не отправляет электронные письма.
 
-## License
+При запущенном бэкенде коллекцию также можно выполнить из командной строки:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```sh
+pnpm dlx newman run postman/Razberemsya.postman_collection.json --working-dir .
+```
+
+## Синтетические тестовые письма
+
+В папке `fixtures/letters` находятся **15 сценариев**. Для каждого есть исходный немецкий текст (`.txt`), PDF и файл `.json` с ожидаемыми значениями и сообщением пользователя на русском. Для фотографий и сканов дополнительно приложены JPG/PNG. Поле `file` в JSON указывает файл, который нужно проверять: для плохой фотографии это именно нечитаемый JPG, а не читаемый эталонный PDF.
+
+| №     | Сценарий                                                                  | Тестовый файл / особенность                                |
+|-------|---------------------------------------------------------------------------|------------------------------------------------------------|
+| 01–03 | Jobcenter: запрос, повторный запрос, подтверждение получения              | Связанный демонстрационный сценарий, `JC-2026-1001`        |
+| 04    | Bürgeramt — ведомство по делам граждан                                    | Другое ведомство и номер дела                              |
+| 05    | Ausländerbehörde — ведомство по делам иностранцев; номер дела отсутствует | `caseNumber = null`, уточняющий вопрос                     |
+| 06    | Finanzamt — налоговая; два срока                                          | Оба срока указаны конкретными датами                       |
+| 07    | Familienkasse — семейная касса; срок отсутствует                          | Система не придумывает срок                                |
+| 08    | Фотография письма о жилищном пособии                                      | Повёрнутый JPG, OCR                                        |
+| 09    | Sozialamt — социальное ведомство                                          | PDF только с изображением, OCR                             |
+| 10    | Jobcenter                                                                 | Скан среднего качества, OCR                                |
+| 11    | Нечитаемая фотография                                                     | JPG отклоняется с кодом 422                                |
+| 12    | Истёкший срок                                                             | Не отображается как ближайший будущий срок                 |
+| 13    | Другое дело в Jobcenter                                                   | Отличающийся номер дела                                    |
+| 14    | Встроенная попытка подменить инструкции модели (prompt injection)         | Посторонний текст не считается командой для извлечения     |
+| 15    | Относительный срок                                                        | Не рассчитывается без подтверждённой даты получения письма |
+
+Имена, адреса, номера дел и содержание полностью вымышлены. Даты относятся к ноябрю и декабрю 2026 года; отображение ближайшего срока зависит от текущей даты.
+
+Файлы можно воспроизводимо создать заново. Только для повторной генерации PDF и изображений необходимы Python 3 с пакетами `reportlab` и `Pillow`, а также Poppler:
+
+```sh
+python3 -m pip install reportlab Pillow
+pnpm fixtures:generate
+```
+
+## API и порядок действий
+
+| Метод | Путь                                 | Назначение                                                                                                                          |
+|-------|--------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| POST  | `/cases`                             | Создать дело: `{ "title": "…" }`                                                                                                    |
+| GET   | `/cases/:id`                         | Получить письма, утверждения, предложения связи, сообщения, черновики, хронологию, ближайший подтверждённый срок и открытые вопросы |
+| POST  | `/cases/:id/letters`                 | Загрузить PDF/JPG/PNG в multipart-поле `file`: максимум 10 МиБ, для PDF — до 20 страниц                                             |
+| POST  | `/cases/:id/messages`                | Передать `{ "text": "…" }`; получить не более трёх уточняющих вопросов                                                              |
+| POST  | `/cases/:id/links/:linkId/confirm`   | После проверки человеком перенести письмо вместе с утверждениями и сроками в предложенное дело                                      |
+| POST  | `/cases/:id/claims/:claimId/confirm` | Подтвердить сведения из документа после проверки исходной цитаты                                                                    |
+| POST  | `/cases/:id/draft`                   | Сохранить проверенный черновик или получить отчёт об ошибках                                                                        |
+| GET   | `/cases/:id/trace`                   | Получить все попытки вызова модели, включая неудачные                                                                               |
+
+Все ошибки API имеют формат `{ code, message, details? }`. Основные HTTP-коды: 404 — объект не найден; 409 — нет подтверждённых фактов или статус уже обработан; 422 — недопустимый документ или черновик не прошёл проверку; 502 — модель не дала подходящего ответа после трёх попыток; 503 — недоступна растеризация PDF. Превышение допустимого размера multipart-файла также возвращает 422.
+
+**Правило подтверждения.** Все новые сведения из документов сначала имеют `DOCUMENT/UNCONFIRMED`. Только явное подтверждение сведений с источником переводит их в `CONFIRMED`. Слова пользователя сохраняются как `USER/UNCONFIRMED`; эндпоинт подтверждения их отклоняет. Проверенное подтверждение получения того же вида документов может заменить прежнее неподтверждённое утверждение об отправке с объяснением на русском. Оно не доказывает дату отправки.
+
+**Связывание дел.** Одинаковые номера дел создают только предложения со статусом `PENDING`. Подтверждение относится ровно к одному письму и одному целевому делу; конкурирующие предложения отклоняются. Остальные письма, сообщения и события остаются в исходном деле. Первоначальная запись вызова LLM при извлечении тоже остаётся в исходном деле и доступна по его ID; событие связывания содержит сведения об исходном деле.
+
+**Черновик.** Метод `DraftService.generate()` принимает только TypeScript-тип `ConfirmedClaim[]` с закрытой меткой, который штатно выдаёт лишь `CasesService.getConfirmedClaims()`. Дополнительно код проверяет ID утверждений, числа, даты, номера дел, истёкшие сроки и соответствие строгому шаблону. Шаблон цитирует только подтверждённые исходные фрагменты и нейтрально просит уточнить информацию. В MVP свободное перефразирование ограничено: проверка одних чисел не выявила бы выдуманные утверждения без чисел. При любой ошибке `Draft` не сохраняется.
+
+## Архитектура и принятые решения
+
+`CasesModule` владеет Prisma и всеми данными дела. Только `WorkflowModule` задаёт порядок работы предметных модулей. `ConfigModule` и `LlmModule` относятся к инфраструктуре. Сервис журналирования вызовов тоже сохраняет данные через `CasesService`. Остальные предметные модули не вызывают друг друга; импорты только типов описывают контракты данных.
+
+- NestJS 12, ESM с `.js` в импортах, строгий TypeScript и **Vitest** соответствуют исходному проекту и `AGENTS.md`. Указание Jest в более раннем техническом задании адаптировано к этим требованиям.
+- Зафиксирован Prisma 6: общая переносимая модель данных с JSON, перечислениями и внешними ключами; локально используется SQLite, вариант схемы для PostgreSQL генерируется отдельно.
+- `@nestjs/config` — официальный пакет NestJS для конфигурации. Zod проверяет переменные окружения при запуске.
+- Документы: `pdf-parse` извлекает текст, `pdftoppm` растеризует сканы, `sharp` и `tesseract.js` выполняют локальное распознавание немецкого текста. Включены поворот по метаданным, автоматический поворот текста, перевод в оттенки серого, нормализация, масштабирование и бинаризация. Рукописный текст не поддерживается.
+- Цитаты проверяются на соответствующей странице. Для OCR разрешены нормализация пробелов и небольшой настраиваемый порог расстояния редактирования. Значения дополнительно должны подтверждаться цитатой; даты сравниваются с исходным немецким форматом или ISO. Неверные поля обнуляются до `null/0`, а недопустимые записи сроков, не допускающие `null`, удаляются.
+- При ошибке LLM выполняется не более двух повторов; каждая попытка сохраняется отдельно. До успешной валидации и сохранения записи вызова результат не попадает в дело. При сбое LLM сообщения и данные дела остаются неизменными.
+- `FakeLlmProvider` возвращает заданные ответы в тестах. `DemoLlmProvider` — единственный оставшийся демонстрационный компонент, помеченный `STUB`.
+- ESLint запрещает импорты SDK провайдеров за пределами `llm/`; Prettier и Oxlint дополняют проверку. `tsx` используется только для запуска CLI оценки на TypeScript; дополнительные пакеты типов нужны для разработки.
+- Учётная запись Observe автоматически не подключается; для этой реализации не нужны доступ к производственной телеметрии и соответствующие ключи.
+
+### Уточнения к техническому заданию 03
+
+Дополнительный эндпоинт подтверждения утверждений закрывает пробел между проверкой фактов человеком и первоначальным списком API. Существующие пути не изменены. Загрузка возвращает `linkSuggestions[]`, поскольку одному номеру могут соответствовать несколько существующих дел. Дополнительные типы событий `CLAIM_CONFIRMED` и `LINK_CONFIRMED` сохраняют эти решения в истории. Поля `Claim.topic` и `Claim.letterId` позволяют проверить источники и реализовать ограниченный сценарий пересмотра. Относительные сроки не вычисляются без подтверждённой исходной даты; вместо этого остаётся открытый вопрос.
+
+Реализация выполнена в существующей рабочей копии репозитория. Имевшиеся изменения в `workflow/` и уже удалённый файл `gosorgan01` сохранены; автоматические коммиты и публикации не выполнялись.
+
+### PostgreSQL
+
+```sh
+pnpm db:postgres
+# Укажите в .env переменную DATABASE_URL для своей базы PostgreSQL, затем:
+pnpm exec prisma generate --schema prisma/schema.postgres.prisma
+pnpm exec prisma db push --schema prisma/schema.postgres.prisma
+```
+
+Файл `schema.postgres.prisma` генерируется из той же исходной схемы; меняется только провайдер источника данных. Для возврата к SQLite повторно сгенерируйте клиент по схеме SQLite и восстановите URL. Схема PostgreSQL прошла валидацию; работа с настоящей базой PostgreSQL не проверялась, поскольку доступного сервера не было. В этом MVP используется `db push`; для производственных выпусков следует добавить версионируемые миграции для каждого типа базы.
+
+## Конфигурация
+
+| Переменная           | Значение по умолчанию       | Назначение                                                                                     |
+|----------------------|-----------------------------|------------------------------------------------------------------------------------------------|
+| `NODE_ENV`           | `development`               | `development`, `test`, `production`; в режиме `production` демонстрационный провайдер запрещён |
+| `HOST` / `PORT`      | `127.0.0.1` / `3000`        | Адрес привязки сервера и порт                                                                  |
+| `DATABASE_URL`       | `file:./dev.db`             | Путь SQLite относительно `prisma` или URL PostgreSQL                                           |
+| `LLM_MODE`           | `demo`                      | `demo` или `openai`                                                                            |
+| `LLM_API_KEY`        | пусто                       | Обязателен в режиме `openai`                                                                   |
+| `LLM_MODEL`          | см. `.env.example`          | Идентификатор модели у провайдера                                                              |
+| `LLM_BASE_URL`       | `https://api.openai.com/v1` | Базовый URL сервиса, совместимого с Chat Completions                                           |
+| `LLM_TIMEOUT_MS`     | `60000`                     | Тайм-аут одной попытки, мс                                                                     |
+| `OCR_MIN_TEXT`       | `200`                       | Минимальная длина текста для текстового слоя и проверки читаемости                             |
+| `OCR_MIN_CONFIDENCE` | `60`                        | Минимальная средняя уверенность OCR (0–100)                                                    |
+| `OCR_QUOTE_DISTANCE` | `0.03`                      | Максимальное относительное расстояние редактирования для OCR-цитат                             |
+| `OCR_LANG_PATH`      | `./.cache/tessdata`         | Папка локальных немецких языковых данных                                                       |
+| `PDFTOPPM_PATH`      | `pdftoppm`                  | Путь к программе Poppler                                                                       |
+
+Значения проверяются при запуске. Файл `.env`, локальные базы данных, кеш OCR и отчёты запусков исключены из Git. Приложение и журнал вызовов сохраняют содержание писем; для будущего многопользовательского или производственного режима отдельно потребуются контроль доступа, правила удаления и защита сохранённых данных.
+
+## Тесты и оценка качества
+
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+pnpm build
+pnpm eval
+```
+
+Интеграционные тесты используют отдельный временный файл SQLite в `/tmp` и `FakeLlmProvider`. Они проверяют загрузку, подтверждение, связывание, диалог, пересмотр, черновики, журнал вызовов и ошибки без частичного сохранения данных дела. Проверка типов включает `test/confirmed-claim.typecheck.ts`: компилятор должен отклонять обычные и неподтверждённые утверждения. CI выполняет проверку линтером, проверку типов, модульные и интеграционные тесты, а также сборку.
+
+Команда `pnpm eval` обрабатывает **настоящие PDF и изображения**, указанные в JSON-фикстурах, а не только эталонный текст. Она создаёт отдельные дела `EVAL …` в настроенной базе, подтверждает сведения из синтетических документов и проверяет черновики. Измеряются точность извлечения ведомства, номера дела и сроков отдельно для текстовых PDF и OCR, корректность цитат, доля прошедших проверку черновиков, читаемость, задержка вызовов и доступные данные о токенах. Отчёт сохраняется в `reports/eval-latest.json`. Исходный локальный демонстрационный прогон находится в `fixtures/eval-baseline.demo.json`; число токенов для демо остаётся `null` и не выдаётся за расход настоящей модели.
+
+Для оценки настоящей LLM задайте `LLM_MODE=openai` и свои ключи, затем повторите тот же запуск. Результаты демонстрационного обработчика с фиксированными правилами не являются доказательством качества языковой модели.
+
+### Результаты локальной проверки (11.11.2026)
+
+- Проверка линтером, проверка типов TypeScript, включая тест типа с закрытой меткой, и производственная сборка завершились успешно.
+- Успешно выполнены 19 модульных и 6 интеграционных API-тестов, включая загрузку файла размером более 10 МиБ.
+- Postman/Newman: 31 запрос с учётом циклов, 43 автоматические проверки, ошибок нет. Краткий отчёт: `postman/verification.demo.json`.
+- Оценка: 15 сценариев с настоящим OCR в демонстрационном режиме; 14 читаемых документов обработаны корректно, нечитаемое фото отклонено. Исходные демонстрационные результаты: `fixtures/eval-baseline.demo.json`.
+- Swagger/OpenAPI содержит все восемь путей API; SQLite проверен на практике, вариант схемы PostgreSQL прошёл валидацию. Тестовые PDF и изображения также проверены визуально.
+- Тестирование с настоящим LLM-провайдером или работающим сервером PostgreSQL не проводилось.
+
+## Новая версия промпта
+
+Существующие файлы в `src/llm/prompts` не изменяются. Для изменений добавьте новый файл, например `extract.v2.md`, выполните `pnpm eval` на том же наборе фикстур и сравните отчёты. `PromptRegistry` по умолчанию выбирает наибольший номер версии; `LlmService.call` позволяет указать `promptVersion` для воспроизводимого запуска. Для каждой попытки сохраняются имя и версия промпта. При сборке файлы промптов копируются в `dist/llm/prompts`.
+
+## Ограничения MVP
+
+Нет аутентификации, разделения пользователей, автоматической отправки писем и юридических консультаций. Пересмотр ограничен описанным сценарием подтверждения получения с совпадающими названиями документов; общего механизма семантического поиска противоречий нет. Сложные таблицы, необычные форматы дат и рукописные письма не поддерживаются. Неясные сведения остаются открытыми вопросами. Для OCR нужно один раз установить языковые данные, а для PDF со сканами — дополнительно Poppler.

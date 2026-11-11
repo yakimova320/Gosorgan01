@@ -1,0 +1,22 @@
+{
+  "id": "11_bad_photo",
+  "synthetic": true,
+  "file": "11_bad_photo.jpg",
+  "source": "OCR",
+  "readable": false,
+  "text": "Bürgeramt Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: BA-2026-9999\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte senden Sie eine Kopie Ihres Reisepasses.\nBitte antworten Sie bis zum 03.12.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Bürgeramt Beispielhausen",
+    "caseNumber": "BA-2026-9999",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte senden Sie eine Kopie Ihres Reisepasses."
+    ],
+    "deadlines": [
+      "2026-12-03"
+    ]
+  },
+  "userMessage": "Письмо сфотографировано очень плохо.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

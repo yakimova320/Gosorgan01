@@ -1,0 +1,24 @@
+{
+  "id": "06_multiple_deadlines",
+  "synthetic": true,
+  "file": "06_multiple_deadlines.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Finanzamt Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: FA-2026-5010\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte reichen Sie die Einkommensnachweise ein.\nBitte bestätigen Sie Ihre Anschrift.\nBitte antworten Sie bis zum 01.12.2026.\nBitte antworten Sie bis zum 10.12.2026.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Finanzamt Beispielhausen",
+    "caseNumber": "FA-2026-5010",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte reichen Sie die Einkommensnachweise ein.",
+      "Bitte bestätigen Sie Ihre Anschrift."
+    ],
+    "deadlines": [
+      "2026-12-01",
+      "2026-12-10"
+    ]
+  },
+  "userMessage": "Какая из двух дат важнее?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

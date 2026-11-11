@@ -1,7 +1,7 @@
 {
   "name": "gosorgan01",
   "version": "0.0.1",
-  "description": "",
+  "description": "Разберёмся — evidence-based correspondence assistant backend",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -13,20 +13,35 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "lint": "oxlint --type-aware src/ test/",
+    "start:prod": "node dist/main.js",
+    "lint": "eslint src test && oxlint --type-aware src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "node scripts/db-push.mjs",
+    "db:postgres": "node scripts/postgres-schema.mjs",
+    "eval": "node --import tsx src/eval/run-eval.ts",
+    "fixtures:generate": "python3 scripts/generate-fixtures.py",
+    "ocr:setup": "node scripts/setup-ocr.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
+    "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/swagger": "^12.1.1",
+    "@prisma/client": "^6.19.3",
+    "multer": "^2.5.0",
+    "pdf-parse": "^2.4.5",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sharp": "^0.35.5",
+    "tesseract.js": "^7.0.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
@@ -34,16 +49,25 @@
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
     "@types/express": "^5.0.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.0.0",
     "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^10.14.0",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
+    "prisma": "^6.19.3",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.72.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.2"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.13"
   }
 }

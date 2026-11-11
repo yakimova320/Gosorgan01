@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+enum ClaimBasis {
+  DOCUMENT
+  USER
+  ASSUMPTION
+}
+enum ClaimStatus {
+  CONFIRMED
+  UNCONFIRMED
+  SUPERSEDED
+}
+enum CaseStatus {
+  OPEN
+  CLOSED
+}
+enum EventType {
+  LETTER_RECEIVED
+  USER_REPORTED_SENT
+  REVISION
+  CLAIM_CONFIRMED
+  LINK_CONFIRMED
+}
+enum SourceType {
+  PDF_TEXT
+  PDF_SCAN
+  IMAGE
+}
+enum LinkStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+enum DraftStatus {
+  PREPARED
+}
+model Case {
+  id String @id @default(cuid())
+  title String
+  status CaseStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  letters Letter[]
+  claims Claim[]
+  deadlines Deadline[]
+  events Event[]
+  messages Message[]
+  drafts Draft[]
+  calls LlmCall[]
+  suggestions LinkSuggestion[] @relation("origin")
+  targetSuggestions LinkSuggestion[] @relation("target")
+}
+model Letter {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  rawText String
+  sourceType SourceType
+  ocrConfidence Float?
+  authority String?
+  caseNumber String?
+  letterDate String?
+  extraction Json
+  createdAt DateTime @default(now())
+  claims Claim[]
+  suggestions LinkSuggestion[]
+}
+model Claim {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  letterId String?
+  letter Letter? @relation(fields: [letterId], references: [id])
+  text String
+  topic String
+  basis ClaimBasis
+  status ClaimStatus @default(UNCONFIRMED)
+  quote String?
+  page Int?
+  confidence Float?
+  supersededById String?
+  supersededBy Claim? @relation("supersession", fields: [supersededById], references: [id])
+  supersedes Claim[] @relation("supersession")
+  reason String?
+  createdAt DateTime @default(now())
+  deadlines Deadline[]
+}
+model Deadline {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  date DateTime
+  claimId String
+  claim Claim @relation(fields: [claimId], references: [id])
+  kind String
+}
+model Event {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  type EventType
+  at DateTime @default(now())
+  details Json
+}
+model Message {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  role String
+  text String
+  createdAt DateTime @default(now())
+}
+model Draft {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation(fields: [caseId], references: [id])
+  germanText String
+  russianExplanation String
+  claimIds Json
+  status DraftStatus @default(PREPARED)
+  createdAt DateTime @default(now())
+}
+model LlmCall {
+  id String @id @default(cuid())
+  caseId String?
+  case Case? @relation(fields: [caseId], references: [id])
+  promptName String
+  promptVersion Int
+  provider String
+  model String
+  input String
+  output String?
+  durationMs Int
+  tokens Int?
+  error Boolean
+  errorMessage String?
+  createdAt DateTime @default(now())
+}
+model LinkSuggestion {
+  id String @id @default(cuid())
+  caseId String
+  case Case @relation("origin", fields: [caseId], references: [id])
+  letterId String
+  letter Letter @relation(fields: [letterId], references: [id])
+  targetCaseId String
+  targetCase Case @relation("target", fields: [targetCaseId], references: [id])
+  status LinkStatus @default(PENDING)
+  @@unique([letterId, targetCaseId])
+}

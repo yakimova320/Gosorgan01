@@ -1,0 +1,20 @@
+{
+  "id": "15_relative_deadline",
+  "synthetic": true,
+  "file": "15_relative_deadline.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Ausländerbehörde Musterstadt\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 11.11.2026\nAktenzeichen: AB-2026-1215\n\nBetreff: Unterlagen zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nBitte legen Sie den Mietvertrag vor.\nBitte antworten Sie innerhalb von zwei Wochen nach Zugang.\n\nBei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen.\nDiese Mitteilung betrifft ausschließlich die genannten Unterlagen.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Ausländerbehörde Musterstadt",
+    "caseNumber": "AB-2026-1215",
+    "letterDate": "2026-11-11",
+    "requirements": [
+      "Bitte legen Sie den Mietvertrag vor."
+    ],
+    "deadlines": []
+  },
+  "userMessage": "В письме сказано ответить в течение двух недель.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

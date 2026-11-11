@@ -1,10 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
-
-@Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
-})
+import { ConfigModule } from './config/config.module.js';
+import { WorkflowModule } from './workflow/workflow.module.js';
+@Module({ imports: [ConfigModule, WorkflowModule] })
 export class AppModule {}

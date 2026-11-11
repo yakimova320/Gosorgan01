@@ -1,0 +1,7 @@
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  esbuild: true
+  tesseract.js: true
+  '@scarf/scarf': false

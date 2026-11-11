@@ -1,10 +1,2 @@
 import { defineConfig } from 'vitest/config';
-
-export default defineConfig({
-  resolve: { tsconfigPaths: true },
-  test: {
-    globals: true,
-    root: './',
-    include: ['**/*.e2e-spec.ts'],
-  },
-});
+export default defineConfig({ test: { globals: true, include: ['test/**/*.e2e-spec.ts'], globalSetup: ['test/setup-db.ts'], fileParallelism: false, testTimeout: 30000 } });
