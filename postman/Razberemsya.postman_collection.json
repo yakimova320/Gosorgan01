@@ -2,7 +2,7 @@
   "info": {
     "name": "Разберёмся — сквозная демонстрация бэкенда на синтетических данных",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "# Как запустить коллекцию\n\nИспользуйте только синтетические данные. Сначала запустите бэкенд по инструкции в README.md.\n\n1. Значение baseUrl по умолчанию: http://127.0.0.1:3000.\n2. В Postman укажите корневую папку репозитория как рабочую и разрешите доступ к файлам. Если файлы не подхватились после импорта, выберите их вручную в Body → form-data → file из папки fixtures/letters.\n3. Запустите все запросы по порядку через Collection Runner. Идентификаторы дела, утверждений и предложения связи заполняются автоматически.\n4. Запросы 06 и 14 циклически подтверждают сведения из синтетических документов. Это автоматизация тестового сценария: при обычном использовании человек должен прочитать каждую цитату и подтвердить её самостоятельно.\n\nДемонстрационный режим работает без API-ключа. Для OCR предварительно выполните pnpm ocr:setup; для PDF со сканами также нужен Poppler.\n\nОжидаемые ответы 409 и 422 в отрицательных сценариях означают правильную работу защиты. Ни один запрос не отправляет письма ведомствам. Названия API-полей, переменных и статусов сохранены без перевода, чтобы запросы оставались совместимыми с бэкендом."
+    "description": "# Как запустить коллекцию\n\nИспользуйте только синтетические данные. Сначала запустите бэкенд по инструкции в README.md.\n\n1. Значение baseUrl по умолчанию: http://127.0.0.1:3000.\n2. В Postman укажите корневую папку репозитория как рабочую и разрешите доступ к файлам. Если файлы не подхватились после импорта, выберите их вручную в Body → form-data → file из папки fixtures/letters.\n3. Запустите все запросы по порядку через Collection Runner. Идентификаторы дела, утверждений и предложения связи заполняются автоматически.\n4. Запросы 06 и 14 циклически подтверждают сведения из синтетических документов. Это автоматизация тестового сценария: при обычном использовании человек должен прочитать каждую цитату и подтвердить её самостоятельно.\n\nДемонстрационный режим работает без API-ключа. Для OCR предварительно выполните pnpm ocr:setup; для PDF со сканами также нужен Poppler.\n\nОжидаемые ответы 409 и 422 в отрицательных сценариях означают правильную работу защиты. Ни один запрос не отправляет письма ведомствам. Названия API-полей, переменных и статусов сохранены без перевода, чтобы запросы оставались совместимыми с бэкендом.\n\nЕсли API возвращает неожиданный HTTP-код, сценарий останавливается и показывает исходный ответ API вместо каскада ошибок в следующих запросах. При LLM_FAILED посмотрите /cases/:id/trace: там записаны ошибки провайдера и тайм-ауты. После исправления импортируйте обновлённую коллекцию заново."
   },
   "variable": [
     {
@@ -73,8 +73,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.collectionVariables.set(\"caseId\", pm.response.json().id);",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    pm.collectionVariables.set(\"caseId\", pm.response.json().id);",
+              "  }",
               "}"
             ]
           }
@@ -108,8 +115,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.test(\"Номер дела извлечён\", () => pm.expect(pm.response.json().extracted.caseNumber.value).to.eql(\"JC-2026-1001\"));",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    pm.test(\"Номер дела извлечён\", () => pm.expect(pm.response.json().extracted.caseNumber.value).to.eql(\"JC-2026-1001\"));",
+              "  }",
               "}"
             ]
           }
@@ -147,10 +161,17 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "const users=pm.response.json().state.claims.filter(c=>c.basis==='USER');",
-              "pm.test('Слова пользователя остаются неподтверждёнными',()=>pm.expect(users.every(c=>c.status==='UNCONFIRMED')).to.eql(true));",
-              "pm.collectionVariables.set('userClaimId',users[0].id);",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    const users=pm.response.json().state.claims.filter(c=>c.basis==='USER');",
+              "    pm.test('Слова пользователя остаются неподтверждёнными',()=>pm.expect(users.every(c=>c.status==='UNCONFIRMED')).to.eql(true));",
+              "    pm.collectionVariables.set('userClaimId',users[0].id);",
+              "  }",
               "}"
             ]
           }
@@ -174,7 +195,14 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "  if (pm.response.code !== 409) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 409; ответ API: ' + errorResponse, () => pm.response.to.have.status(409));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "  }",
               "}"
             ]
           }
@@ -198,10 +226,17 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "const claims=pm.response.json().claims.filter(c=>c.basis==='DOCUMENT'&&c.status==='UNCONFIRMED');",
-              "pm.collectionVariables.set('confirmQueue',JSON.stringify(claims.map(c=>c.id)));",
-              "console.log('Проверьте сведения из синтетических документов:',claims.map(c=>({id:c.id,text:c.text,quote:c.quote,page:c.page})));",
+              "  if (pm.response.code !== 200) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 200; ответ API: ' + errorResponse, () => pm.response.to.have.status(200));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "    const claims=pm.response.json().claims.filter(c=>c.basis==='DOCUMENT'&&c.status==='UNCONFIRMED');",
+              "    pm.collectionVariables.set('confirmQueue',JSON.stringify(claims.map(c=>c.id)));",
+              "    console.log('Проверьте сведения из синтетических документов:',claims.map(c=>({id:c.id,text:c.text,quote:c.quote,page:c.page})));",
+              "  }",
               "}"
             ]
           }
@@ -239,8 +274,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "if (JSON.parse(pm.collectionVariables.get('confirmQueue')||'[]').length) pm.execution.setNextRequest(pm.info.requestId);",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    if (JSON.parse(pm.collectionVariables.get('confirmQueue')||'[]').length) pm.execution.setNextRequest(pm.info.requestId);",
+              "  }",
               "}"
             ]
           }
@@ -264,10 +306,17 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "const data=pm.response.json();",
-              "pm.test('Черновик прошёл проверку',()=>pm.expect(data.report.passed).to.eql(true));",
-              "pm.test('Неподтверждённое утверждение пользователя не включено в черновик',()=>pm.expect(data.draft.claimIds).not.to.include(pm.collectionVariables.get('userClaimId')));",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    const data=pm.response.json();",
+              "    pm.test('Черновик прошёл проверку',()=>pm.expect(data.report.passed).to.eql(true));",
+              "    pm.test('Неподтверждённое утверждение пользователя не включено в черновик',()=>pm.expect(data.draft.claimIds).not.to.include(pm.collectionVariables.get('userClaimId')));",
+              "  }",
               "}"
             ]
           }
@@ -291,8 +340,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test('Попытки вызова и версии промптов записаны в журнал',()=>pm.expect(pm.response.json().every(c=>c.promptVersion>0&&c.input)).to.eql(true));",
+              "  if (pm.response.code !== 200) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 200; ответ API: ' + errorResponse, () => pm.response.to.have.status(200));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "    pm.test('Попытки вызова и версии промптов записаны в журнал',()=>pm.expect(pm.response.json().every(c=>c.promptVersion>0&&c.input)).to.eql(true));",
+              "  }",
               "}"
             ]
           }
@@ -330,8 +386,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.collectionVariables.set(\"inboxId\",pm.response.json().id);",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    pm.collectionVariables.set(\"inboxId\",pm.response.json().id);",
+              "  }",
               "}"
             ]
           }
@@ -365,10 +428,17 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "const link=pm.response.json().linkSuggestions.find(s=>s.targetCaseId===pm.collectionVariables.get('caseId'));",
-              "pm.test('Связь только предложена и ожидает подтверждения',()=>pm.expect(link.status).to.eql('PENDING'));",
-              "pm.collectionVariables.set('linkId',link.id);",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    const link=pm.response.json().linkSuggestions.find(s=>s.targetCaseId===pm.collectionVariables.get('caseId'));",
+              "    pm.test('Связь только предложена и ожидает подтверждения',()=>pm.expect(link.status).to.eql('PENDING'));",
+              "    pm.collectionVariables.set('linkId',link.id);",
+              "  }",
               "}"
             ]
           }
@@ -392,9 +462,16 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.test('Письмо перенесено в основное дело',()=>pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('caseId')));",
-              "pm.test('Повторный запрос не опровергает слова пользователя об отправке',()=>pm.expect(pm.response.json().claims.find(c=>c.id===pm.collectionVariables.get('userClaimId')).status).to.eql('UNCONFIRMED'));",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    pm.test('Письмо перенесено в основное дело',()=>pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('caseId')));",
+              "    pm.test('Повторный запрос не опровергает слова пользователя об отправке',()=>pm.expect(pm.response.json().claims.find(c=>c.id===pm.collectionVariables.get('userClaimId')).status).to.eql('UNCONFIRMED'));",
+              "  }",
               "}"
             ]
           }
@@ -428,7 +505,14 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "  }",
               "}"
             ]
           }
@@ -452,10 +536,17 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "const claims=pm.response.json().claims.filter(c=>c.basis==='DOCUMENT'&&c.status==='UNCONFIRMED');",
-              "pm.collectionVariables.set('confirmQueue',JSON.stringify(claims.map(c=>c.id)));",
-              "console.log('Проверьте сведения из синтетических документов:',claims);",
+              "  if (pm.response.code !== 200) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 200; ответ API: ' + errorResponse, () => pm.response.to.have.status(200));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "    const claims=pm.response.json().claims.filter(c=>c.basis==='DOCUMENT'&&c.status==='UNCONFIRMED');",
+              "    pm.collectionVariables.set('confirmQueue',JSON.stringify(claims.map(c=>c.id)));",
+              "    console.log('Проверьте сведения из синтетических документов:',claims);",
+              "  }",
               "}"
             ]
           }
@@ -493,8 +584,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "if (JSON.parse(pm.collectionVariables.get('confirmQueue')||'[]').length) pm.execution.setNextRequest(pm.info.requestId);",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    if (JSON.parse(pm.collectionVariables.get('confirmQueue')||'[]').length) pm.execution.setNextRequest(pm.info.requestId);",
+              "  }",
               "}"
             ]
           }
@@ -518,10 +616,17 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "const data=pm.response.json();",
-              "pm.test('Подтверждение получения заменяет неподтверждённое утверждение пользователя',()=>pm.expect(data.claims.find(c=>c.id===pm.collectionVariables.get('userClaimId')).status).to.eql('SUPERSEDED'));",
-              "pm.test('Пересмотр отражён в истории дела',()=>pm.expect(data.timeline.some(e=>e.type==='REVISION')).to.eql(true));",
+              "  if (pm.response.code !== 200) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 200; ответ API: ' + errorResponse, () => pm.response.to.have.status(200));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "    const data=pm.response.json();",
+              "    pm.test('Подтверждение получения заменяет неподтверждённое утверждение пользователя',()=>pm.expect(data.claims.find(c=>c.id===pm.collectionVariables.get('userClaimId')).status).to.eql('SUPERSEDED'));",
+              "    pm.test('Пересмотр отражён в истории дела',()=>pm.expect(data.timeline.some(e=>e.type==='REVISION')).to.eql(true));",
+              "  }",
               "}"
             ]
           }
@@ -545,8 +650,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.test(\"Все проверки пройдены\",()=>pm.expect(pm.response.json().report.passed).to.eql(true));",
+              "  if (pm.response.code !== 201) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 201; ответ API: ' + errorResponse, () => pm.response.to.have.status(201));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "    pm.test(\"Все проверки пройдены\",()=>pm.expect(pm.response.json().report.passed).to.eql(true));",
+              "  }",
               "}"
             ]
           }
@@ -570,7 +682,14 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "  if (pm.response.code !== 409) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 409; ответ API: ' + errorResponse, () => pm.response.to.have.status(409));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "  }",
               "}"
             ]
           }
@@ -608,8 +727,15 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
-              "pm.test(\"Единый формат ошибки\",()=>pm.expect(pm.response.json()).to.have.keys(\"code\",\"message\",\"details\"));",
+              "  if (pm.response.code !== 422) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 422; ответ API: ' + errorResponse, () => pm.response.to.have.status(422));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "    pm.test(\"Единый формат ошибки\",()=>pm.expect(pm.response.json()).to.have.keys(\"code\",\"message\",\"details\"));",
+              "  }",
               "}"
             ]
           }
@@ -643,7 +769,14 @@
             "type": "text/javascript",
             "exec": [
               "{",
-              "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "  if (pm.response.code !== 422) {",
+              "    const errorResponse = pm.response.text();",
+              "    console.error('Сценарий остановлен: API вернул ошибку.', errorResponse);",
+              "    pm.test('Ожидается HTTP 422; ответ API: ' + errorResponse, () => pm.response.to.have.status(422));",
+              "    pm.execution.setNextRequest(null);",
+              "  } else {",
+              "    pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "  }",
               "}"
             ]
           }
