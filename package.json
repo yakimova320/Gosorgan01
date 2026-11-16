@@ -24,7 +24,8 @@
     "db:studio": "pnpm --filter jasno-api db:studio",
     "db:seed": "pnpm --filter jasno-api db:seed",
     "db:check": "pnpm --filter jasno-api db:check",
-    "db:pg": "pnpm --filter jasno-api db:pg"
+    "db:pg": "pnpm --filter jasno-api db:pg",
+    "llm:check": "pnpm --filter jasno-api llm:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
