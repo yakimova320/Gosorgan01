@@ -74,6 +74,23 @@ pnpm dev:api
 
 Остановить сервер: `Ctrl + C` в терминале.
 
+### Сайт
+
+Во втором окне терминала:
+
+- Mac: `cp web/.env.example web/.env`
+- Windows: `copy web\.env.example web\.env`
+
+```bash
+pnpm dev:web
+```
+
+Открыть http://localhost:5173. На телефоне в той же сети Wi-Fi: `pnpm dev:web -- --host`, затем адрес, который покажет терминал (Network).
+
+В `web/.env` переменная `VITE_DATA_MODE=mock` включает примерные данные: сайт работает без сервера, в углу видна подпись «примерные данные». `VITE_DATA_MODE=api` берёт данные с сервера; экраны, для которых на сервере ещё нет функции, честно пишут «ещё не подключена».
+
+Иллюстрации кладутся в `web/public/illustrations/` (список в `docs/design/README.md`).
+
 ## Проверки перед Pull Request
 
 ```bash

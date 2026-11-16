@@ -12,10 +12,10 @@
   "scripts": {
     "dev:api": "pnpm --filter jasno-api dev",
     "dev:web": "pnpm --filter jasno-web dev",
-    "build": "pnpm --filter jasno-api build",
+    "build": "pnpm --filter jasno-api build && pnpm --filter jasno-web build",
     "build:api": "pnpm --filter jasno-api build",
     "build:web": "pnpm --filter jasno-web build",
-    "lint": "eslint api/src api/test",
+    "lint": "eslint api/src api/test web/src",
     "format": "prettier --write \"api/**/*.ts\" \"web/src/**/*.{ts,tsx,css}\"",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
