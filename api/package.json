@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "db:pg": "node prisma/gen-postgres.mjs",
-    "db:check": "node prisma/gen-postgres.mjs --check"
+    "db:check": "node prisma/gen-postgres.mjs --check",
+    "llm:check": "tsc -p tsconfig.build.json && node dist/scripts/llm-check.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.4.2",
