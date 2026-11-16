@@ -23,7 +23,7 @@ function AuthCard({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function LoginPage() {
-  const { signIn } = useSession();
+  const { signIn, expired } = useSession();
   const { navigate } = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,6 +48,11 @@ export function LoginPage() {
 
   return (
     <AuthCard title="Вход">
+      {expired && (
+        <p className="small text-2" role="status">
+          Сессия истекла. Войдите снова.
+        </p>
+      )}
       <form className="stack" onSubmit={submit} noValidate>
         <div className="field">
           <label htmlFor="email">E-mail</label>

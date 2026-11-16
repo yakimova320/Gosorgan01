@@ -2,6 +2,8 @@ import { Module, type DynamicModule } from '@nestjs/common';
 import { AppConfigModule } from './config/config.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { CabinetModule } from './cabinet/cabinet.module.js';
 
 @Module({})
 export class AppModule {
@@ -9,7 +11,7 @@ export class AppModule {
   static forRoot(overrides?: NodeJS.ProcessEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [AppConfigModule.forRoot(overrides), PrismaModule],
+      imports: [AppConfigModule.forRoot(overrides), PrismaModule, AuthModule, CabinetModule],
       controllers: [HealthController],
     };
   }
