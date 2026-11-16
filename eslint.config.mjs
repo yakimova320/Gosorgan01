@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 const LLM_SDKS = ['openai', '@google/genai', '@google/generative-ai', '@anthropic-ai/sdk', 'ai', '@ai-sdk/*'];
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', 'api/src/generated/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

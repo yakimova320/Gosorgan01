@@ -19,7 +19,12 @@
     "format": "prettier --write \"api/**/*.ts\" \"web/src/**/*.{ts,tsx,css}\"",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:e2e": "pnpm --filter jasno-api test:e2e"
+    "test:e2e": "pnpm --filter jasno-api test:e2e",
+    "db:migrate": "pnpm --filter jasno-api db:migrate",
+    "db:studio": "pnpm --filter jasno-api db:studio",
+    "db:seed": "pnpm --filter jasno-api db:seed",
+    "db:check": "pnpm --filter jasno-api db:check",
+    "db:pg": "pnpm --filter jasno-api db:pg"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
