@@ -1,0 +1,286 @@
+// Схема базы Ja!sno. Источник: ТЗ v2 раздел 7 с изменениями ТЗ v4 раздел 8.
+// Это единственный файл, который правят руками. PostgreSQL-вариант создаёт `pnpm db:pg`.
+// Простыми словами о таблицах: docs/database.md.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum CaseStatus {
+  OPEN
+  CLOSED
+}
+
+enum CaseOrigin {
+  INCOMING
+  OUTGOING
+}
+
+enum SourceType {
+  PDF_TEXT
+  IMAGE
+}
+
+enum ClaimKind {
+  AUTHORITY
+  CASE_NUMBER
+  LETTER_DATE
+  REQUIREMENT
+  DEADLINE
+  AMOUNT
+  OTHER
+}
+
+enum ClaimBasis {
+  DOCUMENT
+  USER
+}
+
+enum ClaimStatus {
+  UNCONFIRMED
+  CONFIRMED
+  REJECTED
+  SUPERSEDED
+}
+
+enum DeadlineKind {
+  REPLY
+  DOCUMENTS
+  OBJECTION
+  FOLLOW_UP
+}
+
+enum MessageKind {
+  QUESTION
+  STATEMENT
+  ANSWER
+}
+
+enum DraftKind {
+  CLARIFICATION
+  DOCUMENTS
+  EXTENSION
+  STATUS_REQUEST
+  TEMPLATE
+  FREE
+}
+
+enum DraftStatus {
+  PREPARED
+  SENT
+}
+
+enum EventType {
+  LETTER_RECEIVED
+  CASE_CREATED_FROM_LETTER
+  CLAIM_CONFIRMED
+  CLAIM_REJECTED
+  QUESTION_ASKED
+  USER_REPORTED_SENT
+  DRAFT_PREPARED
+  DRAFT_SENT
+  DEADLINE_DONE
+  REVISION
+}
+
+model Cabinet {
+  id                  String               @id @default(cuid())
+  email               String               @unique // в нижнем регистре
+  passwordHash        String
+  passwordChangedAt   DateTime? // ТЗ v4: после смены пароля старые сессии недействительны
+  language            String               @default("ru")
+  profile             Json? // { firstName, lastName, address, numbers: [{label, value}] }
+  consentAt           DateTime
+  createdAt           DateTime             @default(now())
+  lastSeenAt          DateTime             @default(now())
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  cases               Case[]
+  letters             Letter[]
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  cabinetId  String
+  cabinet    Cabinet  @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique // sha256 от токена, сам токен не хранится
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([cabinetId])
+}
+
+// ТЗ v4: ссылка восстановления пароля. Сам токен не хранится, только sha256.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  cabinetId String
+  cabinet   Cabinet   @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([cabinetId])
+}
+
+model Case {
+  id         String     @id @default(cuid())
+  cabinetId  String
+  cabinet    Cabinet    @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  title      String
+  authority  String?
+  caseNumber String?
+  status     CaseStatus @default(OPEN)
+  origin     CaseOrigin @default(INCOMING)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  letters    Letter[]
+  claims     Claim[]
+  deadlines  Deadline[]
+  events     Event[]
+  messages   Message[]
+  drafts     Draft[]
+
+  @@index([cabinetId])
+}
+
+model Letter {
+  id          String     @id @default(cuid())
+  cabinetId   String
+  cabinet     Cabinet    @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  caseId      String? // null = во входящих
+  case        Case?      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  sourceType  SourceType
+  rawText     String // распознанный текст, исходный, без маскирования
+  pages       Json // [{ n, readable, chars }]
+  files       Json // ТЗ v4: оригиналы [{ n, fileKey, mime, bytes }], fileKey случайный, без имени файла
+  explanation Json? // кэш объяснения; сбрасывается при любом изменении фактов письма
+  createdAt   DateTime   @default(now())
+  claims      Claim[]
+  deadlines   Deadline[]
+
+  @@index([cabinetId])
+  @@index([caseId])
+}
+
+model Claim {
+  id           String      @id @default(cuid())
+  letterId     String?
+  letter       Letter?     @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  caseId       String?
+  case         Case?       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  kind         ClaimKind
+  value        String // нормализованное значение, дата в ISO 8601
+  text         String // формулировка для человека по-русски
+  quote        String? // точная цитата из письма; у USER может не быть
+  page         Int?
+  basis        ClaimBasis
+  status       ClaimStatus @default(UNCONFIRMED)
+  reason       String? // почему SUPERSEDED или REJECTED
+  // ТЗ v4: исправление создаёт новую запись, она ссылается на предыдущую; старая получает SUPERSEDED
+  supersedesId String?
+  supersedes   Claim?      @relation("ClaimRevision", fields: [supersedesId], references: [id], onDelete: SetNull)
+  supersededBy Claim[]     @relation("ClaimRevision")
+  updatedBy    String? // USER или SYSTEM
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deadline     Deadline?
+
+  @@index([letterId])
+  @@index([caseId])
+}
+
+model Deadline {
+  id               String       @id @default(cuid())
+  letterId         String
+  letter           Letter       @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  caseId           String?
+  case             Case?        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  claimId          String       @unique
+  claim            Claim        @relation(fields: [claimId], references: [id], onDelete: Cascade) // ТЗ v4
+  date             DateTime // календарная дата: полночь UTC, без сдвига часового пояса
+  kind             DeadlineKind
+  doneAt           DateTime?
+  remindDaysBefore Int          @default(3)
+
+  @@index([letterId])
+  @@index([caseId])
+}
+
+model Event {
+  id      String    @id @default(cuid())
+  caseId  String
+  case    Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  type    EventType
+  at      DateTime  @default(now())
+  details Json
+
+  @@index([caseId])
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  caseId    String
+  case      Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  role      String // USER или ASSISTANT
+  kind      MessageKind
+  text      String
+  createdAt DateTime    @default(now())
+
+  @@index([caseId])
+}
+
+model Draft {
+  id            String      @id @default(cuid())
+  caseId        String
+  case          Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  kind          DraftKind
+  templateId    String?
+  germanText    String
+  russianText   String
+  claimIds      Json
+  claimSnapshot Json // ТЗ v4: значения фактов на момент сборки
+  stale         Boolean     @default(false) // ТЗ v4: факт изменился после сборки
+  verification  Json // отчёт проверки
+  status        DraftStatus @default(PREPARED)
+  sentAt        DateTime?
+  sentVia       String?
+  createdAt     DateTime    @default(now())
+
+  @@index([caseId])
+}
+
+// Журнал обращений к модели. Без внешних ключей, чтобы не мешать удалению:
+// строки удаляются кодом по cabinetId, caseId или letterId.
+// Чат-помощник для гостя: cabinetId = null, input только первые 200 знаков, замаскированные.
+model LlmCall {
+  id            String   @id @default(cuid())
+  cabinetId     String?
+  letterId      String?
+  caseId        String?
+  promptName    String
+  promptVersion Int
+  provider      String
+  model         String
+  input         String // уже замаскированный текст; для фото только описание «image, N KB»
+  output        String?
+  ok            Boolean
+  error         String?
+  attempts      Int
+  durationMs    Int
+  tokensIn      Int?
+  tokensOut     Int?
+  createdAt     DateTime @default(now())
+
+  @@index([cabinetId])
+  @@index([letterId])
+  @@index([caseId])
+}
