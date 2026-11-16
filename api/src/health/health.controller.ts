@@ -2,6 +2,7 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
+import { Public } from '../auth/session.guard.js';
 
 export interface HealthResponse {
   ok: true;
@@ -11,6 +12,7 @@ export interface HealthResponse {
 }
 
 @ApiTags('Служебное')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(@Inject(APP_CONFIG) private readonly config: Env) {}

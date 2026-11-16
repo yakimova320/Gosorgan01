@@ -3,6 +3,13 @@ import { ApiClientError, messageFor } from './errors';
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
+let unauthorizedHandler: (() => void) | null = null;
+
+/** Вызывается, когда сервер отклонил токен сессии (истекла или завершена). Ставит SessionProvider. */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 interface RequestOptions {
   body?: unknown;
   form?: FormData;
@@ -52,6 +59,7 @@ export async function request<T>(method: Method, path: string, options: RequestO
   if (!res.ok) {
     const err = (data ?? {}) as { code?: string; message?: string; details?: unknown };
     const code = err.code ?? 'INTERNAL_ERROR';
+    if (res.status === 401 && code === 'UNAUTHORIZED' && options.token) unauthorizedHandler?.();
     throw new ApiClientError(code, err.message ?? messageFor(code), res.status, err.details);
   }
   return data as T;
