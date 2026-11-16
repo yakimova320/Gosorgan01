@@ -1,0 +1,54 @@
+/*
+ * Тема Ja!sno: акварельный вариант (docs/design/README.md).
+ * Чтобы поменять цвет на всём сайте, достаточно поменять переменную здесь.
+ */
+:root {
+  /* Палитра из иллюстраций */
+  --c-paper: #fbf6ee; /* фон страниц */
+  --c-orange: #f25c2a; /* главное действие */
+  --c-navy: #1e2a4a; /* текст, тёмные блоки */
+  --c-teal: #2f8c8a; /* ответ, «готово» */
+  --c-coral: #ec7a5c; /* вопрос, тревога */
+  --c-mustard: #f2b83f; /* тепло, подсказка */
+  --c-indigo: #2e3f72;
+  --c-teal-light: #ddefec; /* спокойные блоки */
+
+  /* Вспомогательные */
+  --c-white: #ffffff;
+  --c-peach: #fbe9dd;
+  --c-peach-2: #fbf3e4;
+  --c-line: #efe6da;
+  --c-line-strong: #e6d9cb;
+  --c-text-2: #3d4560;
+  --c-text-3: #5a6072;
+  --c-teal-dark: #1f6a68;
+  --c-orange-dark: #a3360f;
+  --c-orange-soft: #fbe3d6;
+  --c-sand: #f5ecdd;
+  --c-track: #f1ece4;
+  --c-on-navy-2: #b9c0d0;
+
+  /* Акварельные пятна */
+  --blob-peach: #f6c9b2;
+  --blob-coral: #fbe3d6;
+  --blob-teal: #bfe0db;
+  --blob-mustard: #fcefc9;
+  --blob-rose: #f6d2d0;
+
+  /* Шрифты */
+  --font-head: 'Rubik', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Скругления и тени */
+  --r-s: 12px;
+  --r-m: 18px;
+  --r-l: 24px;
+  --r-xl: 32px;
+  --shadow-card: 0 6px 16px rgba(30, 42, 74, 0.05);
+  --shadow-cta: 0 10px 22px rgba(242, 92, 42, 0.25);
+
+  /* Размеры */
+  --tap: 44px;
+  --nav-h: 72px;
+  --content-w: 1120px;
+}
