@@ -3,13 +3,9 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "tsConfigPath": "tsconfig.build.json",
     "deleteOutDir": true,
-    "assets": [
-      {
-        "include": "llm/prompts/*.md",
-        "outDir": "dist"
-      }
-    ],
+    "assets": [{ "include": "llm/prompts/*.md", "outDir": "dist" }],
     "watchAssets": true
   }
 }

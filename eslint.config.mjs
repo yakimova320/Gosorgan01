@@ -1,37 +1,31 @@
+// @ts-check
+import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
-export default [
-  { ignores: ['dist/**', 'node_modules/**'] },
+
+// SDK языковых моделей можно импортировать только внутри api/src/llm (ТЗ v2, правило 2).
+const LLM_SDKS = ['openai', '@google/genai', '@google/generative-ai', '@anthropic-ai/sdk', 'ai', '@ai-sdk/*'];
+
+export default tseslint.config(
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**'] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
-    languageOptions: {
-      parser: tseslint.parser,
-      parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
   {
-    files: ['src/**/*.ts'],
-    ignores: ['src/llm/**'],
+    files: ['api/**/*.ts'],
+    ignores: ['api/src/llm/**'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
-            {
-              group: [
-                'openai',
-                'openai/*',
-                '@anthropic-ai/*',
-                '@google/generative-ai',
-                '@google/genai',
-                'ai',
-                '@ai-sdk/*',
-              ],
-              message:
-                'All provider access belongs in llm/ through LlmService.',
-            },
+            { group: LLM_SDKS, message: 'Модель вызывается только через api/src/llm/LlmService.' },
           ],
         },
       ],
     },
   },
-];
+);

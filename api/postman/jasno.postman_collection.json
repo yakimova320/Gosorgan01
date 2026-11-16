@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "Ja!sno API",
+    "description": "Коллекция для проверки API Ja!sno. Каждая задача бэкенда добавляет свою папку. Окружение: local.postman_environment.json.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Здоровье",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('ok = true', () => pm.expect(body.ok).to.eql(true));",
+                  "pm.test('llmMode demo или openai', () => pm.expect(['demo', 'openai']).to.include(body.llmMode));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /nope (неизвестный адрес)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/nope", "host": ["{{baseUrl}}"], "path": ["nope"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));",
+                  "pm.test('code NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('NOT_FOUND'));",
+                  "pm.test('message по-русски', () => pm.expect(pm.response.json().message).to.match(/[а-яА-Я]/));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
