@@ -65,3 +65,14 @@ reports/
 prisma/schema.postgres.prisma
 
 .pnpm-store/
+
+# Ja!sno
+.env
+*.env.local
+!.env.example
+storage/
+*.db
+*.db-journal
+_import/
+Claude outputs/
+.DS_Store
