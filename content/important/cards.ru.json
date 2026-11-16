@@ -1,0 +1,288 @@
+{
+  "source": "Документ «Ja!sno: карточки «Важно знать»», версия от 15.11.2026 (rev 16). Тексты пишут и проверяют люди, код их не меняет.",
+  "topics": [
+    { "id": "housing", "title": "Жильё" },
+    { "id": "insurance", "title": "Страховки" },
+    { "id": "health", "title": "Здоровье" },
+    { "id": "taxes", "title": "Налоги" },
+    { "id": "letters", "title": "Письма и сроки" },
+    { "id": "contracts", "title": "Договоры" }
+  ],
+  "cards": [
+    {
+      "id": "housing-anmeldung",
+      "topic": "housing",
+      "title": "Прописаться нужно в течение 2 недель",
+      "text": "После переезда нужно зарегистрировать адрес в Bürgeramt в течение двух недель. Для этого нужно подтверждение заселения от арендодателя, одного договора аренды не хватит. В WG или при подсубаренде подтверждение подписывает главный съёмщик.",
+      "german": ["Anmeldung", "Wohnungsgeberbestätigung"],
+      "keywords": ["переезд", "прописка", "регистрация адреса", "снять квартиру", "Ummeldung"],
+      "sources": [
+        { "name": "§ 17 BMG", "url": "https://www.gesetze-im-internet.de/bmg/__17.html" },
+        { "name": "формуляр с выдержкой из § 17 и § 19 BMG", "url": "https://www.twist-emsland.de/pdf_files/wohnungsgeberbestaetigung_1571_1.pdf" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-kaution",
+      "topic": "housing",
+      "title": "Залог: максимум 3 холодные аренды, можно тремя частями",
+      "text": "Залог не больше трёх месячных аренд без коммунальных платежей. Его можно внести тремя равными частями: первую в начале аренды, остальные в следующие месяцы. Это право действует, даже если в договоре написано иначе.",
+      "german": ["Kaution", "Nettokaltmiete", "Ratenzahlung"],
+      "keywords": ["залог", "депозит", "снять квартиру", "договор аренды", "Mietvertrag"],
+      "sources": [
+        { "name": "Berliner Mieterverein", "url": "https://www.berliner-mieterverein.de/?p=14846" },
+        { "name": "Finanztip", "url": "https://finanztip.de/mietkaution/" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-fake",
+      "topic": "housing",
+      "title": "Деньги до просмотра и договора не переводите",
+      "text": "Если «владелец» просит залог до подписания договора или деньги за ключ для просмотра, это часто мошенничество. Признаки: слишком низкая цена, владелец «сейчас за границей», просьба прислать копию паспорта заранее. Платите только после просмотра и подписанного договора.",
+      "german": ["Vorkasse", "Vorkaution", "Fake-Anzeige"],
+      "keywords": ["снять квартиру", "объявление", "просмотр", "Besichtigung", "мошенники", "ImmoScout", "Kleinanzeigen"],
+      "sources": [
+        { "name": "Verbraucherzentrale: Fake-Wohnungen", "url": "https://www.verbraucherzentrale.de/node/27576" },
+        { "name": "Verbraucherzentrale Niedersachsen", "url": "https://www.verbraucherzentrale-niedersachsen.de/themen/freizeit-reise/freizeit/5-miese-maschen-bei-der-wohnungssuche" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-rundfunk",
+      "topic": "housing",
+      "title": "Взнос за радио и ТВ платит каждая квартира",
+      "text": "18,36 € в месяц за квартиру, даже без телевизора. Платит один человек за всю квартиру, в WG тоже. Письмо от Beitragsservice не спам. При Bürgergeld, Wohngeld и некоторых других пособиях можно попросить освобождение.",
+      "german": ["Rundfunkbeitrag", "Beitragsservice", "Befreiung"],
+      "keywords": ["GEZ", "телевидение", "радио", "переезд", "письмо Beitragsservice"],
+      "sources": [
+        { "name": "betanet: Rundfunkbeitrag", "url": "https://www.betanet.de/rundfunkbeitrag-befreiung-ermaessigung.html?pdf=328" },
+        { "name": "Finanztip", "url": "https://finanztip.de/rundfunkbeitrag/" }
+      ],
+      "checkedAt": "2026-11-15",
+      "note": "Сумма может вырасти в 2027 году, проверить в январе."
+    },
+    {
+      "id": "insurance-haftpflicht",
+      "topic": "insurance",
+      "title": "Страховка ответственности платит за ущерб другим",
+      "text": "Она не обязательна, но без неё за случайный ущерб платите вы сами. Пример: у вас потекла стиральная машина, и вода испортила квартиру соседей снизу. Этот ущерб оплачивает ваша Privathaftpflicht.",
+      "german": ["Privathaftpflichtversicherung", "Wasserschaden"],
+      "keywords": ["страховка", "соседи", "залил", "стиральная машина", "сломал", "снять квартиру", "переезд"],
+      "sources": [
+        { "name": "Stiftung Warentest: Wasserschaden", "url": "https://www.test.de/Wasserschaden-Welche-Versicherung-wann-zahlt-5700777-0" },
+        { "name": "Verbraucherzentrale: Privathaftpflicht", "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/weitere-versicherungen/private-haftpflichtversicherung-ein-absolutes-muss-fuer-alle-13891" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-mietsachschaden",
+      "topic": "insurance",
+      "title": "Проверьте, покрывает ли полис ущерб съёмной квартире",
+      "text": "Ущерб самой съёмной квартире (пол, двери, сантехника) входит в полис только через пункт «Mietsachschäden». Verbraucherzentrale советует сумму для него не меньше 500 000 €. Мебель и техника арендодателя и ущерб, который накапливается постепенно (сырость, плесень), часто исключены. Смотрите условия своего договора.",
+      "german": ["Mietsachschäden", "Allmählichkeitsschäden", "Versicherungsbedingungen"],
+      "keywords": ["съёмная квартира", "договор аренды", "повредил пол", "выезд", "ремонт", "залог не вернули"],
+      "sources": [
+        { "name": "Verbraucherzentrale: Privathaftpflicht", "url": "https://www.verbraucherzentrale.de/node/13891" },
+        { "name": "Allianz: Allmählichkeitsschäden", "url": "https://www.allianz.de/recht-und-eigentum/privat-haftpflichtversicherung/allmaehlichkeitsschaeden/" },
+        { "name": "Berliner MieterGemeinschaft: Wasserschaden", "url": "https://bmgev.de/mieterecho/artikel/wasserschaden---wer-muss-zahlen" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-pets",
+      "topic": "insurance",
+      "title": "Кошка обычно в полисе, собаке нужна отдельная страховка",
+      "text": "Ущерб от кошки или кролика обычно покрывает Privathaftpflicht. Для собаки нужна отдельная Hundehaftpflicht, в Berlin, Hamburg, Niedersachsen и ряде других земель она обязательна. Если животное сильно испортило съёмную квартиру (например, моча на полу), страховка может отказать, и тогда ремонт оплачивает съёмщик.",
+      "german": ["Tierhalterhaftpflicht", "Hundehaftpflicht"],
+      "keywords": ["кошка", "собака", "животное", "питомец", "съёмная квартира", "ковролин", "Tierhaltung"],
+      "sources": [
+        { "name": "Stiftung Warentest: Tierhalterhaftpflicht", "url": "https://test.de/thema/tierhalterhaftpflichtversicherung/meldungen" },
+        { "name": "GDV: Hundehalterhaftpflicht", "url": "https://www.dieversicherer.de/versicherer/freizeit/hundehalterhaftpflichtversicherung" },
+        { "name": "IWW: отказ при моче кошек", "url": "https://www.iww.de/vk/haftpflichtversicherung/privathaftpflichtversicherung-tierhalterhaftpflicht-in-diesen-faellen-gilt-der-ausschluss-der-uebermaessigen-beanspruchung-f85233" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-hausrat",
+      "topic": "insurance",
+      "title": "Свои вещи страхует Hausrat",
+      "text": "Privathaftpflicht платит только за чужие вещи. Если вода, пожар или кража со взломом испортили вашу мебель и технику, платит Hausratversicherung. Она не обязательна.",
+      "german": ["Hausratversicherung", "Leitungswasser", "Einbruchdiebstahl"],
+      "keywords": ["свои вещи", "мебель", "кража", "затопило", "страховка квартиры"],
+      "sources": [
+        { "name": "Berliner MieterGemeinschaft: Wasserschaden", "url": "https://bmgev.de/mieterecho/artikel/wasserschaden---wer-muss-zahlen" },
+        { "name": "Stiftung Warentest: Wasserschaden", "url": "https://www.test.de/Wasserschaden-Welche-Versicherung-wann-zahlt-5700777-0" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-kuendigung",
+      "topic": "insurance",
+      "title": "Страховку расторгают заранее",
+      "text": "Обычно страховку можно расторгнуть к концу страхового года, срок уведомления от одного до трёх месяцев. Страховой год считается от даты договора, а не от 1 января. Правило «расторгнуть за месяц» для договоров с марта 2022 года (телефон, фитнес, подписки) на страховки не распространяется.",
+      "german": ["Kündigung", "Kündigungsfrist", "Versicherungsjahr"],
+      "keywords": ["расторгнуть", "отказаться от страховки", "договор продлился"],
+      "sources": [
+        { "name": "§ 11 VVG", "url": "https://www.gesetze-im-internet.de/vvg%5F2008/__11.html" },
+        { "name": "exali: Gesetz für faire Verbraucherverträge", "url": "https://www.exali.de/Info-Base/gesetz-faire-verbrauchervertraege" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-pflicht",
+      "topic": "health",
+      "title": "Медицинская страховка обязательна для всех",
+      "text": "С 2009 года каждый, кто живёт в Германии, обязан иметь медицинскую страховку: государственную (Krankenkasse) или частную. Если оформить её позже, взносы могут потребовать за прошедшее время.",
+      "german": ["Krankenversicherungspflicht", "Krankenkasse"],
+      "keywords": ["медицинская страховка", "врач", "переезд в Германию", "письмо от Krankenkasse"],
+      "sources": [
+        { "name": "betanet: Krankenversicherung", "url": "https://www.betanet.de/krankenversicherung.html" },
+        { "name": "Бундестаг, ответ на петицию 117485", "url": "https://epetitionen.bundestag.de/petitionen/_2020/_10/_29/Petition_117485.abschlussbegruendungpdf.pdf" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-116117",
+      "topic": "health",
+      "title": "Ночью и в выходные: 116 117, при угрозе жизни: 112",
+      "text": "116 117 это дежурная служба врачей, когда практики закрыты: высокая температура, сильная боль в горле или спине. Звонок бесплатный, номер работает по всей Германии без кода. Инфаркт, тяжёлая травма, сильное кровотечение: сразу 112.",
+      "german": ["Ärztlicher Bereitschaftsdienst", "Notruf"],
+      "keywords": ["врач ночью", "выходные", "заболел", "температура", "скорая", "неотложка"],
+      "sources": [
+        { "name": "KV Baden-Württemberg: 116117", "url": "https://www.kvbawue.de/buerger/notfallpraxen/116-117/" },
+        { "name": "praktischArzt: 116 117", "url": "https://www.praktischarzt.de/ratgeber/aerztlicher-bereitschaftsdienst-116117/" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-krankmeldung",
+      "topic": "health",
+      "title": "Больничный: сообщить сразу, справка к 4-му дню",
+      "text": "О болезни работодателю сообщают в первый же день. Справка от врача нужна не позже четвёртого дня, но работодатель может требовать её с первого дня. С 2023 года врач передаёт справку в Krankenkasse электронно, работодатель забирает её там сам.",
+      "german": ["Krankmeldung", "Arbeitsunfähigkeitsbescheinigung (eAU)"],
+      "keywords": ["больничный", "заболел", "работа", "работодатель", "справка", "gelber Schein"],
+      "sources": [
+        { "name": "TK: eAU", "url": "https://www.tk.de/firmenkunden/service/fachthemen/meldeverfahren-fachthemen/eau-weg-zur-elektronischen-meldung-2102198?tkcm=aaus" },
+        { "name": "IG Metall: больничный", "url": "https://www.igmetall.de/service/ratgeber/arbeitsunfaehig-krank-das-gilt-es-zu-beachten" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "taxes-steuerid",
+      "topic": "taxes",
+      "title": "Налоговый номер придёт по почте",
+      "text": "После первой регистрации адреса BZSt присылает Steuer-ID сам, заявление не нужно. Номер нужен работодателю, письмо с ним сохраните. Если через 3 месяца письма нет, его можно запросить на сайте BZSt, ответ придёт только по почте.",
+      "german": ["Steuer-Identifikationsnummer", "Bundeszentralamt für Steuern (BZSt)"],
+      "keywords": ["налоговый номер", "работа", "Steuer-ID", "первая работа", "Anmeldung"],
+      "sources": [
+        { "name": "BayernPortal: Steuer-ID anfordern", "url": "https://www.bayernportal.de/dokumente/leistung/694749931600" },
+        { "name": "steuertipps.de: Steuer-ID", "url": "https://www.steuertipps.de/finanzamt-formalitaeten/steuer-identifikationsnummer/themen" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "taxes-kirchensteuer",
+      "topic": "taxes",
+      "title": "Церковный налог платят не все",
+      "text": "Его платят члены церквей, которые собирают налог через Finanzamt, прежде всего римско-католической и евангелической. Православные церкви в Германии его, как правило, не собирают, мусульмане и буддисты его не платят. Сумма: 8 % от подоходного налога в Bayern и Baden-Württemberg, 9 % в остальных землях. При регистрации адреса в Bürgeramt спрашивают религию, и от этой записи зависит, будут ли удерживать налог. Не платить налог и при этом оставаться членом церкви нельзя: нужно официально выйти из церкви в Standesamt или Amtsgericht. Обычно это стоит около 30 €, в некоторых землях бесплатно. Налог перестают удерживать со следующего месяца.",
+      "german": ["Kirchensteuer", "Religionszugehörigkeit", "Kirchenaustritt"],
+      "keywords": ["церковный налог", "религия", "православный", "католик", "выход из церкви", "Anmeldung", "зарплата", "вычеты"],
+      "sources": [
+        { "name": "VLH: Kirchensteuer", "url": "https://www.vlh.de/wissen-service/steuer-abc/kirchensteuer-was-muss-ich-wissen-was-kann-ich-absetzen.html" },
+        { "name": "ETL: Kirchensteuer im Überblick", "url": "https://www.etl.de/aktuelles/die-kirchensteuer-im-ueberblick-2025/" },
+        { "name": "Lohnsteuer kompakt: Kirchensteuer", "url": "https://www.lohnsteuer-kompakt.de/texte/2025/4/prozstpflproz" },
+        { "name": "steuerschroeder.de: Kirchensteuer für Zugezogene", "url": "https://www.steuerschroeder.de/Kirchensteuerpflicht-Auslaender.html" },
+        { "name": "t-online: Kirchenaustritt", "url": "https://www.t-online.de/finanzen/id_86403516/kirchensteuer-sparen-immer-mehr-menschen-treten-aus-der-kirche-aus.html" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-bekanntgabe",
+      "topic": "letters",
+      "title": "Письмо считается полученным на 4-й день",
+      "text": "Решение ведомства, отправленное почтой, считается полученным на четвёртый день после отправки (до 2025 года был третий). От этого дня идут сроки, даже если вы долго не заглядывали в почтовый ящик. То же правило действует для электронных решений.",
+      "german": ["Bekanntgabe", "Bescheid", "Aufgabe zur Post"],
+      "keywords": ["срок", "когда получил", "дата письма", "опоздал", "Jobcenter", "Finanzamt"],
+      "sources": [
+        { "name": "DATEV-Magazin: Bekanntgabefiktion", "url": "https://www.datev-magazin.de/nachrichten-steuern-recht/steuern/bekanntgabefiktion-die-zugangsvermutung-verlaengert-sich-ab-dem-1-januar-2025-auf-vier-tage-135900" },
+        { "name": "gegen-hartz.de: Vier-Tages-Fiktion", "url": "https://www.gegen-hartz.de/news/vier-tages-fiktion-was-das-jetzt-fuer-buergergeld-bezieher-bedeutet" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-widerspruch",
+      "topic": "letters",
+      "title": "Не согласны: обычно есть месяц",
+      "text": "На решение можно подать возражение, на решение Jobcenter обычно в течение месяца со дня получения. Точный срок и адрес написаны в конце письма. Ja!sno не пишет возражения, но покажет, куда обратиться за консультацией.",
+      "german": ["Widerspruch", "Einspruch (Finanzamt)", "Rechtsbehelfsbelehrung"],
+      "keywords": ["возражение", "не согласен", "отказ", "оспорить", "Bescheid"],
+      "sources": [
+        { "name": "gegen-hartz.de: Vier-Tages-Fiktion", "url": "https://www.gegen-hartz.de/news/vier-tages-fiktion-was-das-jetzt-fuer-buergergeld-bezieher-bedeutet" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-aktenzeichen",
+      "topic": "letters",
+      "title": "Указывайте номер дела и храните копии",
+      "text": "В каждом ответе ведомству пишите номер дела из их письма. Сохраняйте копию всего, что отправляете, и дату отправки. В Ja!sno для этого есть дело и отметка «Я отправил(а)».",
+      "german": ["Aktenzeichen", "Geschäftszeichen", "Kundennummer"],
+      "keywords": ["номер дела", "ответ ведомству", "копия", "отправил", "доказать"],
+      "sources": [],
+      "checkedAt": "2026-11-15",
+      "note": "Общий совет, без нормы закона."
+    },
+    {
+      "id": "contracts-telefon",
+      "topic": "contracts",
+      "title": "Телефон и интернет: после 24 месяцев можно расторгнуть за месяц",
+      "text": "Первый срок договора на телефон или интернет не дольше 24 месяцев. Если не расторгнуть его вовремя, он продлевается, но потом его можно расторгнуть в любой момент с уведомлением за месяц. Удобнее всего кнопка «Vertrag kündigen» на сайте провайдера: подтверждение приходит сразу. По телефону лучше не расторгать, потом не докажете.",
+      "german": ["Mindestvertragslaufzeit", "Kündigung", "Kündigungsbutton"],
+      "keywords": ["телефон", "мобильный", "интернет", "Handyvertrag", "расторгнуть", "Vodafone", "Telekom", "O2"],
+      "sources": [
+        { "name": "Verbraucherzentrale: Handyvertrag kündigen", "url": "https://www.verbraucherzentrale.de/node/38191" },
+        { "name": "Verbraucherzentrale: Kundenrechte Telefon und Internet", "url": "https://www.verbraucherzentrale.de/node/65879" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-umzug",
+      "topic": "contracts",
+      "title": "Переезд: интернет можно расторгнуть досрочно",
+      "text": "Если провайдер не может подключить вас по новому адресу, договор можно расторгнуть с уведомлением за месяц, даже до конца срока. Расторжение можно отправить заранее, чтобы оно сработало к дню переезда.",
+      "german": ["Umzug", "Sonderkündigungsrecht"],
+      "keywords": ["переезд", "новая квартира", "интернет", "снять квартиру", "Anmeldung"],
+      "sources": [
+        { "name": "Verbraucherzentrale: Telekommunikationsgesetz", "url": "https://www.verbraucherzentrale.de/wissen/digitale-welt/mobilfunk-und-festnetz/das-telekommunikationsgesetz-vorteile-fuer-die-telefonkunden-10956" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-widerruf",
+      "topic": "contracts",
+      "title": "Договор по телефону, онлайн или у двери: 14 дней на отказ",
+      "text": "Если договор заключён в интернете, по телефону или с агентом у двери, от него можно отказаться в течение 14 дней без объяснения причин. Для договоров на телефон, интернет, электричество или газ срок считается от дня заключения договора. Просто не платить нельзя: отказ нужно заявить компании, например по e-mail. В магазине такого права обычно нет.",
+      "german": ["Widerrufsrecht", "Widerrufsfrist", "Widerrufsbelehrung"],
+      "keywords": ["отказаться", "навязали", "по телефону", "агент у двери", "электричество", "онлайн-покупка"],
+      "sources": [
+        { "name": "Verbraucherzentrale: Widerruf", "url": "https://www.verbraucherzentrale.de/wissen/vertraege-reklamation/kundenrechte/von-widerruf-bis-umtausch-wenn-sie-mit-der-ware-nicht-zufrieden-sind-5117" }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-abo",
+      "topic": "contracts",
+      "title": "Фитнес и подписки: после минимального срока расторгают за месяц",
+      "text": "Для договоров, заключённых с 1 марта 2022 года (фитнес, стриминг, журналы), после минимального срока действует право расторгнуть за месяц. Если договор заключён онлайн, на сайте компании с 1 июля 2022 года должна быть кнопка расторжения, без входа в аккаунт. На страховки эти правила не распространяются (см. «Страховку расторгают заранее»).",
+      "german": ["Gesetz für faire Verbraucherverträge", "Kündigungsbutton", "Vertragsverlängerung"],
+      "keywords": ["фитнес", "подписка", "абонемент", "Abo", "договор продлился", "расторгнуть"],
+      "sources": [
+        { "name": "Verbraucherzentrale: Gesetz für fairere Verträge", "url": "https://www.verbraucherzentrale.de/wissen/vertraege-reklamation/kundenrechte/gesetz-fuer-fairere-vertraege-mehr-schutz-bei-kosten-und-laufzeiten-55274" },
+        { "name": "IT-Recht Kanzlei", "url": "https://www.it-recht-kanzlei.de/information-vertragslaufzeit-kuendigungsbedingugen-dauerschuldverhaeltnisse.html" },
+        { "name": "ÖKO-TEST", "url": "https://www.oekotest.de/geld-versicherungen/Faire-Verbrauchervertraege-Neues-Gesetz-kuerzt-Vertragslaufzeiten-und-Kuendigungsfristen-_11951_1.html" }
+      ],
+      "checkedAt": "2026-11-15"
+    }
+  ]
+}
