@@ -280,7 +280,7 @@ export function LetterPage({ id, caseId }: { id: string; caseId: string | null }
               Не удалось надёжно объяснить сроки. Посмотрите срок в оригинале письма. Ниже факты с цитатами.
             </div>
           )}
-          {expl.error && !datesFailed && <ErrorAlert error={expl.error} />}
+          {!!expl.error && !datesFailed && <ErrorAlert error={expl.error} />}
           <div className="row wrap">
             {caseId && (
               <Link to={`/app/cases/${caseId}/answer`} className="btn btn--primary">
