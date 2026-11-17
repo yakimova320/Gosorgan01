@@ -12,4 +12,6 @@ const config = app.get<Env>(APP_CONFIG);
 await app.listen(config.PORT, config.HOST);
 
 const base = `http://${config.HOST}:${config.PORT}`;
-new Logger('Ja!sno').log(`API: ${base}  ·  Swagger: ${base}/docs  ·  LLM_MODE=${config.LLM_MODE}`);
+new Logger('Ja!sno').log(
+  `API: ${base}  ·  Swagger: ${base}/docs  ·  LLM_MODE=${config.LLM_MODE}`,
+);

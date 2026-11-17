@@ -10,7 +10,7 @@
 |---|---|---|
 | GET /health | B01 | api+demo, e2e-тест |
 | Swagger /docs | B01 | api+demo, e2e-тест |
-| Схема базы, миграции, PrismaService | B02 | готово на SQLite, тест каскадного удаления; PostgreSQL: схема создаётся, запуск в B13/D03 |
+| Схема базы, миграции, PrismaService | B02 | PostgreSQL (B17): миграции, тесты и CI на PostgreSQL, тест каскадного удаления; проверка Дмитрием D03 |
 | Слой ИИ: LlmService, маскирование, журнал LlmCall, demo и Gemini | B04 | api+real: `pnpm llm:check` на письме 01 прошёл с gemini-3.1-flash-lite; промпт extract.v1 (API фактов в B06) |
 | Регистрация, вход, выход, GET и PATCH /cabinet | B03 | api+demo, e2e-тесты, Postman «01 Регистрация и вход» |
 | Смена и восстановление пароля, удаление аккаунта | A01–A03 | нет |

@@ -10,7 +10,7 @@ const PASSWORD = 'mein-langes-Passwort';
 describe('Регистрация, вход, кабинет (e2e)', () => {
   let app: INestApplication;
   let db: PrismaService;
-  let cleanup: () => void;
+  let cleanup: () => Promise<void>;
   const http = () => request(app.getHttpServer());
 
   beforeAll(async () => {
@@ -26,7 +26,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
-    cleanup();
+    await cleanup();
   });
 
   async function register(email: string): Promise<string> {

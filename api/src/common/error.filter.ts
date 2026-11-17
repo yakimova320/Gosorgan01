@@ -1,4 +1,10 @@
-import { Catch, HttpException, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
+import {
+  Catch,
+  HttpException,
+  Logger,
+  type ArgumentsHost,
+  type ExceptionFilter,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { ZodError } from 'zod';
 import { ApiError } from './api-error.js';
@@ -11,7 +17,10 @@ export interface ErrorBody {
 }
 
 /** Переводит любую ошибку в JSON { code, message, details? } с русским текстом. */
-export function toErrorBody(error: unknown): { status: number; body: ErrorBody } {
+export function toErrorBody(error: unknown): {
+  status: number;
+  body: ErrorBody;
+} {
   if (error instanceof ApiError) {
     const body: ErrorBody = { code: error.code, message: error.message };
     if (error.details !== undefined) body.details = error.details;
@@ -23,7 +32,10 @@ export function toErrorBody(error: unknown): { status: number; body: ErrorBody }
       body: {
         code: 'VALIDATION_FAILED',
         message: ERROR_CODES.VALIDATION_FAILED.message,
-        details: error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
+        details: error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
       },
     };
   }
@@ -34,7 +46,10 @@ export function toErrorBody(error: unknown): { status: number; body: ErrorBody }
   }
   return {
     status: 500,
-    body: { code: 'INTERNAL_ERROR', message: ERROR_CODES.INTERNAL_ERROR.message },
+    body: {
+      code: 'INTERNAL_ERROR',
+      message: ERROR_CODES.INTERNAL_ERROR.message,
+    },
   };
 }
 
@@ -47,7 +62,10 @@ export class ApiErrorFilter implements ExceptionFilter {
     const { status, body } = toErrorBody(error);
     if (status >= 500) {
       // Только имя и текст ошибки: без тела запроса, токенов и паролей.
-      const reason = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      const reason =
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : String(error);
       this.logger.error(reason);
     }
     res.status(status).json(body);

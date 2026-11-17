@@ -7,7 +7,10 @@ describe('toErrorBody', () => {
   it('ApiError даёт свой код, статус и русский текст', () => {
     const { status, body } = toErrorBody(new ApiError('EMAIL_TAKEN'));
     expect(status).toBe(409);
-    expect(body).toEqual({ code: 'EMAIL_TAKEN', message: 'Этот e-mail уже зарегистрирован' });
+    expect(body).toEqual({
+      code: 'EMAIL_TAKEN',
+      message: 'Этот e-mail уже зарегистрирован',
+    });
   });
 
   it('ApiError передаёт details', () => {

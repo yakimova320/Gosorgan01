@@ -4,7 +4,8 @@ const bool = z
   .enum(['true', 'false', '1', '0'])
   .transform((v) => v === 'true' || v === '1');
 
-const int = (fallback: number) => z.coerce.number().int().positive().default(fallback);
+const int = (fallback: number) =>
+  z.coerce.number().int().positive().default(fallback);
 
 /**
  * Все переменные окружения сервера (ТЗ v2 раздел 6, ТЗ v4 раздел 7).
@@ -12,10 +13,18 @@ const int = (fallback: number) => z.coerce.number().int().positive().default(fal
  */
 export const envSchema = z
   .object({
-    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    NODE_ENV: z
+      .enum(['development', 'test', 'production'])
+      .default('development'),
     HOST: z.string().min(1).default('127.0.0.1'),
     PORT: int(3000),
-    DATABASE_URL: z.string().min(1).default('file:./dev.db'),
+    DATABASE_URL: z
+      .string()
+      .regex(
+        /^postgres(ql)?:\/\//,
+        'DATABASE_URL: нужен адрес PostgreSQL (postgresql://...)',
+      )
+      .default('postgresql://jasno:jasno@localhost:5432/jasno'),
     CORS_ORIGIN: z
       .string()
       .default('http://localhost:5173')
@@ -56,18 +65,27 @@ export const envSchema = z
     if (env.LLM_MODE === 'openai') {
       for (const key of ['LLM_BASE_URL', 'LLM_API_KEY', 'LLM_MODEL'] as const) {
         if (!env[key]) {
-          ctx.addIssue({ code: 'custom', path: [key], message: `нужно при LLM_MODE=openai` });
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `нужно при LLM_MODE=openai`,
+          });
         }
       }
     }
     if (env.MAIL_MODE === 'smtp' && !env.SMTP_HOST) {
-      ctx.addIssue({ code: 'custom', path: ['SMTP_HOST'], message: 'нужно при MAIL_MODE=smtp' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMTP_HOST'],
+        message: 'нужно при MAIL_MODE=smtp',
+      });
     }
     if (env.NODE_ENV === 'production' && env.MAIL_MODE === 'file') {
       ctx.addIssue({
         code: 'custom',
         path: ['MAIL_MODE'],
-        message: 'режим file запрещён в production: ссылки восстановления пароля лежали бы в файлах',
+        message:
+          'режим file запрещён в production: ссылки восстановления пароля лежали бы в файлах',
       });
     }
   });
@@ -81,8 +99,12 @@ export function parseEnv(source: NodeJS.ProcessEnv): Env {
   );
   const result = envSchema.safeParse(cleaned);
   if (!result.success) {
-    const lines = result.error.issues.map((i) => `  ${i.path.join('.') || '(env)'}: ${i.message}`);
-    throw new Error(`Ошибка в переменных окружения (.env):\n${lines.join('\n')}`);
+    const lines = result.error.issues.map(
+      (i) => `  ${i.path.join('.') || '(env)'}: ${i.message}`,
+    );
+    throw new Error(
+      `Ошибка в переменных окружения (.env):\n${lines.join('\n')}`,
+    );
   }
   return result.data;
 }

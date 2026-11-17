@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'prisma/config';
-import { resolveSqliteUrl } from './src/prisma/database-url.js';
 
 // Prisma CLI сама не читает .env: загружаем так же, как сервер (api/.env главнее корневого).
 for (const file of [
@@ -11,17 +10,8 @@ for (const file of [
   if (existsSync(file)) process.loadEnvFile(file);
 }
 
-const url = resolveSqliteUrl(
-  process.env.DATABASE_URL ?? 'file:./dev.db',
-  import.meta.dirname,
-);
-
-// Prisma Studio 7.10 узнаёт SQLite только по адресу вида file://..., остальные команды — по file:...
-const isStudio = process.argv.includes('studio');
-const datasourceUrl =
-  isStudio && url.startsWith('file:')
-    ? `file://${url.slice('file:'.length)}`
-    : url;
+const url =
+  process.env.DATABASE_URL ?? 'postgresql://jasno:jasno@localhost:5432/jasno';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -30,6 +20,6 @@ export default defineConfig({
     seed: 'node prisma/seed.mjs',
   },
   datasource: {
-    url: datasourceUrl,
+    url,
   },
 });

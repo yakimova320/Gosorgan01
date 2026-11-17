@@ -12,7 +12,13 @@ export class AppModule {
   static forRoot(overrides?: NodeJS.ProcessEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [AppConfigModule.forRoot(overrides), PrismaModule, AuthModule, CabinetModule, LlmModule],
+      imports: [
+        AppConfigModule.forRoot(overrides),
+        PrismaModule,
+        AuthModule,
+        CabinetModule,
+        LlmModule,
+      ],
       controllers: [HealthController],
     };
   }

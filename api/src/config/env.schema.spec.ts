@@ -29,7 +29,11 @@ describe('parseEnv', () => {
 
   it('не показывает значение ключа в тексте ошибки', () => {
     try {
-      parseEnv({ LLM_MODE: 'openai', LLM_API_KEY: 'secret-key-123', PORT: 'abc' });
+      parseEnv({
+        LLM_MODE: 'openai',
+        LLM_API_KEY: 'secret-key-123',
+        PORT: 'abc',
+      });
     } catch (e) {
       expect(String(e)).not.toContain('secret-key-123');
       return;

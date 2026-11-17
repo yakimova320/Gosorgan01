@@ -8,11 +8,9 @@ const email = z
   .pipe(z.email({ message: 'Неверный e-mail' }).max(254));
 
 /** Длина в байтах (72) проверяется отдельно и даёт свой код PASSWORD_TOO_LONG. */
-const password = z
-  .string()
-  .min(PASSWORD_MIN_CHARS, {
-    message: `Пароль от ${PASSWORD_MIN_CHARS} знаков`,
-  });
+const password = z.string().min(PASSWORD_MIN_CHARS, {
+  message: `Пароль от ${PASSWORD_MIN_CHARS} знаков`,
+});
 
 export const RegisterSchema = z.object({
   email,
