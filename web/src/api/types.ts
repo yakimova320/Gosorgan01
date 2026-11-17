@@ -159,3 +159,50 @@ export interface AssistantAnswer {
   cardIds: string[];
   showRegister: boolean;
 }
+
+// ---------- Письмо из API (B05, B06): GET /letters/:id и POST /letters ----------
+
+/** Факт письма как его отдаёт сервер. Статусы и «исправлено вами» решает сервер. */
+export interface LetterClaim {
+  id: string;
+  kind: ClaimKind;
+  value: string;
+  text: string;
+  quote: string | null;
+  page: number | null;
+  basis: ClaimBasis;
+  status: 'UNCONFIRMED' | 'CONFIRMED' | 'REJECTED';
+  supersedesId: string | null;
+  /** срок без точной даты («innerhalb von zwei Wochen») */
+  relativeDeadline: boolean;
+}
+
+/** Срок письма. active: факт срока подтверждён; иначе кандидат. */
+export interface LetterDeadline {
+  id: string;
+  claimId: string;
+  date: string; // ГГГГ-ММ-ДД
+  kind: DeadlineKind;
+  active: boolean;
+  done: boolean;
+}
+
+export interface LetterDetail {
+  letter: {
+    id: string;
+    caseId: string | null;
+    sourceType: 'PDF_TEXT' | 'IMAGE';
+    text: string;
+    pages: { n: number; readable: boolean; chars: number }[];
+    files: { n: number; mime: string; bytes: number }[];
+    createdAt: string;
+  };
+  claims: LetterClaim[];
+  deadlines: LetterDeadline[];
+}
+
+export interface UploadResponse extends LetterDetail {
+  suggestions: CaseSuggestion[];
+  /** сколько полей ответа модели не прошло проверку цитат и значений */
+  extraction: { dropped: number };
+}
