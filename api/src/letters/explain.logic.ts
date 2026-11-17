@@ -101,11 +101,11 @@ export function numbersIn(text: string): string[] {
   for (const p of DATE_PATTERNS) rest = rest.replace(p, ' ');
   const out: string[] = [];
   for (const m of rest.matchAll(
-    /\d{1,3}(?:[.  ]\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?/g,
+    /\d{1,3}(?:[.\u00a0 ]\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?/g,
   )) {
     let raw = m[0];
-    if (/[.  ]\d{3}/.test(raw) && !/^\d+\.\d{1,2}$/.test(raw))
-      raw = raw.replace(/[.  ]/g, '');
+    if (/[.\u00a0 ]\d{3}/.test(raw) && !/^\d+\.\d{1,2}$/.test(raw))
+      raw = raw.replace(/[.\u00a0 ]/g, '');
     out.push(Number(raw.replace(',', '.')).toFixed(2));
   }
   return out;
