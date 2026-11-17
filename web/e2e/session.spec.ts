@@ -22,7 +22,8 @@ test('регистрация через сайт ведёт в кабинет, �
 }) => {
   await page.goto('/register');
   await page.getByLabel('E-mail').fill(uniqueEmail('reg'));
-  await page.getByLabel('Пароль').fill(PASSWORD);
+  await page.getByLabel('Пароль', { exact: true }).fill(PASSWORD);
+  await page.getByLabel('Повторите пароль').fill(PASSWORD);
   await page.getByRole('checkbox').check();
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });

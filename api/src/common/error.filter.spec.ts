@@ -23,7 +23,9 @@ describe('toErrorBody', () => {
     const { status, body } = toErrorBody(r.error);
     expect(status).toBe(400);
     expect(body.code).toBe('VALIDATION_FAILED');
-    expect(body.details).toEqual([expect.objectContaining({ path: 'email' })]);
+    expect(body.details).toEqual({
+      fields: { email: expect.any(String) },
+    });
   });
 
   it('ошибка NestJS получает код по статусу', () => {

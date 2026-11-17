@@ -29,7 +29,7 @@ export async function createUser(
 
 export async function loginUi(page: Page, email: string, password = PASSWORD) {
   await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Пароль').fill(password);
+  await page.getByLabel('Пароль', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Войти' }).click();
 }
 

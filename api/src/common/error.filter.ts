@@ -7,6 +7,12 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ZodError } from 'zod';
+import {
+  SPECIAL_CODES,
+  fieldPath,
+  issueCode,
+  toValidationDetails,
+} from '@jasno/shared';
 import { ApiError } from './api-error.js';
 import { ERROR_CODES, codeForStatus } from './error-codes.js';
 
@@ -27,15 +33,24 @@ export function toErrorBody(error: unknown): {
     return { status: error.getStatus(), body };
   }
   if (error instanceof ZodError) {
+    const details = toValidationDetails(error.issues);
+    // Своя ошибка для отдельных проверок (PASSWORD_TOO_LONG, CONSENT_REQUIRED) вместо VALIDATION_FAILED.
+    for (const issue of error.issues) {
+      const code = issueCode(issue) ?? SPECIAL_CODES[fieldPath(issue.path)];
+      if (code && code in ERROR_CODES) {
+        const known = ERROR_CODES[code as keyof typeof ERROR_CODES];
+        return {
+          status: known.status,
+          body: { code, message: known.message, details },
+        };
+      }
+    }
     return {
       status: 400,
       body: {
         code: 'VALIDATION_FAILED',
         message: ERROR_CODES.VALIDATION_FAILED.message,
-        details: error.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
+        details,
       },
     };
   }
