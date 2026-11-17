@@ -20,6 +20,7 @@
     "llm:check": "tsc -p tsconfig.build.json && node dist/scripts/llm-check.js",
     "llm:check:photo": "tsc -p tsconfig.build.json && node dist/scripts/transcribe-check.js",
     "llm:check:extract": "tsc -p tsconfig.build.json && node dist/scripts/extract-check.js",
+    "llm:check:explain": "tsc -p tsconfig.build.json && node dist/scripts/explain-check.js",
     "db:wipe-accounts": "tsc -p tsconfig.build.json && node dist/scripts/wipe-accounts.js"
   },
   "dependencies": {

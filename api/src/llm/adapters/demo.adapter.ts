@@ -22,6 +22,7 @@ export class DemoAdapter implements LlmAdapter {
     (variables: Record<string, string>, request: AdapterRequest) => unknown
   > = {
     extract: (v) => demoExtract(v.letterText ?? ''),
+    explain: (v) => demoExplain(v.facts ?? '[]'),
     transcribe: (_v, request) =>
       demoTranscribe(request.images.map((i) => i.data)),
   };
@@ -191,4 +192,30 @@ export function demoTranscribe(images: Buffer[]): {
   if (!known) return { text: '', readable: false, reason: 'DEMO_UNKNOWN' };
   if (!known.readable) return { text: '', readable: false, reason: 'BLURRY' };
   return { text: known.text, readable: true, reason: null };
+}
+
+/** explain в режиме demo: короткое объяснение из фактов, каждое утверждение со ссылкой на факты. */
+export function demoExplain(factsJson: string): unknown {
+  const facts = JSON.parse(factsJson) as {
+    id: string;
+    kind: string;
+    value: string;
+  }[];
+  const de = (iso: string) => iso.split('-').reverse().join('.');
+  const authority = facts.find((f) => f.kind === 'AUTHORITY');
+  const about = authority
+    ? {
+        text: `Письмо от ведомства ${authority.value}.`,
+        claimIds: [authority.id],
+      }
+    : { text: 'Письмо из ведомства.', claimIds: [facts[0].id] };
+  const actions = [
+    ...facts
+      .filter((f) => f.kind === 'REQUIREMENT')
+      .map((f) => ({ text: `Ведомство просит: ${f.value}`, claimIds: [f.id] })),
+    ...facts
+      .filter((f) => f.kind === 'DEADLINE')
+      .map((f) => ({ text: `Срок: до ${de(f.value)}.`, claimIds: [f.id] })),
+  ].slice(0, 5);
+  return { about, actions };
 }
