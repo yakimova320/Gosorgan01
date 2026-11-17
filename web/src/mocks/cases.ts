@@ -1,6 +1,9 @@
 import { apiError, type ApiError } from '../api/errors';
 import type {
   ApiCaseDetail,
+  ApiDraft,
+  DraftQuestions,
+  QuestionId,
   ApiExplanation,
   ApiHistoryItem,
   HistoryGroup,
@@ -177,4 +180,67 @@ export function mockExplanation(letterId: string): ApiExplanation | ApiError {
     unconfirmed: l.explanation.unconfirmed,
     cached: true,
   };
+}
+
+// ---------- Черновик в режиме mock ----------
+
+const mockDrafts = new Map<string, ApiDraft>();
+
+export function mockDraftQuestions(
+  letterId: string,
+): DraftQuestions | ApiError {
+  const c = MOCK_CASES.find((x) => x.letters.some((l) => l.id === letterId));
+  if (!c) return apiError('NOT_FOUND', 404);
+  return {
+    letterId,
+    caseId: c.id,
+    questions: [
+      {
+        id: 'WHICH_DOCUMENTS',
+        ru: 'Пожалуйста, сообщите, какие именно документы вам от меня нужны.',
+      },
+      {
+        id: 'DEADLINE',
+        ru: 'Пожалуйста, сообщите, до какого именно срока мне нужно ответить.',
+      },
+      {
+        id: 'REASON',
+        ru: 'Пожалуйста, сообщите, по какой причине вам нужны эти сведения.',
+      },
+    ],
+    amounts: [],
+  };
+}
+
+export function mockCreateDraft(
+  caseId: string,
+  letterId: string,
+  questionId: QuestionId,
+): ApiDraft | ApiError {
+  const c = MOCK_CASES.find((x) => x.id === caseId);
+  const base = c?.drafts[0];
+  if (!c || !base) return apiError('NO_CONFIRMED_CLAIMS', 409);
+  const d: ApiDraft = {
+    id: `${base.id}-${mockDrafts.size + 1}`,
+    caseId,
+    letterId,
+    questionId,
+    kind: 'CLARIFICATION',
+    germanText: base.germanText,
+    russianText: base.russianText,
+    claimIds: base.claimIds,
+    stale: false,
+    status: 'PREPARED',
+    verification: {
+      ...base.verification,
+      note: 'Проверка: текст соответствует шаблону и подтверждённым фактам. Это не юридическая проверка.',
+    },
+    createdAt: new Date().toISOString(),
+  };
+  mockDrafts.set(d.id, d);
+  return d;
+}
+
+export function mockGetDraft(id: string): ApiDraft | ApiError {
+  return mockDrafts.get(id) ?? apiError('NOT_FOUND', 404);
 }

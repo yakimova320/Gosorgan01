@@ -1,6 +1,9 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { MOCK_CABINET, MOCK_CASES } from '../mocks/data';
 import {
+  mockCreateDraft,
+  mockDraftQuestions,
+  mockGetDraft,
   mockCaseDetail,
   mockCaseLetter,
   mockDeleteCase,
@@ -21,12 +24,13 @@ import { DATA_MODE } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import type {
   ApiCaseDetail,
+  ApiDraft,
   ApiExplanation,
+  DraftQuestions,
+  QuestionId,
   Cabinet,
   CaseDetail,
   CaseSummary,
-  Draft,
-  DraftKind,
   Health,
   HistoryGroup,
   HistoryPageResult,
@@ -468,19 +472,60 @@ export const api = createApi({
       keepUnusedDataFor: 0,
     }),
 
-    draft: b.query<
-      Draft,
-      { caseId: string; kind: DraftKind; question: string }
-    >({
-      queryFn: async ({ caseId, kind }) => {
-        if (!isMock) return notConnected();
-        await wait(900);
-        const found = MOCK_CASES.find((c) => c.id === caseId)?.drafts[0];
-        return found
-          ? ok({ ...found, kind })
-          : fail('NO_CONFIRMED_CLAIMS', 409);
+    /** Доступные готовые вопросы для письма дела (B10). После ошибок экран запрашивает их заново. */
+    draftQuestions: b.query<DraftQuestions, string>({
+      queryFn: (letterId, _api, _x, base) => {
+        if (isMock) {
+          const r = mockDraftQuestions(letterId);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          path: `/letters/${encodeURIComponent(letterId)}/draft-questions`,
+        }) as Promise<Result<DraftQuestions>>;
       },
-      providesTags: (_r, _e, a) => [{ type: 'Case', id: a.caseId }],
+      keepUnusedDataFor: 0,
+    }),
+
+    /** Собрать черновик. Один запрос на нажатие, без автоматического повтора. */
+    createDraft: b.mutation<
+      ApiDraft,
+      {
+        caseId: string;
+        letterId: string;
+        questionId: QuestionId;
+        amountClaimId?: string;
+      }
+    >({
+      queryFn: ({ caseId, ...body }, _api, _x, base) => {
+        if (isMock) {
+          const r = mockCreateDraft(caseId, body.letterId, body.questionId);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'POST',
+          path: `/cases/${encodeURIComponent(caseId)}/draft`,
+          body: { kind: 'CLARIFICATION', ...body },
+        }) as Promise<Result<ApiDraft>>;
+      },
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Case', id: a.caseId },
+        { type: 'Case', id: 'LIST' },
+        'History',
+      ],
+    }),
+
+    /** Черновик (текст, основания-снимок, stale). Перед копированием экран запрашивает его заново. */
+    draft: b.query<ApiDraft, string>({
+      queryFn: (id, _api, _x, base) => {
+        if (isMock) {
+          const r = mockGetDraft(id);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({ path: `/drafts/${encodeURIComponent(id)}` }) as Promise<
+          Result<ApiDraft>
+        >;
+      },
+      keepUnusedDataFor: 0,
     }),
   }),
 });
@@ -505,6 +550,8 @@ export const {
   useUpdateCaseMutation,
   useDeleteCaseMutation,
   useDraftQuery,
+  useDraftQuestionsQuery,
+  useCreateDraftMutation,
   useLettersQuery,
   useLetterQuery,
   useConfirmClaimsMutation,

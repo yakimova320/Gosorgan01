@@ -742,3 +742,18 @@ details.faq .faq-body {
 .field label.checkbox {
   font-weight: 400;
 }
+
+/* Черновик: на телефоне вкладки, на широком экране оба текста рядом. */
+.draft-panels[data-tab='de'] .draft-panel--ru,
+.draft-panels[data-tab='ru'] .draft-panel--de {
+  display: none;
+}
+@media (min-width: 900px) {
+  .draft-tabs {
+    display: none;
+  }
+  .draft-panels .draft-panel--de,
+  .draft-panels .draft-panel--ru {
+    display: flex;
+  }
+}

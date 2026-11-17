@@ -256,3 +256,35 @@ export interface ApiExplanation {
   unconfirmed: boolean;
   cached: boolean;
 }
+
+// ---------- Черновик из API (B10) ----------
+
+export type QuestionId = 'WHICH_DOCUMENTS' | 'DEADLINE' | 'REASON' | 'FORMAT' | 'AMOUNT';
+
+export interface DraftQuestions {
+  letterId: string;
+  caseId: string;
+  questions: { id: QuestionId; ru: string }[];
+  amounts: { claimId: string; value: string }[];
+}
+
+/** Черновик. verification.checklist — снимок оснований на момент сборки. */
+export interface ApiDraft {
+  id: string;
+  caseId: string;
+  letterId: string | null;
+  questionId: QuestionId | null;
+  kind: string;
+  germanText: string;
+  russianText: string;
+  claimIds: string[];
+  stale: boolean;
+  status: string;
+  verification: {
+    passed: boolean;
+    checks: { name: string; passed: boolean; details: string | null }[];
+    checklist: { claimId: string; text: string; quote: string | null }[];
+    note?: string;
+  };
+  createdAt: string;
+}
