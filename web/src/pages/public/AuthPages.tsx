@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import type { z } from 'zod';
-import { CheckboxField, EmailField, FormError, PasswordField, SubmitButton } from '../../components/form';
+import { CheckboxField, EmailField, FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
 import { ForgotFormSchema, LoginFormSchema, RegisterFormSchema, ResetFormSchema } from '../../forms/schemas';
 import { applyServerError } from '../../forms/serverErrors';
 import { useAppDispatch, useSession } from '../../store';
@@ -87,25 +87,49 @@ export function RegisterPage() {
   const form = useForm<z.input<typeof RegisterFormSchema>, unknown, z.output<typeof RegisterFormSchema>>({
     resolver: zodResolver(RegisterFormSchema),
     mode: 'onTouched',
-    defaultValues: { email: '', password: '', passwordRepeat: '' },
+    defaultValues: { email: '', password: '', passwordRepeat: '', firstName: '', lastName: '', address: '' },
   });
   const { errors, isSubmitting } = form.formState;
 
-  const submit = form.handleSubmit(async ({ email, password, consent }) => {
+  const submit = form.handleSubmit(async ({ email, password, consent, firstName, lastName, address }) => {
     setFormError(null);
     try {
-      const { sessionToken } = await register({ email, password, consent }).unwrap();
+      const { sessionToken } = await register({ email, password, consent, firstName, lastName, address }).unwrap();
       dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
-      setFormError(applyServerError(err, form.setError, ['email', 'password', 'consent']));
+      setFormError(applyServerError(err, form.setError, ['email', 'password', 'consent', 'firstName', 'lastName', 'address']));
     }
   });
 
   return (
     <AuthCard title="Регистрация">
-      <p className="small text-2">Нужны только e-mail и пароль. Имя, адрес и номера документов Ja!sno не спрашивает.</p>
+      <p className="small text-2">Нужны e-mail, пароль, имя, фамилия и адрес проживания. Имя, фамилию и адрес можно изменить в профиле.</p>
       <form className="stack" onSubmit={submit} noValidate>
+        <TextField
+          id="r-first"
+          label="Имя"
+          autoComplete="given-name"
+          registration={form.register('firstName')}
+          error={errors.firstName}
+          hint="Латинскими буквами, например Anna"
+        />
+        <TextField
+          id="r-last"
+          label="Фамилия"
+          autoComplete="family-name"
+          registration={form.register('lastName')}
+          error={errors.lastName}
+          hint="Латинскими буквами, например Müller"
+        />
+        <TextField
+          id="r-address"
+          label="Адрес проживания"
+          autoComplete="street-address"
+          registration={form.register('address')}
+          error={errors.address}
+          hint="Улица, дом, индекс, город"
+        />
         <EmailField id="r-email" label="E-mail" registration={form.register('email')} error={errors.email} />
         <PasswordField
           id="r-password"

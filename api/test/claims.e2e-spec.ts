@@ -7,6 +7,7 @@ import { createApp } from '../src/app.factory.js';
 import { DemoAdapter } from '../src/llm/adapters/demo.adapter.js';
 import { AdapterError, type AdapterRequest } from '../src/llm/llm.types.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { PERSON } from './person.js';
 import { createTestDatabase } from './test-db.js';
 
 const fixture = (name: string) =>
@@ -81,7 +82,12 @@ describe('Факты письма (e2e, B06)', () => {
   async function register(email: string) {
     const res = await http()
       .post('/auth/register')
-      .send({ email, password: 'mein-langes-Passwort', consent: true })
+      .send({
+        email,
+        password: 'mein-langes-Passwort',
+        consent: true,
+        ...PERSON,
+      })
       .expect(201);
     return res.body.sessionToken as string;
   }

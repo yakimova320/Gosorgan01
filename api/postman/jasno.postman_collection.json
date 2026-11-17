@@ -93,7 +93,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -122,6 +122,44 @@
           ]
         },
         {
+          "name": "POST /auth/register: имя кириллицей",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman-cyr@example.org\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Анна\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('ошибка у поля firstName', () => pm.expect(pm.response.json().details.fields.firstName).to.eql('Введите имя латинскими буквами'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /auth/register: e-mail занят",
           "request": {
             "method": "POST",
@@ -143,7 +181,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -181,7 +219,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"no-consent@example.org\",\n  \"password\": \"{{testPassword}}\"\n}"
+              "raw": "{\n  \"email\": \"no-consent@example.org\",\n  \"password\": \"{{testPassword}}\",\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -219,7 +257,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"too-long@example.org\",\n  \"password\": \"яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя\",\n  \"consent\": true\n}"
+              "raw": "{\n  \"email\": \"too-long@example.org\",\n  \"password\": \"яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -297,7 +335,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"profile\": {\n    \"firstName\": \"Anna\",\n    \"numbers\": [\n      {\n        \"label\": \"Kundennummer\",\n        \"value\": \"123A456\"\n      }\n    ]\n  }\n}"
+              "raw": "{\n  \"profile\": {\n    \"address\": \"Neue Str. 2, 20095 Hamburg\"\n  }\n}"
             }
           },
           "event": [
@@ -307,7 +345,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('статус 200', () => pm.response.to.have.status(200));",
-                  "pm.test('профиль сохранён', () => pm.expect(pm.response.json().profile.firstName).to.eql('Anna'));"
+                  "pm.test('профиль сохранён', () => pm.expect(pm.response.json().profile.firstName).to.eql('Anna'));",
+                  "pm.test('изменён только адрес', () => pm.expect(pm.response.json().profile.address).to.eql('Neue Str. 2, 20095 Hamburg'));"
                 ]
               }
             }
@@ -516,7 +555,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{lettersEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true\n}"
+              "raw": "{\n  \"email\": \"{{lettersEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [

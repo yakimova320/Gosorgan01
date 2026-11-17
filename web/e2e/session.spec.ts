@@ -6,6 +6,8 @@ import {
   loginUi,
   PASSWORD,
   uniqueEmail,
+  fillRegistration,
+  letters,
 } from './helpers';
 
 const FIXTURE_PDF = resolve(
@@ -21,10 +23,7 @@ test('регистрация через сайт ведёт в кабинет, �
   page,
 }) => {
   await page.goto('/register');
-  await page.getByLabel('E-mail').fill(uniqueEmail('reg'));
-  await page.getByLabel('Пароль', { exact: true }).fill(PASSWORD);
-  await page.getByLabel('Повторите пароль').fill(PASSWORD);
-  await page.getByRole('checkbox').check();
+  await fillRegistration(page, { email: uniqueEmail('reg') });
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
   await clientNavigate(page, '/app/profile');
@@ -38,8 +37,8 @@ test('пользователь Б в том же браузере не види�
   page,
   request,
 }) => {
-  const a = await createUser(request, 'a', `Annika${Date.now() % 100000}`);
-  const b = await createUser(request, 'b', `Bruno${Date.now() % 100000}`);
+  const a = await createUser(request, 'a', `Annika${letters()}`);
+  const b = await createUser(request, 'b', `Bruno${letters()}`);
 
   await page.goto('/login');
   await loginUi(page, a.email);

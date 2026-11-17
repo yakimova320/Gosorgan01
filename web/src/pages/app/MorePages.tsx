@@ -3,12 +3,18 @@ import { PASSWORD_MIN_CHARS } from '@jasno/shared';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { FormError, PasswordField, SubmitButton } from '../../components/form';
-import { ChangePasswordFormSchema, DeleteAccountFormSchema } from '../../forms/schemas';
+import { FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
+import { ChangePasswordFormSchema, DeleteAccountFormSchema, ProfileFormSchema } from '../../forms/schemas';
 import { applyServerError } from '../../forms/serverErrors';
 import { useNavigate } from 'react-router';
 import { useAppDispatch } from '../../store';
-import { useCabinetQuery, useChangePasswordMutation, useDeleteAccountMutation, useLogoutMutation } from '../../store/api';
+import {
+  useCabinetQuery,
+  useChangePasswordMutation,
+  useDeleteAccountMutation,
+  useLogoutMutation,
+  useUpdateProfileMutation,
+} from '../../store/api';
 import { signedOut } from '../../store/session';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
@@ -133,20 +139,12 @@ export function ProfilePage() {
       <div className="desktop-2col stack">
         <section className="card stack">
           <h2 style={{ fontSize: 19 }}>Мои данные</h2>
-          <p className="muted">Нужны только для черновика ответа: имя и адрес отправителя.</p>
-          <div className="field">
-            <label htmlFor="p-name">Имя и фамилия</label>
-            <input id="p-name" className="input" defaultValue={[p?.firstName, p?.lastName].filter(Boolean).join(' ')} disabled />
-          </div>
-          <div className="field">
-            <label htmlFor="p-addr">Адрес</label>
-            <input id="p-addr" className="input" defaultValue={p?.address ?? ''} disabled />
-          </div>
+          <p className="muted">Имя, фамилия и адрес нужны для черновика ответа: это данные отправителя.</p>
+          {p && <ProfileForm key={cabinet.data?.email} profile={p} />}
           <div className="field">
             <label htmlFor="p-email">E-mail</label>
             <input id="p-email" className="input" value={cabinet.data?.email ?? ''} readOnly />
           </div>
-          <DemoNote>Сохранение профиля подключается в задаче F05</DemoNote>
           <div className="field">
             <label htmlFor="p-lang">Язык</label>
             <select id="p-lang" className="select" value="ru" disabled>
@@ -233,5 +231,57 @@ export function ProfilePage() {
         </section>
       </div>
     </>
+  );
+}
+
+type ProfileForm = z.input<typeof ProfileFormSchema>;
+
+/** Имя, фамилия, адрес. На сервер уходят только изменённые поля, сервер проверяет итог целиком. */
+function ProfileForm({ profile }: { profile: { firstName?: string; lastName?: string; address?: string } }) {
+  const [updateProfile] = useUpdateProfileMutation();
+  const [saved, setSaved] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<ProfileForm, unknown, z.output<typeof ProfileFormSchema>>({
+    resolver: zodResolver(ProfileFormSchema),
+    mode: 'onTouched',
+    defaultValues: { firstName: profile.firstName ?? '', lastName: profile.lastName ?? '', address: profile.address ?? '' },
+  });
+  const { errors, isSubmitting, dirtyFields } = form.formState;
+
+  const submit = form.handleSubmit(async (values) => {
+    setSaved(false);
+    setFormError(null);
+    const changed = Object.fromEntries(
+      (Object.keys(values) as (keyof ProfileForm)[]).filter((k) => dirtyFields[k]).map((k) => [k, values[k]]),
+    );
+    if (Object.keys(changed).length === 0) return setSaved(true);
+    try {
+      const cabinet = await updateProfile(changed).unwrap();
+      form.reset({
+        firstName: cabinet.profile?.firstName ?? '',
+        lastName: cabinet.profile?.lastName ?? '',
+        address: cabinet.profile?.address ?? '',
+      });
+      setSaved(true);
+    } catch (err) {
+      setFormError(applyServerError(err, form.setError, ['firstName', 'lastName', 'address'], 'profile.'));
+    }
+  });
+
+  return (
+    <form className="stack" onSubmit={submit} noValidate>
+      <TextField id="p-first" label="Имя" autoComplete="given-name" registration={form.register('firstName')} error={errors.firstName} />
+      <TextField id="p-last" label="Фамилия" autoComplete="family-name" registration={form.register('lastName')} error={errors.lastName} />
+      <TextField id="p-address" label="Адрес проживания" autoComplete="street-address" registration={form.register('address')} error={errors.address} />
+      {saved && (
+        <div className="alert alert--info" role="status">
+          Сохранено
+        </div>
+      )}
+      <FormError message={formError} />
+      <SubmitButton submitting={isSubmitting} className="btn btn--navy btn--small">
+        Сохранить
+      </SubmitButton>
+    </form>
   );
 }

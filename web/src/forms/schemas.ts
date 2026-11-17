@@ -1,5 +1,8 @@
 import {
+  AddressSchema,
   ChangePasswordSchema,
+  FirstNameSchema,
+  LastNameSchema,
   DeleteAccountSchema,
   ForgotPasswordSchema,
   LoginSchema,
@@ -57,3 +60,10 @@ export const ChangePasswordFormSchema = ChangePasswordSchema.extend({
 );
 
 export const DeleteAccountFormSchema = DeleteAccountSchema;
+
+/** Профиль на сайте: имя, фамилия, адрес. На сервер уходят только изменённые поля. */
+export const ProfileFormSchema = z.object({
+  firstName: FirstNameSchema,
+  lastName: LastNameSchema,
+  address: AddressSchema,
+});

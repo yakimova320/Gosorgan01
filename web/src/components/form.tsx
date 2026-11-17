@@ -76,6 +76,32 @@ export function EmailField({
   );
 }
 
+/** Обычное текстовое поле: имя, фамилия, адрес. */
+export function TextField({
+  id,
+  label,
+  registration,
+  error,
+  hint,
+  autoComplete,
+}: FieldProps & { autoComplete?: string }) {
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        className="input"
+        type="text"
+        autoComplete={autoComplete}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(id, error, hint)}
+        {...registration}
+      />
+      <FieldMessages id={id} error={error} hint={hint} />
+    </div>
+  );
+}
+
 /** Пароль: значение не меняется (без trim), вставка и менеджеры паролей разрешены. */
 export function PasswordField({
   id,
