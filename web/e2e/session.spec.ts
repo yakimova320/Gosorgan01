@@ -77,7 +77,7 @@ test('выбранные файлы сценария не переходят к 
   await loginUi(page, a.email);
   await expect(page).toHaveURL(/\/app$/);
   await clientNavigate(page, '/app/scan');
-  await page.locator('input[type="file"][multiple]').setInputFiles(FIXTURE_PDF);
+  await page.getByTestId('file-input').setInputFiles(FIXTURE_PDF);
   await expect(page).toHaveURL(/\/app\/scan\/pages$/);
 
   await clientNavigate(page, '/app/profile');

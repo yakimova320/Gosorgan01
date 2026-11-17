@@ -1,96 +1,71 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { DraftKind } from '../api/types';
 import { useSession } from '../store';
-import type { DraftKind, UploadResult } from '../api/types';
 
 /*
- * Состояние многошаговых сценариев, пока человек идёт по шагам.
- * Хранится только в памяти страницы: после перезагрузки сценарий начинается заново.
- * Файлы и превью здесь, а не в Redux: File не сериализуется (TechBriefing v5, 4.1).
- * При входе, выходе и смене пользователя всё сбрасывается: данные прошлого пользователя не остаются.
- * Перенос сценария на сервер (letterId в URL): F02 и F04.
+ * Состояние сценариев, которое не хранится на сервере (TechBriefing v5, 4.1).
+ * Выбранный файл письма и адрес его превью: File не сериализуется, поэтому не в Redux.
+ * Результат загрузки и решения по фактам здесь не хранятся: письмо открывается по ID из URL,
+ * решения до сохранения живут в состоянии страницы проверки, после — на сервере.
+ * При входе, выходе и смене пользователя всё сбрасывается, адреса превью освобождаются.
  */
 
-export interface PickedPage {
+export interface PickedFile {
   file: File;
   url: string; // временный адрес превью в браузере, не сохраняется на сервере
 }
 
 interface FlowValue {
-  pages: PickedPage[];
-  addFiles: (files: FileList | File[]) => void;
-  removePage: (index: number) => void;
-  movePage: (index: number, delta: -1 | 1) => void;
-  upload: UploadResult | null;
-  setUpload: (r: UploadResult | null) => void;
-  decisions: Record<string, 'ok' | 'wrong'>;
-  decide: (claimId: string, d: 'ok' | 'wrong') => void;
+  /** Пока одно фото или один PDF на письмо (несколько фото: B11). */
+  picked: PickedFile | null;
+  pickFile: (file: File) => void;
+  clearFile: () => void;
   answer: { kind: DraftKind; question: string };
   setAnswer: (a: { kind: DraftKind; question: string }) => void;
-  resetScan: () => void;
 }
 
 const FlowContext = createContext<FlowValue | null>(null);
 
 export function FlowProvider({ children }: { children: ReactNode }) {
-  const [pages, setPages] = useState<PickedPage[]>([]);
-  const [upload, setUpload] = useState<UploadResult | null>(null);
-  const [decisions, setDecisions] = useState<Record<string, 'ok' | 'wrong'>>({});
+  const [picked, setPicked] = useState<PickedFile | null>(null);
   const [answer, setAnswer] = useState<{ kind: DraftKind; question: string }>({ kind: 'CLARIFICATION', question: '' });
 
-  const addFiles = useCallback((files: FileList | File[]) => {
-    const list = Array.from(files).map((file) => ({ file, url: URL.createObjectURL(file) }));
-    setPages((p) => [...p, ...list]);
-  }, []);
-
-  const removePage = useCallback((index: number) => {
-    setPages((p) => {
-      const copy = [...p];
-      const [gone] = copy.splice(index, 1);
-      if (gone) URL.revokeObjectURL(gone.url);
-      return copy;
+  /** Новый файл заменяет прежний; адрес прежнего превью освобождается. */
+  const pickFile = useCallback((file: File) => {
+    setPicked((old) => {
+      if (old) URL.revokeObjectURL(old.url);
+      return { file, url: URL.createObjectURL(file) };
     });
   }, []);
 
-  const movePage = useCallback((index: number, delta: -1 | 1) => {
-    setPages((p) => {
-      const j = index + delta;
-      if (j < 0 || j >= p.length) return p;
-      const copy = [...p];
-      [copy[index], copy[j]] = [copy[j], copy[index]];
-      return copy;
+  const clearFile = useCallback(() => {
+    setPicked((old) => {
+      if (old) URL.revokeObjectURL(old.url);
+      return null;
     });
-  }, []);
-
-  const decide = useCallback((claimId: string, d: 'ok' | 'wrong') => setDecisions((x) => ({ ...x, [claimId]: d })), []);
-
-  const resetScan = useCallback(() => {
-    setPages((p) => {
-      p.forEach((x) => URL.revokeObjectURL(x.url));
-      return [];
-    });
-    setUpload(null);
-    setDecisions({});
   }, []);
 
   const { token } = useSession();
   const lastToken = useRef(token);
-  const pagesRef = useRef(pages);
-  pagesRef.current = pages;
+  const pickedRef = useRef(picked);
+  pickedRef.current = picked;
 
   useEffect(() => {
     if (lastToken.current === token) return;
     lastToken.current = token;
-    resetScan();
+    clearFile();
     setAnswer({ kind: 'CLARIFICATION', question: '' });
-  }, [token, resetScan]);
+  }, [token, clearFile]);
 
-  // Уход со страницы: освободить адреса превью.
-  useEffect(() => () => pagesRef.current.forEach((x) => URL.revokeObjectURL(x.url)), []);
-
-  const value = useMemo(
-    () => ({ pages, addFiles, removePage, movePage, upload, setUpload, decisions, decide, answer, setAnswer, resetScan }),
-    [pages, addFiles, removePage, movePage, upload, decisions, decide, answer, resetScan],
+  // Уход со страницы: освободить адрес превью.
+  useEffect(
+    () => () => {
+      if (pickedRef.current) URL.revokeObjectURL(pickedRef.current.url);
+    },
+    [],
   );
+
+  const value = useMemo(() => ({ picked, pickFile, clearFile, answer, setAnswer }), [picked, pickFile, clearFile, answer]);
   return <FlowContext.Provider value={value}>{children}</FlowContext.Provider>;
 }
 

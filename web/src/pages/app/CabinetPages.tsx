@@ -105,7 +105,7 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
         Входящие письма
       </h2>
       {letters.map((l) => (
-        <div key={l.id} className="card row-between" data-testid="inbox-letter">
+        <Link key={l.id} to={`/app/letters/${l.id}/check`} className="card row-between" data-testid="inbox-letter">
           <div className="stack-s">
             <strong>{l.authority ?? 'Письмо'}</strong>
             <span className="small text-2">
@@ -114,7 +114,7 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
             </span>
           </div>
           {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
-        </div>
+        </Link>
       ))}
     </section>
   );

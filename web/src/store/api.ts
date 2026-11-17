@@ -1,5 +1,13 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { MOCK_CABINET, MOCK_CASES, mockUploadLetter } from '../mocks/data';
+import { MOCK_CABINET, MOCK_CASES } from '../mocks/data';
+import {
+  mockConfirm,
+  mockCorrect,
+  mockDelete,
+  mockLetter,
+  mockLetters,
+  mockUpload,
+} from '../mocks/letters';
 import { DATA_MODE } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import type {
@@ -11,7 +19,8 @@ import type {
   Explanation,
   Health,
   HistoryItem,
-  UploadResult,
+  LetterDetail,
+  UploadResponse,
 } from '../api/types';
 import { apiBaseQuery, type RequestArgs } from './baseQuery';
 import { takeUploadFiles } from './uploads';
@@ -34,6 +43,8 @@ const fail = (code: string, status?: number): { error: ApiError } => ({
 });
 const notConnected = () => fail('NOT_CONNECTED');
 const isMock = DATA_MODE === 'mock';
+/** Загрузка фото: распознавание и извлечение фактов могут идти больше минуты. */
+const UPLOAD_TIMEOUT_MS = 180_000;
 
 function summary(c: CaseDetail): CaseSummary {
   const {
@@ -60,7 +71,7 @@ export interface InboxLetter {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: apiBaseQuery,
-  tagTypes: ['Cabinet', 'Case', 'History', 'Letters'],
+  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter'],
   endpoints: (b) => ({
     health: b.query<Health, void>({
       queryFn: (_a, _api, _x, base) =>
@@ -188,35 +199,117 @@ export const api = createApi({
     letters: b.query<InboxLetter[], void>({
       queryFn: (_a, _api, _x, base) =>
         isMock
-          ? ok<InboxLetter[]>([])
+          ? ok<InboxLetter[]>(
+              mockLetters().map((l) => ({
+                id: l.letter.id,
+                createdAt: l.letter.createdAt,
+                sourceType: l.letter.sourceType,
+                authority:
+                  l.claims.find((c) => c.kind === 'AUTHORITY')?.value ?? null,
+                caseNumber:
+                  l.claims.find((c) => c.kind === 'CASE_NUMBER')?.value ?? null,
+                unconfirmed: l.claims.filter((c) => c.status === 'UNCONFIRMED')
+                  .length,
+              })),
+            )
           : (base({ path: '/letters?inbox=true' }) as Promise<
               Result<InboxLetter[]>
             >),
       providesTags: ['Letters'],
     }),
 
-    /** Аргумент: ключ файлов из uploads.ts. Сами File в Redux не попадают. */
-    uploadLetter: b.mutation<UploadResult, string>({
-      queryFn: async (uploadKey) => {
+    /**
+     * Загрузка письма (B05, B06). Аргумент: ключ файлов из uploads.ts, сами File в Redux не попадают.
+     * Тайм-аут больше обычного: фото + извлечение фактов. Автоматического повтора нет:
+     * после тайм-аута письмо могло сохраниться.
+     */
+    uploadLetter: b.mutation<UploadResponse, string>({
+      queryFn: async (uploadKey, _api, _x, base) => {
         const files = takeUploadFiles(uploadKey);
-        if (!isMock) return notConnected();
-        void files;
-        await wait(1800);
-        const letter = mockUploadLetter();
-        return ok<UploadResult>({
-          letter,
-          claims: letter.claims,
-          deadlines: letter.deadlines,
-          suggestions: [
-            {
-              caseId: 'case-jc',
-              title: 'Jobcenter: выписки со счёта',
-              reason: 'Совпадает номер дела JC-2026-1001',
-            },
-          ],
-        });
+        if (isMock) {
+          await wait(1800);
+          return ok(mockUpload());
+        }
+        const form = new FormData();
+        for (const f of files) form.append('files', f, f.name);
+        return base({
+          method: 'POST',
+          path: '/letters',
+          form,
+          timeoutMs: UPLOAD_TIMEOUT_MS,
+        }) as Promise<Result<UploadResponse>>;
       },
-      invalidatesTags: ['Cabinet', 'Case', 'History', 'Letters'],
+      invalidatesTags: ['Cabinet', 'Letters'],
+    }),
+
+    letter: b.query<LetterDetail, string>({
+      queryFn: (id, _api, _x, base) => {
+        if (isMock) {
+          const r = mockLetter(id);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({ path: `/letters/${encodeURIComponent(id)}` }) as Promise<
+          Result<LetterDetail>
+        >;
+      },
+      providesTags: (_r, _e, id) => [{ type: 'Letter', id }],
+    }),
+
+    /** «Сохранить проверку»: все решения одним запросом. */
+    confirmClaims: b.mutation<
+      LetterDetail,
+      { id: string; confirm: string[]; reject: string[] }
+    >({
+      queryFn: ({ id, confirm, reject }, _api, _x, base) => {
+        if (isMock) {
+          const r = mockConfirm(id, confirm, reject);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'POST',
+          path: `/letters/${encodeURIComponent(id)}/claims/confirm`,
+          body: { confirm, reject },
+        }) as Promise<Result<LetterDetail>>;
+      },
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Letter', id: a.id },
+        'Letters',
+        'Cabinet',
+      ],
+    }),
+
+    correctClaim: b.mutation<
+      LetterDetail,
+      { id: string; claimId: string; value: string }
+    >({
+      queryFn: ({ id, claimId, value }, _api, _x, base) => {
+        if (isMock) {
+          const r = mockCorrect(id, claimId, value);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'POST',
+          path: `/letters/${encodeURIComponent(id)}/claims/${encodeURIComponent(claimId)}/correct`,
+          body: { value },
+        }) as Promise<Result<LetterDetail>>;
+      },
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Letter', id: a.id },
+        'Letters',
+        'Cabinet',
+      ],
+    }),
+
+    /** Полное удаление письма. «Оставить во входящих» запроса не требует: письмо уже во входящих. */
+    deleteLetter: b.mutation<void, string>({
+      queryFn: async (id, _api, _x, base) => {
+        if (isMock) return ok(mockDelete(id));
+        return base({
+          method: 'DELETE',
+          path: `/letters/${encodeURIComponent(id)}`,
+        }) as Promise<Result<void>>;
+      },
+      invalidatesTags: ['Letters', 'Cabinet'],
     }),
 
     // ---------- Дела (B07) ----------
@@ -302,5 +395,9 @@ export const {
   useExplainQuery,
   useDraftQuery,
   useLettersQuery,
+  useLetterQuery,
+  useConfirmClaimsMutation,
+  useCorrectClaimMutation,
+  useDeleteLetterMutation,
   useUpdateProfileMutation,
 } = api;
