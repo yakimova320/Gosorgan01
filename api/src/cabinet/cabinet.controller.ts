@@ -4,6 +4,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -22,6 +23,7 @@ const CABINET_EXAMPLE: CabinetView = {
   profile: {
     firstName: 'Anna',
     lastName: 'Muster',
+    address: 'Musterstr. 1, 10115 Berlin',
     numbers: [{ label: 'Kundennummer', value: '123A456' }],
   },
   counts: { openTasks: 1, activeCases: 2, inboxLetters: 0 },
@@ -59,12 +61,15 @@ export class CabinetController {
   }
 
   @Patch()
+  @ApiOperation({
+    summary: 'Изменить язык или профиль',
+    description:
+      'Профиль можно менять по одному полю. Итог проверяется целиком: имя, фамилию и адрес очистить нельзя. ' +
+      'Имя и фамилия: латинские буквы, пробел, дефис, апостроф.',
+  })
   @ApiBody({
     schema: {
-      example: {
-        language: 'ru',
-        profile: { firstName: 'Anna', address: 'Musterstr. 1, 10115 Berlin' },
-      },
+      example: { profile: { address: 'Neue Str. 2, 10115 Berlin' } },
     },
   })
   @ApiOkResponse({
@@ -76,6 +81,9 @@ export class CabinetController {
       example: {
         code: 'VALIDATION_FAILED',
         message: 'Проверьте введённые данные',
+        details: {
+          fields: { 'profile.firstName': 'Введите имя латинскими буквами' },
+        },
       },
     },
   })

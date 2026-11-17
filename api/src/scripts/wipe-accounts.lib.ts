@@ -1,0 +1,142 @@
+import { existsSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+/*
+ * Разовая очистка аккаунтов (не запускается вместе с приложением).
+ * Удаляет только выбранные кабинеты: строки по cabinetId (каскад: сессии, токены восстановления,
+ * дела, письма, факты, сроки, события, сообщения, черновики), LlmCall этих кабинетов и их писем, файлы писем.
+ * Порядок для каждого кабинета: сначала файлы, потом база. Если файлы удалить не удалось,
+ * кабинет остаётся в базе, и повторный запуск его найдёт.
+ */
+
+export interface WipeTarget {
+  host: string;
+  port: string;
+  database: string;
+  schema: string;
+  storageDir: string;
+}
+
+/** Цель из DATABASE_URL, без логина и пароля. */
+export function describeTarget(
+  databaseUrl: string,
+  storageDir: string,
+): WipeTarget {
+  const url = new URL(databaseUrl);
+  return {
+    host: url.hostname,
+    port: url.port || '5432',
+    database: url.pathname.replace(/^\//, ''),
+    schema: url.searchParams.get('schema') ?? 'public',
+    storageDir,
+  };
+}
+
+/** Строка, которую человек вводит в --confirm: хост, порт, база и схема. */
+export function targetId(t: WipeTarget): string {
+  return `${t.host}:${t.port}/${t.database}/${t.schema}`;
+}
+
+export type Selector = { all: true } | { emails: string[] };
+
+export interface WipePlan {
+  cabinets: { id: string; email: string }[];
+  counts: {
+    sessions: number;
+    resetTokens: number;
+    cases: number;
+    letters: number;
+    claims: number;
+    drafts: number;
+    llmCalls: number;
+    letterDirs: number;
+  };
+}
+
+export async function planWipe(
+  db: PrismaService,
+  storageDir: string,
+  selector: Selector,
+): Promise<WipePlan> {
+  const cabinets = await db.cabinet.findMany({
+    where:
+      'all' in selector
+        ? {}
+        : { email: { in: selector.emails.map((e) => e.trim().toLowerCase()) } },
+    select: { id: true, email: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  const ids = cabinets.map((c) => c.id);
+  const letterIds = (
+    await db.letter.findMany({
+      where: { cabinetId: { in: ids } },
+      select: { id: true },
+    })
+  ).map((l) => l.id);
+  const [sessions, resetTokens, cases, claims, drafts, llmCalls] =
+    await Promise.all([
+      db.session.count({ where: { cabinetId: { in: ids } } }),
+      db.passwordResetToken.count({ where: { cabinetId: { in: ids } } }),
+      db.case.count({ where: { cabinetId: { in: ids } } }),
+      db.claim.count({ where: { letterId: { in: letterIds } } }),
+      db.draft.count({ where: { case: { cabinetId: { in: ids } } } }),
+      db.llmCall.count({ where: llmCallsOf(ids, letterIds) }),
+    ]);
+  return {
+    cabinets,
+    counts: {
+      sessions,
+      resetTokens,
+      cases,
+      letters: letterIds.length,
+      claims,
+      drafts,
+      llmCalls,
+      letterDirs: ids.filter((id) => existsSync(letterDir(storageDir, id)))
+        .length,
+    },
+  };
+}
+
+export async function executeWipe(
+  db: PrismaService,
+  storageDir: string,
+  plan: WipePlan,
+): Promise<{ deleted: string[] }> {
+  const deleted: string[] = [];
+  for (const cabinet of plan.cabinets) {
+    // 1. Файлы. Ошибка: остановка, кабинет остаётся в базе для повторного запуска.
+    await rm(letterDir(storageDir, cabinet.id), {
+      recursive: true,
+      force: true,
+    });
+    // 2. База одной транзакцией.
+    await db.$transaction(async (tx) => {
+      const letterIds = (
+        await tx.letter.findMany({
+          where: { cabinetId: cabinet.id },
+          select: { id: true },
+        })
+      ).map((l) => l.id);
+      await tx.llmCall.deleteMany({
+        where: llmCallsOf([cabinet.id], letterIds),
+      });
+      await tx.cabinet.delete({ where: { id: cabinet.id } });
+    });
+    deleted.push(cabinet.id);
+  }
+  return { deleted };
+}
+
+function llmCallsOf(cabinetIds: string[], letterIds: string[]) {
+  return {
+    OR: [{ cabinetId: { in: cabinetIds } }, { letterId: { in: letterIds } }],
+  };
+}
+
+function letterDir(storageDir: string, cabinetId: string): string {
+  if (!/^[a-zA-Z0-9_-]+$/.test(cabinetId)) throw new Error('bad cabinetId');
+  return resolve(storageDir, 'letters', cabinetId);
+}

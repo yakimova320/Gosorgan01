@@ -40,6 +40,9 @@ export class AuthController {
       example: {
         email: 'anna@example.org',
         password: 'mein-langes-Passwort',
+        firstName: 'Anna',
+        lastName: 'Muster',
+        address: 'Musterstr. 1, 10115 Berlin',
         consent: true,
       },
     },

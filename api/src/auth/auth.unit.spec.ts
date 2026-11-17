@@ -1,3 +1,4 @@
+import { PERSON } from '../../test/person.js';
 import { ApiError } from '../common/api-error.js';
 import { berlinToday } from '../common/berlin-date.js';
 import { LoginSchema, RegisterSchema } from './auth.schemas.js';
@@ -44,6 +45,7 @@ describe('Токен сессии', () => {
 describe('Проверка ввода', () => {
   it('e-mail приводится к маленьким буквам', () => {
     const r = RegisterSchema.parse({
+      ...PERSON,
       email: '  Anna@Example.ORG ',
       password: '1234567890',
       consent: true,
@@ -54,6 +56,7 @@ describe('Проверка ввода', () => {
   it('пароль короче 10 знаков и неверный e-mail отклоняются', () => {
     expect(
       RegisterSchema.safeParse({
+        ...PERSON,
         email: 'a@b.de',
         password: '123',
         consent: true,
@@ -61,6 +64,7 @@ describe('Проверка ввода', () => {
     ).toBe(false);
     expect(
       RegisterSchema.safeParse({
+        ...PERSON,
         email: 'nope',
         password: '1234567890',
         consent: true,

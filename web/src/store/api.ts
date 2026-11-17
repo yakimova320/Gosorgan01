@@ -47,10 +47,20 @@ function summary(c: CaseDetail): CaseSummary {
   return rest;
 }
 
+/** Письмо во входящих (GET /letters?inbox=true). */
+export interface InboxLetter {
+  id: string;
+  createdAt: string;
+  sourceType: 'PDF_TEXT' | 'IMAGE';
+  authority: string | null;
+  caseNumber: string | null;
+  unconfirmed: number;
+}
+
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: apiBaseQuery,
-  tagTypes: ['Cabinet', 'Case', 'History'],
+  tagTypes: ['Cabinet', 'Case', 'History', 'Letters'],
   endpoints: (b) => ({
     health: b.query<Health, void>({
       queryFn: (_a, _api, _x, base) =>
@@ -63,7 +73,14 @@ export const api = createApi({
 
     register: b.mutation<
       { sessionToken: string },
-      { email: string; password: string; consent: boolean }
+      {
+        email: string;
+        password: string;
+        consent: boolean;
+        firstName: string;
+        lastName: string;
+        address: string;
+      }
     >({
       queryFn: async (body, _api, _x, base) => {
         if (isMock)
@@ -143,7 +160,40 @@ export const api = createApi({
       providesTags: ['Cabinet'],
     }),
 
+    /** Изменение профиля: только изменённые поля, сервер проверяет итог целиком. */
+    updateProfile: b.mutation<
+      Cabinet,
+      Partial<NonNullable<Cabinet['profile']>>
+    >({
+      queryFn: async (profile, _api, _x, base) => {
+        if (isMock) {
+          await wait();
+          return ok({
+            ...MOCK_CABINET,
+            profile: { ...MOCK_CABINET.profile, ...profile },
+          });
+        }
+        return base({
+          method: 'PATCH',
+          path: '/cabinet',
+          body: { profile },
+        }) as Promise<Result<Cabinet>>;
+      },
+      invalidatesTags: ['Cabinet'],
+    }),
+
     // ---------- Письма и факты (B05, B06) ----------
+
+    /** Входящие письма кабинета (без дела). В режиме mock: пусто, примерные письма лежат в делах. */
+    letters: b.query<InboxLetter[], void>({
+      queryFn: (_a, _api, _x, base) =>
+        isMock
+          ? ok<InboxLetter[]>([])
+          : (base({ path: '/letters?inbox=true' }) as Promise<
+              Result<InboxLetter[]>
+            >),
+      providesTags: ['Letters'],
+    }),
 
     /** Аргумент: ключ файлов из uploads.ts. Сами File в Redux не попадают. */
     uploadLetter: b.mutation<UploadResult, string>({
@@ -166,7 +216,7 @@ export const api = createApi({
           ],
         });
       },
-      invalidatesTags: ['Cabinet', 'Case', 'History'],
+      invalidatesTags: ['Cabinet', 'Case', 'History', 'Letters'],
     }),
 
     // ---------- Дела (B07) ----------
@@ -251,4 +301,6 @@ export const {
   useHistoryQuery,
   useExplainQuery,
   useDraftQuery,
+  useLettersQuery,
+  useUpdateProfileMutation,
 } = api;
