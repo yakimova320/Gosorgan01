@@ -52,7 +52,7 @@ describe('LlmCall в базе', () => {
       cabinetId: 'cab-1',
       letterId: 'let-1',
       promptName: 'extract',
-      promptVersion: 1,
+      promptVersion: 2,
       provider: 'demo',
       ok: true,
       attempts: 1,

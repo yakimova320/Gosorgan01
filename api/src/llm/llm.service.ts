@@ -27,6 +27,11 @@ export interface LlmCallOptions<S extends z.ZodType> {
    * Вернула текст: ответ не принят, повтор с этим текстом. Повтор входит в те же 3 попытки.
    */
   check?: (result: z.infer<S>) => string | null;
+  /**
+   * Сколько обращений можно потратить в этом вызове (не больше MAX_ATTEMPTS).
+   * Нужен для общего бюджета операции: фото = transcribe + extract, всего не больше 3.
+   */
+  maxAttempts?: number;
   context: LlmContext;
 }
 
@@ -79,6 +84,10 @@ export class LlmService {
       ...images.map((img) => `image, ${Math.ceil(img.data.length / 1024)} KB`),
     ].join('\n\n');
 
+    const limit = Math.max(
+      1,
+      Math.min(options.maxAttempts ?? MAX_ATTEMPTS, MAX_ATTEMPTS),
+    );
     const started = Date.now();
     let attempts = 0;
     let lastError: string | null = null;
@@ -106,7 +115,7 @@ export class LlmService {
         tokensOut: tokensOut || null,
       });
 
-    while (attempts < MAX_ATTEMPTS) {
+    while (attempts < limit) {
       attempts++;
       const retryNote = lastError
         ? `\n\nПредыдущий ответ не принят: ${lastError}\nОтветь заново. Только JSON по описанной схеме.`
@@ -129,11 +138,7 @@ export class LlmService {
         lastError = e.message;
         if (e.kind === 'QUOTA') {
           const wait = e.retryAfterMs ?? 1000;
-          if (
-            !quotaHit &&
-            wait <= MAX_QUOTA_WAIT_MS &&
-            attempts < MAX_ATTEMPTS
-          ) {
+          if (!quotaHit && wait <= MAX_QUOTA_WAIT_MS && attempts < limit) {
             quotaHit = true;
             await this.sleep(wait);
             continue;
@@ -176,7 +181,7 @@ export class LlmService {
     }
 
     this.logger.warn(
-      `${prompt.name}.v${prompt.version}: нет верного ответа за ${MAX_ATTEMPTS} попытки`,
+      `${prompt.name}.v${prompt.version}: нет верного ответа за ${limit} попытки`,
     );
     await finish(false);
     throw new ApiError('LLM_FAILED');

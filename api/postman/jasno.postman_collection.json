@@ -581,7 +581,323 @@
                   "const b = pm.response.json();",
                   "pm.test('письмо во входящих', () => pm.expect(b.letter.caseId).to.eql(null));",
                   "pm.test('текст письма', () => pm.expect(b.letter.text).to.include('Jobcenter'));",
-                  "pm.test('нет ключей хранения', () => pm.expect(JSON.stringify(b)).to.not.include('fileKey'));"
+                  "pm.test('нет ключей хранения', () => pm.expect(JSON.stringify(b)).to.not.include('fileKey'));",
+                  "pm.test('факты с цитатами', () => pm.expect(b.claims.length).to.be.above(0));",
+                  "pm.collectionVariables.set('letterId', b.letter.id);",
+                  "pm.collectionVariables.set('claimId', b.claims.find(c => c.kind === 'CASE_NUMBER').id);",
+                  "pm.collectionVariables.set('deadlineClaimId', b.claims.find(c => c.kind === 'DEADLINE').id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters?inbox=true",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters?inbox=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ],
+              "query": [
+                {
+                  "key": "inbox",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('письмо во входящих', () => pm.expect(pm.response.json().map(l => l.id)).to.include(pm.collectionVariables.get('letterId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('сроки в формате YYYY-MM-DD', () => pm.response.json().deadlines.forEach(d => pm.expect(d.date).to.match(/^\\d{4}-\\d{2}-\\d{2}$/)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/claims/confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/claims/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "claims",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": [\n    \"{{deadlineClaimId}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('срок действует', () => pm.expect(pm.response.json().deadlines.find(d => d.claimId === pm.collectionVariables.get('deadlineClaimId')).active).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/claims/confirm: противоположное решение",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/claims/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "claims",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reject\": [\n    \"{{deadlineClaimId}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 409', () => pm.response.to.have.status(409));",
+                  "pm.test('code CLAIM_STATE', () => pm.expect(pm.response.json().code).to.eql('CLAIM_STATE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/claims/:claimId/correct",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/claims/{{claimId}}/correct",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "claims",
+                "{{claimId}}",
+                "correct"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"JC-2026-1002\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const c = pm.response.json().claims.find(x => x.supersedesId === pm.collectionVariables.get('claimId'));",
+                  "pm.test('новая версия USER без цитаты', () => { pm.expect(c.basis).to.eql('USER'); pm.expect(c.quote).to.eql(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /letters/:id?mode=неизвестный",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}?mode=inboks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}"
+              ],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "inboks"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /letters/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id после удаления",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));"
                 ]
               }
             }

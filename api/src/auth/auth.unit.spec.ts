@@ -16,7 +16,7 @@ describe('Пароль', () => {
     expect(hash).toMatch(/^\$2[aby]\$12\$/);
     expect(await verifyPassword('mein-langes-Passwort', hash)).toBe(true);
     expect(await verifyPassword('falsches-Passwort', hash)).toBe(false);
-  });
+  }, 20_000); // bcrypt cost 12 три раза: под нагрузкой дольше 5 с
 
   it('72 байта можно, 73 байта: PASSWORD_TOO_LONG', () => {
     expect(() => assertPasswordFits('a'.repeat(72))).not.toThrow();

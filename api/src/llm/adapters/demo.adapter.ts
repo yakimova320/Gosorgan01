@@ -51,6 +51,9 @@ const toIso = (m: RegExpExecArray) =>
   `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
 
 /** Правила для extract.v1 по строкам письма. Цитата всегда целая строка из текста. */
+const RELATIVE =
+  /\b(?:innerhalb|binnen)\s+(?:von\s+)?(?:\d+|einer|eines|zwei|drei|vier|vierzehn)\s+(?:Tag|Tagen|Woche|Wochen|Monat|Monaten)\b|\bumgehend\b|\bunverzüglich\b/i;
+
 export function demoExtract(text: string) {
   const lines = text
     .split('\n')
@@ -98,7 +101,15 @@ export function demoExtract(text: string) {
       ),
     );
 
+  // Срок без даты: только фраза, без пересчёта (extract.v2).
+  const relativeDeadlines = lines
+    .filter((l) => !DATE.test(l))
+    .map((l) => [l, RELATIVE.exec(l)?.[0]] as const)
+    .filter((x): x is readonly [string, string] => !!x[1])
+    .map(([l, phrase]) => field(l, phrase));
+
   return {
+    relativeDeadlines,
     authority: field(authorityLine, authorityLine ?? null),
     caseNumber: field(caseLine, caseValue),
     letterDate: dateMatch ? field(dateLine, toIso(dateMatch)) : empty,

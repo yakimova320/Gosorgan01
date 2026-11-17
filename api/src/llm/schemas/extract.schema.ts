@@ -30,3 +30,9 @@ export const ExtractSchema = z.object({
 });
 
 export type ExtractResult = z.infer<typeof ExtractSchema>;
+
+/** Ответ extract.v2: как v1 и сроки без точной даты (не пересчитываются в дату). */
+export const ExtractV2Schema = ExtractSchema.extend({
+  relativeDeadlines: z.array(item(z.string().min(1))).max(10),
+});
+export type ExtractV2Result = z.infer<typeof ExtractV2Schema>;

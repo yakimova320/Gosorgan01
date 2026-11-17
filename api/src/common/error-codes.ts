@@ -21,6 +21,10 @@ export const ERROR_CODES = {
   INVALID_CREDENTIALS: { status: 401, message: 'Неверный e-mail или пароль' },
   NOT_FOUND: { status: 404, message: 'Не найдено' },
   EMAIL_TAKEN: { status: 409, message: 'Этот e-mail уже зарегистрирован' },
+  CLAIM_STATE: {
+    status: 409,
+    message: 'Этот факт уже изменён. Обновите страницу',
+  },
   NO_CONFIRMED_CLAIMS: {
     status: 409,
     message: 'Сначала подтвердите факты письма',

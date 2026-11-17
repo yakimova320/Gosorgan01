@@ -14,7 +14,49 @@ export interface DocumentText {
   mime: string;
   sourceType: 'PDF_TEXT' | 'IMAGE';
   text: string;
-  pages: { n: number; readable: boolean; chars: number }[];
+  /** Метаданные страниц для базы: start и end — границы текста страницы в text. */
+  pages: {
+    n: number;
+    readable: boolean;
+    chars: number;
+    start: number;
+    end: number;
+  }[];
+  /** Текст каждой страницы отдельно (только в памяти): проверка цитат и номеров страниц. */
+  pageTexts: { n: number; text: string }[];
+  /** Сколько обращений к модели потрачено (фото), из общего бюджета 3 на загрузку. */
+  llmAttempts: number;
+}
+
+/** На распознавание фото не больше 2 обращений: хотя бы одно остаётся на извлечение фактов. */
+export const TRANSCRIBE_MAX_ATTEMPTS = 2;
+
+/** Склеивает страницы в один текст и запоминает границы каждой страницы (без разбора маркеров). */
+export function joinPages(pageTexts: { n: number; text: string }[]): {
+  text: string;
+  pages: {
+    n: number;
+    readable: boolean;
+    chars: number;
+    start: number;
+    end: number;
+  }[];
+} {
+  let text = '';
+  const pages = pageTexts.map((p, i) => {
+    if (pageTexts.length > 1)
+      text += `${i ? '\n\n' : ''}--- Seite ${p.n} ---\n`;
+    const start = text.length;
+    text += p.text;
+    return {
+      n: p.n,
+      readable: true,
+      chars: p.text.length,
+      start,
+      end: text.length,
+    };
+  });
+  return { text, pages };
 }
 
 /** Тексты для человека по коду причины. Текст модели о причине не показывается. */
@@ -52,31 +94,25 @@ export class DocumentsService {
     context: { cabinetId: string; letterId: string },
   ): Promise<DocumentText> {
     if (kind === 'pdf') {
-      const pages = await readPdfText(data);
-      const text =
-        pages.length === 1
-          ? pages[0].text
-          : pages.map((p) => `--- Seite ${p.n} ---\n${p.text}`).join('\n\n');
+      const pageTexts = await readPdfText(data);
       return {
         kind,
         mime: MIME.pdf,
         sourceType: 'PDF_TEXT',
-        text,
-        pages: pages.map((p) => ({
-          n: p.n,
-          readable: true,
-          chars: p.text.length,
-        })),
+        ...joinPages(pageTexts),
+        pageTexts,
+        llmAttempts: 0,
       };
     }
 
     // Ошибки связи, квоты и неверного ответа модели остаются LLM_FAILED / LLM_QUOTA.
-    const result = await this.llm.call({
+    const { data: result, attempts } = await this.llm.callWithTrace({
       prompt: 'transcribe',
       variables: {},
       images: [{ mime: MIME[kind], data }],
       schema: TranscribeSchema,
       check: checkTranscribe,
+      maxAttempts: TRANSCRIBE_MAX_ATTEMPTS,
       context,
     });
     if (!result.readable) {
@@ -94,8 +130,9 @@ export class DocumentsService {
       kind,
       mime: MIME[kind],
       sourceType: 'IMAGE',
-      text,
-      pages: [{ n: 1, readable: true, chars: text.length }],
+      ...joinPages([{ n: 1, text }]),
+      pageTexts: [{ n: 1, text }],
+      llmAttempts: attempts,
     };
   }
 }
