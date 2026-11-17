@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   API_URL,
   clientNavigate,
@@ -15,6 +15,25 @@ import {
  */
 
 const LIVE = process.env.JASNO_E2E_LIVE === '1';
+/**
+ * Live: ждать шага и сразу остановиться с понятной причиной, если провайдер модели перегружен.
+ * В demo — обычное ожидание.
+ */
+async function step(page: Page, waitFor: () => Promise<unknown>) {
+  if (!LIVE) return waitFor();
+  const busy = page
+    .getByText(/перегружен/i)
+    .first()
+    .waitFor({ state: 'visible', timeout: 300_000 })
+    .then(() => 'busy' as const, () => 'done' as const);
+  const result = await Promise.race([waitFor().then(() => 'done' as const), busy]);
+  if (result === 'busy')
+    throw new Error(
+      'Провайдер модели перегружен (LLM_QUOTA). Это не ошибка кода: повторите позже или с другой моделью, ' +
+        'например LLM_MODEL=gemini-3.5-flash-lite pnpm --filter jasno-web e2e:live',
+    );
+}
+
 const fixture = resolve(
   import.meta.dirname,
   '..',
@@ -37,7 +56,8 @@ test('основной путь: от регистрации до скопиро
   };
   // live: настоящая модель, иначе demo
   expect(health.llmMode === 'demo').toBe(!LIVE);
-  if (LIVE) console.log(`e2e:live: llmMode=${health.llmMode}`);
+  if (LIVE)
+    console.log(`e2e:live: llmMode=${health.llmMode}${process.env.LLM_MODEL ? `, LLM_MODEL=${process.env.LLM_MODEL}` : ''}`);
 
   // 1. Регистрация
   await page.goto('/register');
@@ -53,7 +73,7 @@ test('основной путь: от регистрации до скопиро
   await page.getByRole('link', { name: 'Сфотографировать письмо' }).click();
   await page.getByTestId('file-input').setInputFiles(fixture);
   await page.getByRole('button', { name: 'Готово, читать письмо' }).click();
-  await expect(page).toHaveURL(/\/check$/, { timeout: wait });
+  await step(page, () => expect(page).toHaveURL(/\/check$/, { timeout: wait }));
 
   // 3. Факты: всё «Верно», одно сохранение
   await expect(page.getByTestId('claim').first()).toBeVisible();
@@ -76,7 +96,7 @@ test('основной путь: от регистрации до скопиро
   await expect(page.getByTestId('case-letter')).toHaveCount(1);
   const caseUrl = page.url();
   await page.getByRole('link', { name: 'Объяснение' }).click();
-  await expect(page.getByTestId('explanation')).toBeVisible({ timeout: wait });
+  await step(page, () => expect(page.getByTestId('explanation')).toBeVisible({ timeout: wait }));
 
   // 6. Черновик
   await page.goto(caseUrl);

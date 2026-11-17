@@ -28,8 +28,9 @@ if (process.env.JASNO_E2E_LIVE === '1') {
   if (!existsSync(file))
     throw new Error('e2e:live: нет api/.env с настройками модели');
   const all = parseEnv(readFileSync(file, 'utf8'));
+  // Значение из окружения важнее файла: можно один раз запустить с другой моделью (LLM_MODEL=… pnpm e2e:live).
   model = Object.fromEntries(
-    MODEL_KEYS.filter((k) => all[k]).map((k) => [k, all[k]]),
+    MODEL_KEYS.map((k) => [k, process.env[k] ?? all[k]]).filter((e) => e[1]),
   );
   console.log(
     `e2e:live: модель ${model.LLM_MODE ?? '?'} / ${model.LLM_MODEL ?? '?'} (ключ не выводится)`,
