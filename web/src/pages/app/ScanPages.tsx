@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../../api';
 import { errorText } from '../../api/errors';
 import { useFlow } from '../../app/flow';
-import { Link, Redirect, useRouter } from '../../app/router';
-import { useSession } from '../../app/session';
+import { Link, Navigate, useNavigate } from 'react-router';
+import { useUploadLetterMutation } from '../../store/api';
+import { putUploadFiles } from '../../store/uploads';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { DemoNote, ErrorAlert, PageHeader } from '../../components/ui';
@@ -31,7 +31,7 @@ function Steps({ n }: { n: 1 | 2 | 3 | 4 | 5 }) {
 /** Шаг 1: снимок или файл. */
 export function ScanStartPage() {
   const { pages, addFiles } = useFlow();
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const camera = useRef<HTMLInputElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -80,11 +80,11 @@ export function ScanStartPage() {
 /** Шаг 2: проверка страниц. */
 export function ScanPagesPage() {
   const { pages, removePage, movePage } = useFlow();
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const total = pages.reduce((s, p) => s + p.file.size, 0);
   const tooBig = total > MAX_LETTER_MB * 1024 * 1024;
 
-  if (pages.length === 0) return <Redirect to="/app/scan" />;
+  if (pages.length === 0) return <Navigate to="/app/scan" replace />;
 
   return (
     <>
@@ -126,9 +126,9 @@ export function ScanPagesPage() {
 
 /** Шаг 3: Ja!sno читает. Показываем только реальное состояние запроса, без придуманных галочек. */
 export function ScanReadingPage() {
-  const { token } = useSession();
+  const [uploadLetter] = useUploadLetterMutation();
   const { pages, setUpload } = useFlow();
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const started = useRef(-1);
@@ -137,19 +137,16 @@ export function ScanReadingPage() {
     if (pages.length === 0 || started.current === attempt) return;
     started.current = attempt; // защита от двойной отправки
     setError(null);
-    api
-      .uploadLetter(
-        token,
-        pages.map((p) => p.file),
-      )
+    uploadLetter(putUploadFiles(pages.map((p) => p.file)))
+      .unwrap()
       .then((r) => {
         setUpload(r);
         navigate('/app/scan/facts', { replace: true });
       })
       .catch(setError);
-  }, [attempt, pages, token, setUpload, navigate]);
+  }, [attempt, pages, uploadLetter, setUpload, navigate]);
 
-  if (pages.length === 0) return <Redirect to="/app/scan" />;
+  if (pages.length === 0) return <Navigate to="/app/scan" replace />;
 
   return (
     <>
@@ -185,8 +182,8 @@ export function ScanReadingPage() {
 /** Шаг 4: проверка фактов с цитатами. */
 export function ScanFactsPage() {
   const { upload, decisions, decide } = useFlow();
-  const { navigate } = useRouter();
-  if (!upload) return <Redirect to="/app/scan" />;
+  const navigate = useNavigate();
+  if (!upload) return <Navigate to="/app/scan" replace />;
   const claims = upload.claims;
   const checked = claims.filter((c) => decisions[c.id]).length;
 
@@ -236,10 +233,10 @@ export function ScanFactsPage() {
 /** Шаг 5: в какое дело положить письмо. */
 export function ScanAssignPage() {
   const { upload, resetScan } = useFlow();
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const [choice, setChoice] = useState<string>(upload?.suggestions[0]?.caseId ?? 'new');
   const [error] = useState<unknown>(null);
-  if (!upload) return <Redirect to="/app/scan" />;
+  if (!upload) return <Navigate to="/app/scan" replace />;
 
   function finish(target: 'case' | 'inbox' | 'delete') {
     resetScan();

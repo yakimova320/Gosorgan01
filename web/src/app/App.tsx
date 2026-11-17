@@ -1,15 +1,57 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
+import { Provider } from 'react-redux';
+import {
+  createBrowserRouter,
+  createHashRouter,
+  createMemoryRouter,
+  Navigate,
+  Outlet,
+  useParams,
+  useSearchParams,
+  type RouteObject,
+} from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 import { AppShell, ModeBadge, PublicLayout } from '../components/layout';
-import { AnswerDetailsPage, AnswerDraftPage, AnswerGoalPage, AnswerSendPage, DonePage } from '../pages/app/AnswerPages';
-import { CabinetPage, CasePage, CasesPage, HistoryPage, LetterPage } from '../pages/app/CabinetPages';
+import {
+  AnswerDetailsPage,
+  AnswerDraftPage,
+  AnswerGoalPage,
+  AnswerSendPage,
+  DonePage,
+} from '../pages/app/AnswerPages';
+import {
+  CabinetPage,
+  CasePage,
+  CasesPage,
+  HistoryPage,
+  LetterPage,
+} from '../pages/app/CabinetPages';
 import { AskPage, ProfilePage, WritePage } from '../pages/app/MorePages';
-import { ScanAssignPage, ScanFactsPage, ScanPagesPage, ScanReadingPage, ScanStartPage } from '../pages/app/ScanPages';
-import { ForgotPage, LoginPage, RegisterPage, ResetPage } from '../pages/public/AuthPages';
-import { BeratungPage, FaqPage, NotFoundPage, WissenPage } from '../pages/public/InfoPages';
+import {
+  ScanAssignPage,
+  ScanFactsPage,
+  ScanPagesPage,
+  ScanReadingPage,
+  ScanStartPage,
+} from '../pages/app/ScanPages';
+import {
+  ForgotPage,
+  LoginPage,
+  RegisterPage,
+  ResetPage,
+} from '../pages/public/AuthPages';
+import {
+  BeratungPage,
+  FaqPage,
+  NotFoundPage,
+  WissenPage,
+} from '../pages/public/InfoPages';
 import { StartPage } from '../pages/public/StartPage';
 import { FlowProvider } from './flow';
-import { matchPath, Redirect, RouterProvider, useRouter, type Params } from './router';
-import { SessionProvider, useSession } from './session';
+import { createStore, useSession } from '../store';
+import { readStoredToken } from '../store/session';
+
+type Params = Record<string, string>;
 
 interface Route {
   path: string;
@@ -34,17 +76,49 @@ export const ROUTES: Route[] = [
 
   { path: '/app', area: 'cabinet', render: () => <CabinetPage /> },
   { path: '/app/cases', area: 'cabinet', render: () => <CasesPage /> },
-  { path: '/app/cases/:id', area: 'cabinet', render: (p) => <CasePage id={p.id} /> },
-  { path: '/app/cases/:id/answer', area: 'cabinet', render: (p) => <AnswerGoalPage caseId={p.id} /> },
-  { path: '/app/cases/:id/answer/details', area: 'cabinet', render: (p) => <AnswerDetailsPage caseId={p.id} /> },
-  { path: '/app/cases/:id/answer/draft', area: 'cabinet', render: (p) => <AnswerDraftPage caseId={p.id} /> },
-  { path: '/app/cases/:id/answer/send', area: 'cabinet', render: (p) => <AnswerSendPage caseId={p.id} /> },
-  { path: '/app/letters/:id', area: 'cabinet', render: (p, s) => <LetterPage id={p.id} caseId={s.get('case')} /> },
+  {
+    path: '/app/cases/:id',
+    area: 'cabinet',
+    render: (p) => <CasePage id={p.id} />,
+  },
+  {
+    path: '/app/cases/:id/answer',
+    area: 'cabinet',
+    render: (p) => <AnswerGoalPage caseId={p.id} />,
+  },
+  {
+    path: '/app/cases/:id/answer/details',
+    area: 'cabinet',
+    render: (p) => <AnswerDetailsPage caseId={p.id} />,
+  },
+  {
+    path: '/app/cases/:id/answer/draft',
+    area: 'cabinet',
+    render: (p) => <AnswerDraftPage caseId={p.id} />,
+  },
+  {
+    path: '/app/cases/:id/answer/send',
+    area: 'cabinet',
+    render: (p) => <AnswerSendPage caseId={p.id} />,
+  },
+  {
+    path: '/app/letters/:id',
+    area: 'cabinet',
+    render: (p, s) => <LetterPage id={p.id} caseId={s.get('case')} />,
+  },
   { path: '/app/scan', area: 'cabinet', render: () => <ScanStartPage /> },
   { path: '/app/scan/pages', area: 'cabinet', render: () => <ScanPagesPage /> },
-  { path: '/app/scan/reading', area: 'cabinet', render: () => <ScanReadingPage /> },
+  {
+    path: '/app/scan/reading',
+    area: 'cabinet',
+    render: () => <ScanReadingPage />,
+  },
   { path: '/app/scan/facts', area: 'cabinet', render: () => <ScanFactsPage /> },
-  { path: '/app/scan/assign', area: 'cabinet', render: () => <ScanAssignPage /> },
+  {
+    path: '/app/scan/assign',
+    area: 'cabinet',
+    render: () => <ScanAssignPage />,
+  },
   { path: '/app/history', area: 'cabinet', render: () => <HistoryPage /> },
   { path: '/app/ask', area: 'cabinet', render: () => <AskPage /> },
   { path: '/app/write', area: 'cabinet', render: () => <WritePage /> },
@@ -52,35 +126,84 @@ export const ROUTES: Route[] = [
   { path: '/app/done', area: 'cabinet', render: () => <DonePage /> },
 ];
 
-function Screen() {
-  const { path, search } = useRouter();
-  const { token } = useSession();
+/** Адрес после «#»: сайт открыт как файл (офлайн-показ) или демо-сборка с window.__JASNO_HASH__ = true. */
+const HASH_MODE =
+  typeof window !== 'undefined' &&
+  (window.location.protocol === 'file:' ||
+    (window as unknown as { __JASNO_HASH__?: boolean }).__JASNO_HASH__ ===
+      true);
 
-  for (const route of ROUTES) {
-    const params = matchPath(route.path, path);
-    if (!params) continue;
-    if (route.area === 'cabinet') {
-      if (!token) return <Redirect to="/login" />;
-      return <AppShell key={route.path}>{route.render(params, search)}</AppShell>;
-    }
-    return <PublicLayout key={route.path}>{route.render(params, search)}</PublicLayout>;
+function RouteScreen({ route }: { route: Route }) {
+  const params = useParams() as Params;
+  const [search] = useSearchParams();
+  const { token } = useSession();
+  if (route.area === 'cabinet') {
+    if (!token) return <Navigate to="/login" replace />;
+    return <AppShell key={route.path}>{route.render(params, search)}</AppShell>;
   }
   return (
-    <PublicLayout>
-      <NotFoundPage />
-    </PublicLayout>
+    <PublicLayout key={route.path}>{route.render(params, search)}</PublicLayout>
   );
 }
 
-export function App({ initialPath, initialToken }: { initialPath?: string; initialToken?: string | null }) {
+/** Общая оболочка всех маршрутов: остаётся на месте при переходах, поэтому состояние сценария не теряется. */
+function Root() {
   return (
-    <SessionProvider initialToken={initialToken}>
-      <RouterProvider initialPath={initialPath}>
-        <FlowProvider>
-          <ModeBadge />
-          <Screen />
-        </FlowProvider>
-      </RouterProvider>
-    </SessionProvider>
+    <FlowProvider>
+      <ModeBadge />
+      <Outlet />
+    </FlowProvider>
+  );
+}
+
+const ROUTE_OBJECTS: RouteObject[] = [
+  {
+    element: <Root />,
+    children: [
+      ...ROUTES.map((route) => ({
+        path: route.path,
+        element: <RouteScreen route={route} />,
+      })),
+      {
+        path: '*',
+        element: (
+          <PublicLayout>
+            <NotFoundPage />
+          </PublicLayout>
+        ),
+      },
+    ],
+  },
+];
+
+/** initialPath и initialToken нужны для тестов и офлайн-показа; без них адрес и токен берутся из браузера. */
+export function App({
+  initialPath,
+  initialToken,
+}: {
+  initialPath?: string;
+  initialToken?: string | null;
+}) {
+  const store = useMemo(
+    () =>
+      createStore({
+        token: initialToken !== undefined ? initialToken : readStoredToken(),
+        expired: false,
+      }),
+    [initialToken],
+  );
+  const router = useMemo(() => {
+    if (initialPath)
+      return createMemoryRouter(ROUTE_OBJECTS, {
+        initialEntries: [initialPath],
+      });
+    return HASH_MODE
+      ? createHashRouter(ROUTE_OBJECTS)
+      : createBrowserRouter(ROUTE_OBJECTS);
+  }, [initialPath]);
+  return (
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   );
 }

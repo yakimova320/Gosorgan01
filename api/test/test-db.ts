@@ -19,12 +19,13 @@ export function createTestDatabase(): {
   url: string;
   cleanup: () => Promise<void>;
 } {
-  const schema = `test_${randomBytes(6).toString('hex')}`;
+  const schema = `test_${Date.now()}_${randomBytes(4).toString('hex')}`;
   const base = new URL(BASE_URL);
   base.searchParams.delete('schema');
   const url = new URL(base);
   url.searchParams.set('schema', schema);
 
+  sweepStaleSchemas(base.toString(), 'test_');
   execFileSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
     cwd: API_DIR,
     env: { ...process.env, DATABASE_URL: url.toString() },
@@ -43,4 +44,32 @@ export function createTestDatabase(): {
       }
     },
   };
+}
+
+/**
+ * Удаляет схемы prefix<время>_..., которые старше часа: остатки прогонов, упавших до cleanup.
+ * Свежие схемы не трогает, чтобы не мешать параллельному прогону. Работает в фоне.
+ */
+export function sweepStaleSchemas(baseUrl: string, prefix: string): void {
+  void (async () => {
+    const client = new pg.Client({ connectionString: baseUrl });
+    try {
+      await client.connect();
+      const { rows } = await client.query<{ name: string }>(
+        `SELECT schema_name AS name FROM information_schema.schemata WHERE schema_name LIKE $1`,
+        [`${prefix}%`],
+      );
+      const hourAgo = Date.now() - 60 * 60 * 1000;
+      for (const { name } of rows) {
+        const started = Number(name.slice(prefix.length).split('_')[0]);
+        if (Number.isFinite(started) && started < hourAgo) {
+          await client.query(`DROP SCHEMA IF EXISTS "${name}" CASCADE`);
+        }
+      }
+    } catch {
+      // Уборка не обязательна: тесты работают и без неё.
+    } finally {
+      await client.end().catch(() => undefined);
+    }
+  })();
 }

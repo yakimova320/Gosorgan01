@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useRouter } from '../../app/router';
+import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { PageHeader } from '../../components/ui';
@@ -73,7 +73,7 @@ function CardView({ card }: { card: Card }) {
 }
 
 export function WissenPage() {
-  const { search } = useRouter();
+  const [search] = useSearchParams();
   const [topic, setTopic] = useState<string>(search.get('topic') ?? TOPICS[0].id);
   const [query, setQuery] = useState('');
 

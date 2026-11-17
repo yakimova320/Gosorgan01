@@ -1,20 +1,18 @@
 import { useState } from 'react';
-import { api } from '../../api';
 import { errorCode } from '../../api/errors';
 import type { Draft, DraftKind } from '../../api/types';
 import { useFlow } from '../../app/flow';
-import { Link, useRouter } from '../../app/router';
-import { useSession } from '../../app/session';
+import { Link, useNavigate } from 'react-router';
+import { useDraftQuery } from '../../store/api';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { DemoNote, ErrorAlert, Loading, PageHeader } from '../../components/ui';
 import { DRAFT_KIND } from '../../lib/labels';
-import { useAsync } from '../../lib/useAsync';
 
 /** Шаг 1: цель ответа. */
 export function AnswerGoalPage({ caseId }: { caseId: string }) {
   const { answer, setAnswer } = useFlow();
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -61,7 +59,7 @@ const QUESTIONS = ['Какие именно документы нужны?', 'М
 /** Шаг 2: что именно непонятно (для запроса уточнения). */
 export function AnswerDetailsPage({ caseId }: { caseId: string }) {
   const { answer, setAnswer } = useFlow();
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const [q, setQ] = useState(answer.question);
 
   return (
@@ -115,12 +113,11 @@ function DraftText({ draft }: { draft: Draft }) {
 
 /** Шаг 3: проверка черновика. */
 export function AnswerDraftPage({ caseId }: { caseId: string }) {
-  const { token } = useSession();
   const { answer } = useFlow();
-  const d = useAsync(() => api.draft(token, caseId, answer.kind, answer.question), [token, caseId, answer.kind, answer.question]);
+  const d = useDraftQuery({ caseId, kind: answer.kind, question: answer.question });
   const [copied, setCopied] = useState(false);
 
-  if (d.loading) return <Loading text="Собираем черновик из подтверждённых фактов…" />;
+  if (d.isLoading) return <Loading text="Собираем черновик из подтверждённых фактов…" />;
   if (d.error) {
     return (
       <>

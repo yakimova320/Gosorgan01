@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { errorText } from '../api/errors';
 import type { CaseStage, CaseSummary } from '../api/types';
-import { Link, useRouter } from '../app/router';
+import { Link, useNavigate } from 'react-router';
 import { dayMonth, deadlineText, formatDate } from '../lib/dates';
 import { initials, STAGE } from '../lib/labels';
 import { Icon } from './Icon';
@@ -31,7 +31,8 @@ export function StageChip({ stage }: { stage: CaseStage }) {
 }
 
 export function PageHeader({ title, subtitle, back }: { title: string; subtitle?: string; back?: string }) {
-  const { back: goBack } = useRouter();
+  const navigate = useNavigate();
+  const goBack = (fallback: string) => (window.history.length > 1 ? navigate(-1) : navigate(fallback));
   return (
     <div className="stack-s">
       {back && (

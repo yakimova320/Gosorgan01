@@ -1,7 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { api } from '../../api';
-import { Link, useRouter } from '../../app/router';
-import { useSession } from '../../app/session';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useAppDispatch, useSession } from '../../store';
+import { useForgotPasswordMutation, useLoginMutation, useRegisterMutation, useResetPasswordMutation } from '../../store/api';
+import { signedIn } from '../../store/session';
 import { ErrorAlert } from '../../components/ui';
 
 const PASSWORD_MIN = 10;
@@ -23,8 +24,10 @@ function AuthCard({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function LoginPage() {
-  const { signIn, expired } = useSession();
-  const { navigate } = useRouter();
+  const { expired } = useSession();
+  const dispatch = useAppDispatch();
+  const [login] = useLoginMutation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<unknown>(null);
@@ -36,8 +39,8 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const { sessionToken } = await api.login({ email: email.trim().toLowerCase(), password });
-      signIn(sessionToken);
+      const { sessionToken } = await login({ email: email.trim().toLowerCase(), password }).unwrap();
+      dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
       setError(err);
@@ -81,8 +84,9 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
-  const { signIn } = useSession();
-  const { navigate } = useRouter();
+  const dispatch = useAppDispatch();
+  const [register] = useRegisterMutation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
@@ -100,8 +104,8 @@ export function RegisterPage() {
     setBusy(true);
     setError(null);
     try {
-      const { sessionToken } = await api.register({ email: email.trim().toLowerCase(), password, consent });
-      signIn(sessionToken);
+      const { sessionToken } = await register({ email: email.trim().toLowerCase(), password, consent }).unwrap();
+      dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
       setError(err);
@@ -149,6 +153,7 @@ export function RegisterPage() {
 }
 
 export function ForgotPage() {
+  const [forgotPassword] = useForgotPasswordMutation();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -160,7 +165,7 @@ export function ForgotPage() {
     setBusy(true);
     setError(null);
     try {
-      await api.forgotPassword(email.trim().toLowerCase());
+      await forgotPassword(email.trim().toLowerCase()).unwrap();
       setSent(true);
     } catch (err) {
       setError(err);
@@ -196,7 +201,9 @@ export function ForgotPage() {
 }
 
 export function ResetPage() {
-  const { search, navigate } = useRouter();
+  const [resetPassword] = useResetPasswordMutation();
+  const [search] = useSearchParams();
+  const navigate = useNavigate();
   const token = search.get('token') ?? '';
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
@@ -212,7 +219,7 @@ export function ResetPage() {
     setBusy(true);
     setError(null);
     try {
-      await api.resetPassword(token, pw);
+      await resetPassword({ token, newPassword: pw }).unwrap();
       navigate('/login?reset=1', { replace: true });
     } catch (err) {
       setError(err);
