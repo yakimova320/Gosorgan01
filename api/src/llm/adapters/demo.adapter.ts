@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   AdapterError,
   type AdapterRequest,
@@ -16,9 +19,11 @@ export class DemoAdapter implements LlmAdapter {
 
   private readonly handlers: Record<
     string,
-    (variables: Record<string, string>) => unknown
+    (variables: Record<string, string>, request: AdapterRequest) => unknown
   > = {
     extract: (v) => demoExtract(v.letterText ?? ''),
+    transcribe: (_v, request) =>
+      demoTranscribe(request.images.map((i) => i.data)),
   };
 
   async complete(request: AdapterRequest): Promise<AdapterResponse> {
@@ -28,7 +33,7 @@ export class DemoAdapter implements LlmAdapter {
         'BAD_REQUEST',
         `demo: нет правил для промпта ${request.promptName}`,
       );
-    return { text: JSON.stringify(handler(request.variables)) };
+    return { text: JSON.stringify(handler(request.variables, request)) };
   }
 }
 
@@ -101,4 +106,78 @@ export function demoExtract(text: string) {
     deadlines,
     amounts,
   };
+}
+
+/** Папка с синтетическими письмами: из src/llm/adapters и dist/llm/adapters на четыре уровня выше. */
+const FIXTURES_DIR = resolve(
+  import.meta.dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'fixtures',
+  'letters',
+);
+
+interface FixturePhoto {
+  text: string;
+  readable: boolean;
+}
+let fixturePhotos: Map<string, FixturePhoto> | null = null;
+
+/** sha256 фото из fixtures/letters → текст и читаемость эталона. Без папки: пустой список. */
+function loadFixturePhotos(): Map<string, FixturePhoto> {
+  const map = new Map<string, FixturePhoto>();
+  if (!existsSync(FIXTURES_DIR)) return map;
+  for (const name of readdirSync(FIXTURES_DIR).filter((f) =>
+    f.endsWith('.json'),
+  )) {
+    try {
+      const meta = JSON.parse(
+        readFileSync(resolve(FIXTURES_DIR, name), 'utf8'),
+      ) as {
+        file?: string;
+        text?: string;
+        readable?: boolean;
+      };
+      // Фото письма: поле file или файл с тем же именем (.jpg, .png), например 09_scan.png.
+      const base = name.replace(/\.json$/, '');
+      const candidates = [meta.file, `${base}.jpg`, `${base}.png`].filter(
+        (f): f is string =>
+          !!f &&
+          /\.(jpe?g|png)$/i.test(f) &&
+          existsSync(resolve(FIXTURES_DIR, f)),
+      );
+      for (const file of new Set(candidates)) {
+        const image = readFileSync(resolve(FIXTURES_DIR, file));
+        map.set(sha256(image), {
+          text: meta.text ?? '',
+          readable: meta.readable !== false,
+        });
+      }
+    } catch {
+      // повреждённый эталон пропускаем: demo не должен падать из-за fixtures
+    }
+  }
+  return map;
+}
+
+function sha256(data: Buffer): string {
+  return createHash('sha256').update(data).digest('hex');
+}
+
+/**
+ * transcribe в режиме demo: узнаёт только фото из fixtures/letters по хэшу.
+ * Любое другое фото: честно «не прочитано» (DEMO_UNKNOWN), без придуманного текста.
+ */
+export function demoTranscribe(images: Buffer[]): {
+  text: string;
+  readable: boolean;
+  reason: string | null;
+} {
+  fixturePhotos ??= loadFixturePhotos();
+  const known = images[0] ? fixturePhotos.get(sha256(images[0])) : undefined;
+  if (!known) return { text: '', readable: false, reason: 'DEMO_UNKNOWN' };
+  if (!known.readable) return { text: '', readable: false, reason: 'BLURRY' };
+  return { text: known.text, readable: true, reason: null };
 }

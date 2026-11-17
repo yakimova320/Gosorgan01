@@ -26,6 +26,16 @@ export const ERROR_CODES = {
     message: 'Сначала подтвердите факты письма',
   },
   FILE_TOO_LARGE: { status: 413, message: 'Файл слишком большой' },
+  NO_FILE: { status: 400, message: 'Выберите файл письма: PDF, JPG или PNG' },
+  FILE_DAMAGED: {
+    status: 422,
+    message: 'Файл повреждён или не открывается. Попробуйте другой файл',
+  },
+  PDF_ENCRYPTED: {
+    status: 422,
+    message:
+      'PDF защищён паролем. Сохраните его без пароля или сфотографируйте письмо',
+  },
   LETTER_TOO_LARGE: {
     status: 413,
     message: 'Файлы письма вместе слишком большие',

@@ -17,7 +17,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "llm:check": "tsc -p tsconfig.build.json && node dist/scripts/llm-check.js"
+    "llm:check": "tsc -p tsconfig.build.json && node dist/scripts/llm-check.js",
+    "llm:check:photo": "tsc -p tsconfig.build.json && node dist/scripts/transcribe-check.js"
   },
   "dependencies": {
     "@jasno/shared": "workspace:*",
@@ -28,6 +29,8 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "bcryptjs": "^3.0.3",
+    "multer": "^2.5.0",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -37,9 +40,11 @@
     "@nestjs/cli": "^12.0.0",
     "@nestjs/testing": "^12.4.2",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
+    "pdf-lib": "^1.17.1",
     "prisma": "7.10.1",
     "supertest": "^7.3.2",
     "typescript": "^6.0.2",

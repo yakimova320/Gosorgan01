@@ -129,6 +129,14 @@ pnpm build
 
 Коллекция: `api/postman/jasno.postman_collection.json`, окружение: `api/postman/local.postman_environment.json`. В Postman: «Import», выбрать оба файла, вверху справа выбрать окружение «Ja!sno local», потом «Run collection».
 
+Папка «02 Письма и факты» загружает файлы из `fixtures/letters`. В Postman: Settings → General → Working directory = папка проекта `Gosorgan01`. Сервер должен работать в режиме `LLM_MODE=demo`, иначе фото уходят в настоящую модель.
+
+Из терминала (в папке проекта, сервер запущен):
+
+```bash
+pnpm dlx newman run api/postman/jasno.postman_collection.json -e api/postman/local.postman_environment.json --working-dir .
+```
+
 ## Заглушки
 
 Временные решения в коде помечены `// STUB:` и перечислены здесь.
