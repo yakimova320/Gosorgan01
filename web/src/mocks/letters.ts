@@ -118,3 +118,13 @@ export function mockCorrect(
 export function mockDelete(id: string): void {
   letters.delete(id);
 }
+
+export function mockAssign(
+  id: string,
+  caseId: string,
+): { caseId: string; changed: boolean } | ApiError {
+  const l = letters.get(id);
+  if (!l) return apiError('NOT_FOUND', 404);
+  letters.delete(id); // во входящих больше нет; дела в mock — примерные данные
+  return { caseId, changed: true };
+}

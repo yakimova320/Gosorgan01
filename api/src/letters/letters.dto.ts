@@ -90,3 +90,16 @@ export const DeleteLetterQuerySchema = z
 export const ListLettersQuerySchema = z
   .object({ inbox: z.enum(['true', 'false']).optional() })
   .strict();
+
+/** В дело: существующее дело или новое (название необязательно). */
+export const AssignLetterSchema = z.union([
+  z.object({ caseId: z.string().min(1).max(64) }).strict(),
+  z
+    .object({
+      newCase: z
+        .object({ title: z.string().trim().min(1).max(120).optional() })
+        .strict(),
+    })
+    .strict(),
+]);
+export type AssignLetterInput = z.infer<typeof AssignLetterSchema>;

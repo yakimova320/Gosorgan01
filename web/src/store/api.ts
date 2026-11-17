@@ -1,6 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { MOCK_CABINET, MOCK_CASES } from '../mocks/data';
 import {
+  mockAssign,
   mockConfirm,
   mockCorrect,
   mockDelete,
@@ -301,6 +302,36 @@ export const api = createApi({
     }),
 
     /** Полное удаление письма. «Оставить во входящих» запроса не требует: письмо уже во входящих. */
+    /** «В дело»: существующее дело или новое. Факты и сроки переходят вместе с письмом. */
+    assignLetter: b.mutation<
+      { caseId: string; changed: boolean },
+      {
+        id: string;
+        target: { caseId: string } | { newCase: { title?: string } };
+      }
+    >({
+      queryFn: ({ id, target }, _api, _x, base) => {
+        if (isMock) {
+          const r = mockAssign(
+            id,
+            'caseId' in target ? target.caseId : 'case-jc',
+          );
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'POST',
+          path: `/letters/${encodeURIComponent(id)}/assign`,
+          body: target,
+        }) as Promise<Result<{ caseId: string; changed: boolean }>>;
+      },
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Letter', id: a.id },
+        'Letters',
+        'Cabinet',
+        { type: 'Case', id: 'LIST' },
+      ],
+    }),
+
     deleteLetter: b.mutation<void, string>({
       queryFn: async (id, _api, _x, base) => {
         if (isMock) return ok(mockDelete(id));
@@ -315,7 +346,12 @@ export const api = createApi({
     // ---------- Дела (B07) ----------
 
     cases: b.query<CaseSummary[], void>({
-      queryFn: () => (isMock ? ok(MOCK_CASES.map(summary)) : notConnected()),
+      queryFn: (_a, _api, _x, base) =>
+        isMock
+          ? ok(MOCK_CASES.map(summary))
+          : (base({ path: '/cases?status=all' }) as Promise<
+              Result<CaseSummary[]>
+            >),
       providesTags: [{ type: 'Case', id: 'LIST' }],
     }),
 
@@ -399,5 +435,6 @@ export const {
   useConfirmClaimsMutation,
   useCorrectClaimMutation,
   useDeleteLetterMutation,
+  useAssignLetterMutation,
   useUpdateProfileMutation,
 } = api;

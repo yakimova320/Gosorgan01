@@ -80,7 +80,7 @@ export function CaseRow({ c, index = 0 }: { c: CaseSummary; index?: number }) {
   const s = STAGE[c.stage];
   const subtitle = c.nextDeadline ? `${c.authority ?? ''} · до ${formatDate(c.nextDeadline)}` : (c.authority ?? '');
   return (
-    <Link to={`/app/cases/${c.id}`} className="card row" style={{ padding: '10px 14px 10px 10px', borderRadius: 20 }}>
+    <Link to={`/app/cases/${c.id}`} className="card row" data-testid="case-row" style={{ padding: '10px 14px 10px 10px', borderRadius: 20 }}>
       <AuthorityBadge name={c.authority} color={BADGE_COLORS[index % BADGE_COLORS.length]} />
       <div className="stack-s" style={{ flex: 1, minWidth: 0, gap: 5 }}>
         <div className="row-between">

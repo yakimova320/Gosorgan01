@@ -4,6 +4,7 @@ import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CabinetModule } from './cabinet/cabinet.module.js';
+import { CasesModule } from './cases/cases.module.js';
 import { LettersModule } from './letters/letters.module.js';
 import { LlmModule } from './llm/llm.module.js';
 
@@ -20,6 +21,7 @@ export class AppModule {
         CabinetModule,
         LlmModule,
         LettersModule,
+        CasesModule,
       ],
       controllers: [HealthController],
     };
