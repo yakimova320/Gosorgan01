@@ -1,9 +1,13 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useSession } from '../store';
 import type { DraftKind, UploadResult } from '../api/types';
 
 /*
  * Состояние многошаговых сценариев, пока человек идёт по шагам.
  * Хранится только в памяти страницы: после перезагрузки сценарий начинается заново.
+ * Файлы и превью здесь, а не в Redux: File не сериализуется (TechBriefing v5, 4.1).
+ * При входе, выходе и смене пользователя всё сбрасывается: данные прошлого пользователя не остаются.
+ * Перенос сценария на сервер (letterId в URL): F02 и F04.
  */
 
 export interface PickedPage {
@@ -67,6 +71,21 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     setUpload(null);
     setDecisions({});
   }, []);
+
+  const { token } = useSession();
+  const lastToken = useRef(token);
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
+
+  useEffect(() => {
+    if (lastToken.current === token) return;
+    lastToken.current = token;
+    resetScan();
+    setAnswer({ kind: 'CLARIFICATION', question: '' });
+  }, [token, resetScan]);
+
+  // Уход со страницы: освободить адреса превью.
+  useEffect(() => () => pagesRef.current.forEach((x) => URL.revokeObjectURL(x.url)), []);
 
   const value = useMemo(
     () => ({ pages, addFiles, removePage, movePage, upload, setUpload, decisions, decide, answer, setAnswer, resetScan }),

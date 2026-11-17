@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { DATA_MODE, IS_PRODUCTION } from '../api/config';
-import { Link, NavLink } from '../app/router';
-import { useSession } from '../app/session';
+import { Link, NavLink } from 'react-router';
+import { useSession } from '../store';
 import { Icon } from './Icon';
 import { Logo } from './ui';
 
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Icon name="scan" size={20} color="#FFFFFF" width={2.2} /> Новое письмо
         </Link>
         {MAIN_NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} exact={n.exact}>
+          <NavLink key={n.to} to={n.to} end={n.exact}>
             <Icon name={n.icon} size={20} /> {n.label}
           </NavLink>
         ))}
@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="page">{children}</main>
 
       <nav className="bottom-nav" aria-label="Главное меню">
-        <NavLink to="/app" exact>
+        <NavLink to="/app" end>
           <Icon name="home" />
           Кабинет
         </NavLink>

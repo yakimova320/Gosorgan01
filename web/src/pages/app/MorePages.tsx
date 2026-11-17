@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { api } from '../../api';
-import { useRouter } from '../../app/router';
-import { useSession } from '../../app/session';
+import { useNavigate } from 'react-router';
+import { useAppDispatch } from '../../store';
+import { useCabinetQuery, useChangePasswordMutation, useDeleteAccountMutation, useLogoutMutation } from '../../store/api';
+import { signedOut } from '../../store/session';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { DemoNote, ErrorAlert, Loading, PageHeader } from '../../components/ui';
-import { useAsync } from '../../lib/useAsync';
 
 /** «Спросить»: чат-помощник (C01–C03, после демо). Пока экран-оболочка. */
 export function AskPage() {
@@ -58,9 +58,13 @@ export function WritePage() {
 }
 
 export function ProfilePage() {
-  const { token, signOut } = useSession();
-  const { navigate } = useRouter();
-  const cabinet = useAsync(() => api.cabinet(token), [token]);
+  const dispatch = useAppDispatch();
+  const signOut = () => dispatch(signedOut());
+  const [changePasswordReq] = useChangePasswordMutation();
+  const [deleteAccountReq] = useDeleteAccountMutation();
+  const [logoutReq] = useLogoutMutation();
+  const navigate = useNavigate();
+  const cabinet = useCabinetQuery();
 
   const [oldPw, setOldPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -81,7 +85,7 @@ export function ProfilePage() {
     if (newPw !== newPw2) return setPwMsg('Пароли не совпадают');
     setBusy(true);
     try {
-      await api.changePassword(token, oldPw, newPw);
+      await changePasswordReq({ oldPassword: oldPw, newPassword: newPw }).unwrap();
       setPwMsg('Пароль изменён. На других устройствах нужно войти заново.');
       setOldPw('');
       setNewPw('');
@@ -99,9 +103,10 @@ export function ProfilePage() {
     setBusy(true);
     setDelErr(null);
     try {
-      await api.deleteAccount(token, delPw);
+      await deleteAccountReq(delPw).unwrap();
+      // Сначала уйти с закрытой страницы (flushSync: сразу), иначе она сама перенаправит на вход.
+      await navigate('/', { replace: true, flushSync: true });
       signOut();
-      navigate('/', { replace: true });
     } catch (err) {
       setDelErr(err);
     } finally {
@@ -111,14 +116,15 @@ export function ProfilePage() {
 
   async function logout() {
     try {
-      await api.logout(token);
+      await logoutReq().unwrap();
     } finally {
+      // Сначала уйти с закрытой страницы (flushSync: сразу), иначе она сама перенаправит на вход.
+      await navigate('/', { replace: true, flushSync: true });
       signOut();
-      navigate('/', { replace: true });
     }
   }
 
-  if (cabinet.loading) return <Loading />;
+  if (cabinet.isLoading) return <Loading />;
   const p = cabinet.data?.profile;
 
   return (

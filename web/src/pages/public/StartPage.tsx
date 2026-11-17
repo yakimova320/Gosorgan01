@@ -1,7 +1,7 @@
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
-import { Link } from '../../app/router';
-import { useSession } from '../../app/session';
+import { Link } from 'react-router';
+import { useSession } from '../../store';
 import { CARDS, TOPICS } from '../../content';
 
 const STEPS = [

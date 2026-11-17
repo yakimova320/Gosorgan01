@@ -78,3 +78,7 @@ Claude outputs/
 
 # Prisma: клиент создаёт prisma generate
 api/src/generated/
+api/storage-e2e/
+web/dist-offline/
+web/test-results/
+web/playwright-report/

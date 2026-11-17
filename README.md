@@ -121,6 +121,10 @@ pnpm build
 
 Все команды должны закончиться без ошибок. Те же проверки запускает GitHub Actions в каждом PR (`.github/workflows/ci.yml`).
 
+`pnpm test:e2e` запускает тесты API и браузерные тесты Playwright (`web/e2e`). Для них нужна запущенная база (`pnpm db:up`) и один раз браузер: `pnpm --filter jasno-web exec playwright install chromium`. Браузерные тесты сами запускают API (порт 3100, своя схема базы, `LLM_MODE=demo`, без файлов `.env`) и сайт (порт 5174).
+
+Офлайн-показ без сервера: `pnpm --filter jasno-web build:offline` создаёт один файл `web/dist-offline/index.html` с примерными данными. Он открывается двойным щелчком.
+
 ## Postman
 
 Коллекция: `api/postman/jasno.postman_collection.json`, окружение: `api/postman/local.postman_environment.json`. В Postman: «Import», выбрать оба файла, вверху справа выбрать окружение «Ja!sno local», потом «Run collection».

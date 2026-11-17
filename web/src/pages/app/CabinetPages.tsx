@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react';
-import { api } from '../../api';
 import { errorCode } from '../../api/errors';
 import type { CaseStage, Claim, Letter } from '../../api/types';
-import { Link } from '../../app/router';
-import { useSession } from '../../app/session';
+import { Link } from 'react-router';
+import { skipToken } from '@reduxjs/toolkit/query/react';
+import { useCabinetQuery, useCaseDetailQuery, useCasesQuery, useExplainQuery, useHistoryQuery } from '../../store/api';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { CaseRow, DemoNote, ErrorAlert, Loading, NextStepCard, PageHeader, StageChip } from '../../components/ui';
 import { deadlineText, formatDate, formatDateTime } from '../../lib/dates';
 import { CLAIM_KIND } from '../../lib/labels';
-import { useAsync } from '../../lib/useAsync';
 
 function greeting(): string {
   const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: 'numeric', hour12: false }).format(new Date()));
@@ -19,11 +18,10 @@ function greeting(): string {
 }
 
 export function CabinetPage() {
-  const { token } = useSession();
-  const cabinet = useAsync(() => api.cabinet(token), [token]);
-  const cases = useAsync(() => api.cases(token), [token]);
+  const cabinet = useCabinetQuery();
+  const cases = useCasesQuery();
 
-  if (cabinet.loading || cases.loading) return <Loading />;
+  if (cabinet.isLoading || cases.isLoading) return <Loading />;
   const name = cabinet.data?.profile?.firstName;
   const list = cases.data ?? [];
 
@@ -92,8 +90,7 @@ const FILTERS: { id: 'active' | 'done' | 'all'; label: string }[] = [
 ];
 
 export function CasesPage() {
-  const { token } = useSession();
-  const cases = useAsync(() => api.cases(token), [token]);
+  const cases = useCasesQuery();
   const [filter, setFilter] = useState<'active' | 'done' | 'all'>('active');
   const [q, setQ] = useState('');
 
@@ -115,13 +112,13 @@ export function CasesPage() {
           </button>
         ))}
       </div>
-      {cases.loading && <Loading />}
+      {cases.isLoading && <Loading />}
       <ErrorAlert error={cases.error} />
       <div className="stack">
         {shown.map((c, i) => (
           <CaseRow key={c.id} c={c} index={i} />
         ))}
-        {!cases.loading && shown.length === 0 && <p className="muted">Дел не найдено.</p>}
+        {!cases.isLoading && shown.length === 0 && <p className="muted">Дел не найдено.</p>}
       </div>
     </>
   );
@@ -136,9 +133,8 @@ const STAGE_HINT: Partial<Record<CaseStage, string>> = {
 };
 
 export function CasePage({ id }: { id: string }) {
-  const { token } = useSession();
-  const c = useAsync(() => api.caseDetail(token, id), [token, id]);
-  if (c.loading) return <Loading />;
+  const c = useCaseDetailQuery(id);
+  if (c.isLoading) return <Loading />;
   if (c.error || !c.data) return <ErrorAlert error={c.error} />;
   const cs = c.data;
   const open = cs.deadlines.filter((d) => !d.doneAt).sort((a, b) => a.date.localeCompare(b.date));
@@ -233,13 +229,12 @@ function FactRow({ claim }: { claim: Claim }) {
 }
 
 export function LetterPage({ id, caseId }: { id: string; caseId: string | null }) {
-  const { token } = useSession();
-  const cs = useAsync(() => (caseId ? api.caseDetail(token, caseId) : Promise.resolve(null)), [token, caseId]);
+  const cs = useCaseDetailQuery(caseId ?? skipToken);
   const letter: Letter | undefined = cs.data?.letters.find((l) => l.id === id);
-  const expl = useAsync(() => api.explain(token, id), [token, id]);
+  const expl = useExplainQuery(id);
   const [showOriginal, setShowOriginal] = useState(false);
 
-  if (cs.loading) return <Loading />;
+  if (cs.isLoading) return <Loading />;
   if (!letter) return <ErrorAlert error={cs.error ?? new Error('not found')} />;
   const datesFailed = errorCode(expl.error) === 'DATES_NOT_VERIFIED';
 
@@ -248,7 +243,7 @@ export function LetterPage({ id, caseId }: { id: string; caseId: string | null }
       <PageHeader title="Письмо без паники" back={caseId ? `/app/cases/${caseId}` : '/app'} />
       <div className="desktop-2col stack">
         <section className="stack">
-          {expl.loading && <Loading text="Ja!sno объясняет письмо…" />}
+          {expl.isLoading && <Loading text="Ja!sno объясняет письмо…" />}
           {expl.data && (
             <>
               <div className="card card--teal stack">
@@ -315,8 +310,7 @@ export function LetterPage({ id, caseId }: { id: string; caseId: string | null }
 }
 
 export function HistoryPage() {
-  const { token } = useSession();
-  const h = useAsync(() => api.history(token), [token]);
+  const h = useHistoryQuery();
   const [q, setQ] = useState('');
   const items = (h.data ?? []).filter((i) => !q || `${i.title} ${i.subtitle ?? ''} ${i.caseTitle}`.toLowerCase().includes(q.toLowerCase()));
 
@@ -324,7 +318,7 @@ export function HistoryPage() {
     <>
       <PageHeader title="История" subtitle="Все письма, вопросы и ответы по всем делам." />
       <input className="input" type="search" placeholder="Поиск по истории" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Поиск по истории" />
-      {h.loading && <Loading />}
+      {h.isLoading && <Loading />}
       <ErrorAlert error={h.error} />
       <ol className="list-reset stack">
         {items.map((i, n) => (

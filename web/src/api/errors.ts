@@ -34,16 +34,28 @@ const MESSAGES: Record<string, string> = {
   NOT_CONNECTED: 'Эта функция ещё не подключена к серверу',
 };
 
-export class ApiClientError extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-    readonly status = 0,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = 'ApiClientError';
-  }
+/**
+ * Ошибка API как обычный объект: её можно хранить в Redux (RTK Query кладёт ошибки в store).
+ * code: код сервера ({ code, message }) или NETWORK, TIMEOUT, BAD_RESPONSE, NOT_CONNECTED, CANCELLED.
+ */
+export interface ApiError {
+  code: string;
+  message: string;
+  status?: number;
+  details?: unknown;
+}
+
+export function apiError(code: string, status?: number, message?: string, details?: unknown): ApiError {
+  return { code, message: message || messageFor(code), status, details };
+}
+
+export function isApiError(value: unknown): value is ApiError {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as ApiError).code === 'string' &&
+    typeof (value as ApiError).message === 'string'
+  );
 }
 
 export function messageFor(code: string, fallback?: string): string {
@@ -52,10 +64,10 @@ export function messageFor(code: string, fallback?: string): string {
 
 /** Текст любой ошибки для показа человеку. */
 export function errorText(error: unknown): string {
-  if (error instanceof ApiClientError) return error.message || messageFor(error.code);
+  if (isApiError(error)) return error.message || messageFor(error.code);
   return messageFor('INTERNAL_ERROR');
 }
 
 export function errorCode(error: unknown): string | null {
-  return error instanceof ApiClientError ? error.code : null;
+  return isApiError(error) ? error.code : null;
 }
