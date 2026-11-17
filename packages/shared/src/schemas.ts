@@ -19,9 +19,46 @@ export const EmailSchema = z
       .max(254, { message: 'Слишком длинный e-mail' }),
   );
 
+const text = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, { message: `Не больше ${max} знаков` });
+
+/**
+ * Имя и фамилия: латиница, в том числе умлауты и буквы с диакритикой (ä, ß, é, ł).
+ * Между частями: пробел, дефис, апостроф ' или ’. Кириллица и цифры не допускаются.
+ * Пробелы по краям убираются, буквы приводятся к форме NFC (é одним знаком).
+ */
+export const LATIN_NAME = /^\p{Script=Latin}+(?:[ \-'’]\p{Script=Latin}+)*$/u;
+
+const latinName = (message: string) =>
+  z
+    .string()
+    .transform((v) => v.normalize('NFC').trim())
+    .pipe(
+      z
+        .string()
+        .min(1, { message })
+        .max(100, { message: 'Не больше 100 знаков' })
+        .regex(LATIN_NAME, { message }),
+    );
+
+export const FirstNameSchema = latinName('Введите имя латинскими буквами');
+export const LastNameSchema = latinName('Введите фамилию латинскими буквами');
+/** Адрес проживания: без ограничения алфавита. */
+export const AddressSchema = z
+  .string()
+  .trim()
+  .min(5, { message: 'Введите адрес проживания' })
+  .max(300, { message: 'Не больше 300 знаков' });
+
 export const RegisterSchema = z.object({
   email: EmailSchema,
   password: NewPasswordSchema,
+  firstName: FirstNameSchema,
+  lastName: LastNameSchema,
+  address: AddressSchema,
   consent: z.literal(true, {
     error: 'Нужно согласие на обработку данных',
   }),
@@ -55,17 +92,12 @@ export const DeleteAccountSchema = z.object({
 });
 export type DeleteAccountInput = z.infer<typeof DeleteAccountSchema>;
 
-const text = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, { message: `Не больше ${max} знаков` });
-
+/** Профиль целиком: имя, фамилия и адрес обязательны всегда. */
 export const ProfileSchema = z
   .object({
-    firstName: text(100).optional(),
-    lastName: text(100).optional(),
-    address: text(300).optional(),
+    firstName: FirstNameSchema,
+    lastName: LastNameSchema,
+    address: AddressSchema,
     numbers: z
       .array(
         z.object({ label: text(80).min(1), value: text(80).min(1) }).strict(),
@@ -75,6 +107,13 @@ export const ProfileSchema = z
   })
   .strict();
 export type Profile = z.infer<typeof ProfileSchema>;
+
+/**
+ * Изменение профиля: можно прислать одно поле. Сервер объединяет его с сохранённым
+ * профилем и проверяет итог по ProfileSchema: обязательное поле очистить нельзя.
+ */
+export const ProfilePatchSchema = ProfileSchema.partial().strict();
+export type ProfilePatch = z.infer<typeof ProfilePatchSchema>;
 
 /**
  * Поля, ошибка в которых даёт свой код API вместо VALIDATION_FAILED.

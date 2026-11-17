@@ -16,6 +16,8 @@ export function applyServerError<T extends FieldValues>(
   error: unknown,
   setError: UseFormSetError<T>,
   knownFields: readonly string[],
+  /** Префикс пути на сервере: 'profile.' → поле формы firstName */
+  prefix = '',
 ): string | null {
   if (!isApiError(error)) return errorText(error);
   const known = new Set(knownFields);
@@ -34,7 +36,9 @@ export function applyServerError<T extends FieldValues>(
 
   const details = error.details as
     { fields?: Record<string, string>; form?: string[] } | undefined;
-  for (const [field, message] of Object.entries(details?.fields ?? {})) {
+  for (const [path, message] of Object.entries(details?.fields ?? {})) {
+    const field =
+      prefix && path.startsWith(prefix) ? path.slice(prefix.length) : path;
     if (known.has(field)) {
       setError(
         field as Path<T>,

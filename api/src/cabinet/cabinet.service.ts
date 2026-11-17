@@ -3,7 +3,11 @@ import { Prisma } from '../generated/prisma/client.js';
 import { ApiError } from '../common/api-error.js';
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { Profile, UpdateCabinetInput } from './cabinet.schemas.js';
+import {
+  ProfileSchema,
+  type Profile,
+  type UpdateCabinetInput,
+} from './cabinet.schemas.js';
 
 export interface CabinetView {
   email: string;
@@ -63,8 +67,28 @@ export class CabinetService {
   ): Promise<CabinetView> {
     const data: Prisma.CabinetUpdateInput = {};
     if (input.language !== undefined) data.language = input.language;
-    if (input.profile !== undefined)
-      data.profile = input.profile === null ? Prisma.DbNull : input.profile;
+    if (input.profile !== undefined) {
+      // Частичное изменение: объединяем с сохранённым и проверяем итог целиком.
+      const current = await this.db.cabinet.findUniqueOrThrow({
+        where: { id: cabinetId },
+        select: { profile: true },
+      });
+      const merged = {
+        ...((current.profile as Record<string, unknown> | null) ?? {}),
+        ...input.profile,
+      };
+      const checked = ProfileSchema.safeParse(merged);
+      if (!checked.success) {
+        const fields = Object.fromEntries(
+          checked.error.issues.map((i) => [
+            ['profile', ...i.path].join('.'),
+            i.message,
+          ]),
+        );
+        throw new ApiError('VALIDATION_FAILED', { fields });
+      }
+      data.profile = checked.data;
+    }
     await this.db.cabinet.update({ where: { id: cabinetId }, data });
     return this.get(cabinetId);
   }

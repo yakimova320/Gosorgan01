@@ -10,6 +10,7 @@ import { DemoAdapter } from '../src/llm/adapters/demo.adapter.js';
 import { AdapterError } from '../src/llm/llm.types.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { encryptedPdf, mixedPdf, textPdf } from './pdf-fixtures.js';
+import { PERSON } from './person.js';
 import { createTestDatabase } from './test-db.js';
 
 const fixture = (name: string) =>
@@ -64,6 +65,7 @@ describe('Приём письма POST /letters (e2e)', () => {
         email: 'letters@example.org',
         password: 'mein-langes-Passwort',
         consent: true,
+        ...PERSON,
       })
       .expect(201);
     token = res.body.sessionToken;

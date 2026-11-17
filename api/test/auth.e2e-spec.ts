@@ -3,6 +3,7 @@ import request from 'supertest';
 import { createApp } from '../src/app.factory.js';
 import { hashToken } from '../src/auth/session-token.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { PERSON } from './person.js';
 import { createTestDatabase } from './test-db.js';
 
 const PASSWORD = 'mein-langes-Passwort';
@@ -32,7 +33,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
   async function register(email: string): Promise<string> {
     const res = await http()
       .post('/auth/register')
-      .send({ email, password: PASSWORD, consent: true })
+      .send({ email, password: PASSWORD, consent: true, ...PERSON })
       .expect(201);
     return res.body.sessionToken as string;
   }
@@ -48,7 +49,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
     expect(cab.body).toEqual({
       email: 'anna@example.org',
       language: 'ru',
-      profile: null,
+      profile: PERSON,
       counts: { openTasks: 0, activeCases: 0, inboxLetters: 0 },
       nextDeadline: null,
     });
@@ -90,7 +91,12 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
     await register('taken@example.org');
     const taken = await http()
       .post('/auth/register')
-      .send({ email: 'TAKEN@example.org', password: PASSWORD, consent: true })
+      .send({
+        email: 'TAKEN@example.org',
+        password: PASSWORD,
+        consent: true,
+        ...PERSON,
+      })
       .expect(409);
     expect(taken.body.code).toBe('EMAIL_TAKEN');
 
@@ -103,7 +109,12 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
 
     const consentFalse = await http()
       .post('/auth/register')
-      .send({ email: 'new@example.org', password: PASSWORD, consent: false })
+      .send({
+        email: 'new@example.org',
+        password: PASSWORD,
+        consent: false,
+        ...PERSON,
+      })
       .expect(400);
     expect(consentFalse.body.code).toBe('CONSENT_REQUIRED');
 
@@ -113,6 +124,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
         email: 'new@example.org',
         password: 'я'.repeat(40),
         consent: true,
+        ...PERSON,
       })
       .expect(400);
     expect(tooLong.body.code).toBe('PASSWORD_TOO_LONG');
@@ -120,7 +132,12 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
 
     const short = await http()
       .post('/auth/register')
-      .send({ email: 'new@example.org', password: 'short', consent: true })
+      .send({
+        email: 'new@example.org',
+        password: 'short',
+        consent: true,
+        ...PERSON,
+      })
       .expect(400);
     expect(short.body.code).toBe('VALIDATION_FAILED');
     expect(short.body.details).toEqual({
@@ -195,20 +212,87 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       .expect(401);
   });
 
-  it('PATCH /cabinet меняет профиль и проверяет ввод', async () => {
+  it('регистрация сохраняет имя, фамилию и адрес; кабинет пустой', async () => {
+    const token = await register('person@example.org');
+    const res = await http()
+      .get('/cabinet')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body.profile).toEqual(PERSON);
+    const cabinet = await db.cabinet.findUniqueOrThrow({
+      where: { email: 'person@example.org' },
+    });
+    expect(await db.letter.count({ where: { cabinetId: cabinet.id } })).toBe(0);
+    expect(await db.case.count({ where: { cabinetId: cabinet.id } })).toBe(0);
+  });
+
+  it('регистрация без имени или с кириллицей: ошибки у полей', async () => {
+    const base = {
+      email: 'cyr@example.org',
+      password: PASSWORD,
+      consent: true,
+    };
+    const missing = await http().post('/auth/register').send(base).expect(400);
+    expect(Object.keys(missing.body.details.fields).sort()).toEqual([
+      'address',
+      'firstName',
+      'lastName',
+    ]);
+    const cyr = await http()
+      .post('/auth/register')
+      .send({ ...base, ...PERSON, firstName: 'Анна', lastName: 'Мюллер' })
+      .expect(400);
+    expect(cyr.body.details.fields).toEqual({
+      firstName: 'Введите имя латинскими буквами',
+      lastName: 'Введите фамилию латинскими буквами',
+    });
+    expect(
+      await db.cabinet.count({ where: { email: 'cyr@example.org' } }),
+    ).toBe(0);
+  });
+
+  it('PATCH /cabinet: одно поле профиля, итог проверяется целиком', async () => {
     const token = await register('profile@example.org');
     const auth = { Authorization: `Bearer ${token}` };
-    const profile = {
-      firstName: 'Anna',
-      lastName: 'Muster',
-      numbers: [{ label: 'Kundennummer', value: '123A456' }],
-    };
     const res = await http()
       .patch('/cabinet')
       .set(auth)
-      .send({ profile })
+      .send({ profile: { address: 'Neue Str. 2, 20095 Hamburg' } })
       .expect(200);
-    expect(res.body.profile).toEqual(profile);
+    expect(res.body.profile).toEqual({
+      ...PERSON,
+      address: 'Neue Str. 2, 20095 Hamburg',
+    });
+
+    const renamed = await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ profile: { firstName: '  Zoë-Marie ', lastName: 'O’Neill' } })
+      .expect(200);
+    expect(renamed.body.profile).toMatchObject({
+      firstName: 'Zoë-Marie',
+      lastName: 'O’Neill',
+    });
+
+    const cleared = await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ profile: { lastName: '' } })
+      .expect(400);
+    expect(cleared.body.details.fields).toHaveProperty(['profile.lastName']);
+    await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ profile: null })
+      .expect(400);
+    const cyr = await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ profile: { firstName: 'Анна' } })
+      .expect(400);
+    expect(cyr.body.details.fields['profile.firstName']).toBe(
+      'Введите имя латинскими буквами',
+    );
 
     const bad = await http()
       .patch('/cabinet')
@@ -228,12 +312,12 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       'profile.numbers.0.value',
     ]);
 
-    const cleared = await http()
-      .patch('/cabinet')
-      .set(auth)
-      .send({ profile: null })
-      .expect(200);
-    expect(cleared.body.profile).toBeNull();
+    const after = await http().get('/cabinet').set(auth).expect(200);
+    expect(after.body.profile).toEqual({
+      firstName: 'Zoë-Marie',
+      lastName: 'O’Neill',
+      address: 'Neue Str. 2, 20095 Hamburg',
+    });
   });
 
   it('два кабинета не видят данных друг друга', async () => {
@@ -307,7 +391,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       .set('Authorization', `Bearer ${tokenB}`)
       .expect(200);
     expect(bView.body.email).toBe('b@example.org');
-    expect(bView.body.profile).toBeNull();
+    expect(bView.body.profile).toEqual(PERSON); // только свои регистрационные данные
     expect(bView.body.counts).toEqual({
       openTasks: 1,
       activeCases: 1,

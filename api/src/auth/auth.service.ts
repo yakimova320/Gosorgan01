@@ -41,7 +41,17 @@ export class AuthService {
     let cabinetId: string;
     try {
       const cabinet = await this.db.cabinet.create({
-        data: { email: input.email, passwordHash, consentAt: new Date() },
+        data: {
+          email: input.email,
+          passwordHash,
+          consentAt: new Date(),
+          // Регистрационные данные: только имя, фамилия и адрес. Писем, дел и демо-данных нет.
+          profile: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            address: input.address,
+          },
+        },
       });
       cabinetId = cabinet.id;
     } catch (e) {

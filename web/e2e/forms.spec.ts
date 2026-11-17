@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createUser, PASSWORD, uniqueEmail } from './helpers';
+import { createUser, PASSWORD, uniqueEmail, fillRegistration } from './helpers';
 
 /* Поля и проверка форм (TechBriefing v5, раздел 5.3). */
 
@@ -45,7 +45,7 @@ test('отправка пустой формы: ошибки видны, фок�
 }) => {
   await page.goto('/register');
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
-  await expect(page.getByLabel('E-mail')).toBeFocused();
+  await expect(page.getByLabel('Имя', { exact: true })).toBeFocused();
   await expect(page.locator('#r-email-error')).toBeVisible();
   await expect(page.locator('#r-consent-error')).toHaveText(
     'Нужно согласие на обработку данных',
@@ -56,9 +56,10 @@ test('без согласия форма не уходит на сервер', a
   let requests = 0;
   page.on('request', (r) => r.url().endsWith('/auth/register') && requests++);
   await page.goto('/register');
-  await page.getByLabel('E-mail').fill(uniqueEmail('noconsent'));
-  await page.getByLabel('Пароль', { exact: true }).fill(PASSWORD);
-  await page.getByLabel('Повторите пароль').fill(PASSWORD);
+  await fillRegistration(page, {
+    email: uniqueEmail('noconsent'),
+    consent: false,
+  });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page.getByRole('checkbox')).toBeFocused();
   await expect(page.locator('#r-consent-error')).toBeVisible();
@@ -71,10 +72,7 @@ test('повторное нажатие во время запроса не от
   let requests = 0;
   page.on('request', (r) => r.url().endsWith('/auth/register') && requests++);
   await page.goto('/register');
-  await page.getByLabel('E-mail').fill(uniqueEmail('double'));
-  await page.getByLabel('Пароль', { exact: true }).fill(PASSWORD);
-  await page.getByLabel('Повторите пароль').fill(PASSWORD);
-  await page.getByRole('checkbox').check();
+  await fillRegistration(page, { email: uniqueEmail('double') });
   const button = page.locator('form button[type="submit"]');
   await button.click();
   await page.keyboard.press('Enter');
@@ -86,10 +84,7 @@ test('повторное нажатие во время запроса не от
 test('EMAIL_TAKEN показывается у поля e-mail', async ({ page, request }) => {
   const a = await createUser(request, 'taken', 'Taken');
   await page.goto('/register');
-  await page.getByLabel('E-mail').fill(a.email);
-  await page.getByLabel('Пароль', { exact: true }).fill(PASSWORD);
-  await page.getByLabel('Повторите пароль').fill(PASSWORD);
-  await page.getByRole('checkbox').check();
+  await fillRegistration(page, { email: a.email });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page.locator('#r-email-error')).toHaveText(
     'Этот e-mail уже зарегистрирован',

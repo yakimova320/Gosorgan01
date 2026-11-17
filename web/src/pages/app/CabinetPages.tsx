@@ -3,7 +3,15 @@ import { errorCode } from '../../api/errors';
 import type { CaseStage, Claim, Letter } from '../../api/types';
 import { Link } from 'react-router';
 import { skipToken } from '@reduxjs/toolkit/query/react';
-import { useCabinetQuery, useCaseDetailQuery, useCasesQuery, useExplainQuery, useHistoryQuery } from '../../store/api';
+import {
+  useCabinetQuery,
+  useCaseDetailQuery,
+  useCasesQuery,
+  useExplainQuery,
+  useHistoryQuery,
+  useLettersQuery,
+  type InboxLetter,
+} from '../../store/api';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { CaseRow, DemoNote, ErrorAlert, Loading, NextStepCard, PageHeader, StageChip } from '../../components/ui';
@@ -20,12 +28,16 @@ function greeting(): string {
 export function CabinetPage() {
   const cabinet = useCabinetQuery();
   const cases = useCasesQuery();
+  const letters = useLettersQuery();
 
-  if (cabinet.isLoading || cases.isLoading) return <Loading />;
+  if (cabinet.isLoading || cases.isLoading || letters.isLoading) return <Loading />;
   const name = cabinet.data?.profile?.firstName;
   const list = cases.data ?? [];
+  const inbox = letters.data ?? [];
+  // Дела подключаются в B07: до этого «не подключено» значит «дел нет», а не ошибка.
+  const casesError = errorCode(cases.error) === 'NOT_CONNECTED' ? null : cases.error;
 
-  if (!cases.error && list.length === 0) {
+  if (!casesError && !letters.error && list.length === 0 && inbox.length === 0) {
     return (
       <>
         <PageHeader title={name ? `${greeting()}, ${name}` : greeting()} />
@@ -51,7 +63,7 @@ export function CabinetPage() {
         <span className="muted">{greeting()},</span>
         <h1>{name ?? 'ваш кабинет'}</h1>
       </div>
-      <ErrorAlert error={cabinet.error ?? cases.error} />
+      <ErrorAlert error={cabinet.error ?? casesError ?? letters.error} />
 
       <div className="desktop-2col stack">
         <section className="card card--teal row" style={{ borderRadius: 26, padding: '16px 0 0 18px', alignItems: 'flex-end', overflow: 'hidden', minHeight: 150 }}>
@@ -68,6 +80,8 @@ export function CabinetPage() {
         {next && <NextStepCard to={`/app/cases/${next.caseId}`} date={next.date} title={next.title} />}
       </div>
 
+      {inbox.length > 0 && <InboxList letters={inbox} />}
+
       <div className="row-between" style={{ paddingTop: 4 }}>
         <h2 style={{ fontSize: 19 }}>Мои дела</h2>
         <Link to="/app/history" className="link">
@@ -80,6 +94,29 @@ export function CabinetPage() {
         ))}
       </div>
     </>
+  );
+}
+
+/** Входящие письма (без дела). Проверка фактов на сайте подключается в F02. */
+function InboxList({ letters }: { letters: InboxLetter[] }) {
+  return (
+    <section className="stack" aria-labelledby="inbox-title">
+      <h2 id="inbox-title" style={{ fontSize: 19 }}>
+        Входящие письма
+      </h2>
+      {letters.map((l) => (
+        <div key={l.id} className="card row-between" data-testid="inbox-letter">
+          <div className="stack-s">
+            <strong>{l.authority ?? 'Письмо'}</strong>
+            <span className="small text-2">
+              {formatDate(l.createdAt.slice(0, 10))}
+              {l.caseNumber ? ` · ${l.caseNumber}` : ''}
+            </span>
+          </div>
+          {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
+        </div>
+      ))}
+    </section>
   );
 }
 
