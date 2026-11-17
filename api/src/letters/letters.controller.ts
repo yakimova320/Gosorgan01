@@ -45,7 +45,9 @@ import {
   type LetterDetail,
   type UploadLetterResponse,
 } from './letters.dto.js';
+import { ExplainService, type ExplainResponse } from './explain.service.js';
 import { LettersService } from './letters.service.js';
+import { z } from 'zod';
 
 const err = (code: string, message: string, details?: unknown) => ({
   schema: { example: { code, message, ...(details ? { details } : {}) } },
@@ -96,6 +98,7 @@ const NOT_FOUND = err('NOT_FOUND', 'Не найдено');
 export class LettersController {
   constructor(
     @Inject(LettersService) private readonly letters: LettersService,
+    @Inject(ExplainService) private readonly explainer: ExplainService,
   ) {}
 
   @Post()
@@ -328,5 +331,68 @@ export class LettersController {
     @Body(new ZodPipe(AssignLetterSchema)) body: AssignLetterInput,
   ): Promise<{ caseId: string; changed: boolean }> {
     return this.letters.assign(auth.cabinetId, id, body);
+  }
+
+  @Post(':id/explain')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Объяснение письма по-русски по его фактам',
+    description:
+      'Каждое утверждение ссылается на факты (claimIds); даты и числа проверяются по цитатам этих фактов. ' +
+      'Сроки — все сроки письма с датой, confirmed: false у неподтверждённых. Кэш по версии фактов, языку и версии промпта. ' +
+      'Факты изменились во время ответа: 409 CLAIMS_CHANGED. Даты не прошли проверку за 3 попытки: 422 DATES_NOT_VERIFIED.',
+  })
+  @ApiQuery({ name: 'lang', required: false, enum: ['ru'] })
+  @ApiOkResponse({
+    schema: {
+      example: {
+        lang: 'ru',
+        about: {
+          text: 'Jobcenter Musterstadt просит прислать выписки со счёта за сентябрь.',
+          claimIds: ['cm0auth', 'cm0req'],
+          unconfirmed: false,
+        },
+        actions: [
+          {
+            text: 'Прислать выписки со счёта до 30.11.2026.',
+            claimIds: ['cm0req', 'cm0dl'],
+            unconfirmed: false,
+          },
+        ],
+        deadlines: [
+          {
+            date: '2026-11-30',
+            claimId: 'cm0dl',
+            kind: 'DOCUMENTS',
+            confirmed: true,
+          },
+        ],
+        unconfirmed: false,
+        cached: false,
+      },
+    },
+  })
+  @ApiNotFoundResponse(NOT_FOUND)
+  @ApiConflictResponse(
+    err(
+      'CLAIMS_CHANGED',
+      'Факты письма изменились, пока готовилось объяснение. Запросите объяснение ещё раз',
+    ),
+  )
+  @ApiUnprocessableEntityResponse(
+    err(
+      'DATES_NOT_VERIFIED',
+      'Не удалось надёжно объяснить сроки. Посмотрите срок в оригинале письма',
+    ),
+  )
+  explain(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') id: string,
+    @Query(
+      new ZodPipe(z.object({ lang: z.enum(['ru']).default('ru') }).strict()),
+    )
+    query: { lang: 'ru' },
+  ): Promise<ExplainResponse> {
+    return this.explainer.explain(auth.cabinetId, id, query.lang);
   }
 }
