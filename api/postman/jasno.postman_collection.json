@@ -229,7 +229,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('статус 400', () => pm.response.to.have.status(400));",
-                  "pm.test('code PASSWORD_TOO_LONG', () => pm.expect(pm.response.json().code).to.eql('PASSWORD_TOO_LONG'));"
+                  "pm.test('code PASSWORD_TOO_LONG', () => pm.expect(pm.response.json().code).to.eql('PASSWORD_TOO_LONG'));",
+                  "pm.test('ошибка у поля password', () => pm.expect(pm.response.json().details.fields).to.have.property('password'));"
                 ]
               }
             }

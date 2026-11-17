@@ -735,3 +735,7 @@ details.faq .faq-body {
     transition: none;
   }
 }
+
+.input[aria-invalid='true'] {
+  border-color: var(--c-orange-dark);
+}

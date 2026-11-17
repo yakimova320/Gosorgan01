@@ -1,20 +1,8 @@
 import { z } from 'zod';
+import { ProfileSchema } from '@jasno/shared';
 
-const text = (max: number) => z.string().trim().max(max);
-
-export const ProfileSchema = z
-  .object({
-    firstName: text(100).optional(),
-    lastName: text(100).optional(),
-    address: text(300).optional(),
-    numbers: z
-      .array(
-        z.object({ label: text(80).min(1), value: text(80).min(1) }).strict(),
-      )
-      .max(10)
-      .optional(),
-  })
-  .strict();
+/** Профиль общий с сайтом: packages/shared. */
+export { ProfileSchema, type Profile } from '@jasno/shared';
 
 export const UpdateCabinetSchema = z
   .object({
@@ -24,4 +12,3 @@ export const UpdateCabinetSchema = z
   })
   .strict();
 export type UpdateCabinetInput = z.infer<typeof UpdateCabinetSchema>;
-export type Profile = z.infer<typeof ProfileSchema>;

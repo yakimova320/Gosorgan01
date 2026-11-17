@@ -1,18 +1,22 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { PASSWORD_MIN_CHARS } from '@jasno/shared';
+import { useState, type ReactNode } from 'react';
+import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router';
+import type { z } from 'zod';
+import { CheckboxField, EmailField, FormError, PasswordField, SubmitButton } from '../../components/form';
+import { ForgotFormSchema, LoginFormSchema, RegisterFormSchema, ResetFormSchema } from '../../forms/schemas';
+import { applyServerError } from '../../forms/serverErrors';
 import { useAppDispatch, useSession } from '../../store';
 import { useForgotPasswordMutation, useLoginMutation, useRegisterMutation, useResetPasswordMutation } from '../../store/api';
 import { signedIn } from '../../store/session';
-import { ErrorAlert } from '../../components/ui';
 
-const PASSWORD_MIN = 10;
-const PASSWORD_MAX_BYTES = 72; // предел bcrypt, ТЗ v4 раздел 9
+/*
+ * Формы входа и пароля: react-hook-form + схемы из packages/shared (TechBriefing v5, раздел 5).
+ * mode 'onTouched': ошибка после первого ухода из поля, дальше при каждом изменении.
+ */
 
-function passwordProblem(pw: string): string | null {
-  if (pw.length < PASSWORD_MIN) return `Пароль: не меньше ${PASSWORD_MIN} знаков`;
-  if (new TextEncoder().encode(pw).length > PASSWORD_MAX_BYTES) return 'Пароль слишком длинный (русские буквы считаются за два знака, максимум около 36 букв)';
-  return null;
-}
+const PASSWORD_HINT = `Не меньше ${PASSWORD_MIN_CHARS} знаков`;
 
 function AuthCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -28,26 +32,24 @@ export function LoginPage() {
   const dispatch = useAppDispatch();
   const [login] = useLoginMutation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<z.input<typeof LoginFormSchema>, unknown, z.output<typeof LoginFormSchema>>({
+    resolver: zodResolver(LoginFormSchema),
+    mode: 'onTouched',
+    defaultValues: { email: '', password: '' },
+  });
+  const { errors, isSubmitting } = form.formState;
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
+  const submit = form.handleSubmit(async (values) => {
+    setFormError(null);
     try {
-      const { sessionToken } = await login({ email: email.trim().toLowerCase(), password }).unwrap();
+      const { sessionToken } = await login(values).unwrap();
       dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
-      setError(err);
-    } finally {
-      setBusy(false);
+      setFormError(applyServerError(err, form.setError, ['email', 'password']));
     }
-  }
+  });
 
   return (
     <AuthCard title="Вход">
@@ -57,18 +59,12 @@ export function LoginPage() {
         </p>
       )}
       <form className="stack" onSubmit={submit} noValidate>
-        <div className="field">
-          <label htmlFor="email">E-mail</label>
-          <input id="email" className="input" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="password">Пароль</label>
-          <input id="password" className="input" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <ErrorAlert error={error} />
-        <button className="btn btn--primary" type="submit" disabled={busy || !email || !password}>
-          {busy ? 'Входим…' : 'Войти'}
-        </button>
+        <EmailField id="email" label="E-mail" registration={form.register('email')} error={errors.email} />
+        <PasswordField id="password" label="Пароль" autoComplete="current-password" registration={form.register('password')} error={errors.password} />
+        <FormError message={formError} />
+        <SubmitButton submitting={isSubmitting} busyText="Входим…">
+          Войти
+        </SubmitButton>
       </form>
       <Link to="/forgot" className="link">
         Забыли пароль?
@@ -87,60 +83,52 @@ export function RegisterPage() {
   const dispatch = useAppDispatch();
   const [register] = useRegisterMutation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [consent, setConsent] = useState(false);
-  const [touched, setTouched] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<z.input<typeof RegisterFormSchema>, unknown, z.output<typeof RegisterFormSchema>>({
+    resolver: zodResolver(RegisterFormSchema),
+    mode: 'onTouched',
+    defaultValues: { email: '', password: '', passwordRepeat: '' },
+  });
+  const { errors, isSubmitting } = form.formState;
 
-  const pwProblem = passwordProblem(password);
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setTouched(true);
-    if (busy || pwProblem || !emailOk || !consent) return;
-    setBusy(true);
-    setError(null);
+  const submit = form.handleSubmit(async ({ email, password, consent }) => {
+    setFormError(null);
     try {
-      const { sessionToken } = await register({ email: email.trim().toLowerCase(), password, consent }).unwrap();
+      const { sessionToken } = await register({ email, password, consent }).unwrap();
       dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
-      setError(err);
-    } finally {
-      setBusy(false);
+      setFormError(applyServerError(err, form.setError, ['email', 'password', 'consent']));
     }
-  }
+  });
 
   return (
     <AuthCard title="Регистрация">
       <p className="small text-2">Нужны только e-mail и пароль. Имя, адрес и номера документов Ja!sno не спрашивает.</p>
       <form className="stack" onSubmit={submit} noValidate>
-        <div className="field">
-          <label htmlFor="r-email">E-mail</label>
-          <input id="r-email" className="input" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={touched && !emailOk} />
-          {touched && !emailOk && <span className="field-error">Проверьте e-mail</span>}
-        </div>
-        <div className="field">
-          <label htmlFor="r-password">Пароль</label>
-          <input id="r-password" className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={touched && !!pwProblem} aria-describedby="pw-hint" />
-          <span id="pw-hint" className={touched && pwProblem ? 'field-error' : 'muted'}>
-            {touched && pwProblem ? pwProblem : `Не меньше ${PASSWORD_MIN} знаков`}
-          </span>
-        </div>
-        <label className="checkbox">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            Я согласен(на) с обработкой моих данных по правилам Datenschutz. В тестовой версии загружайте только примеры писем.
-          </span>
-        </label>
-        {touched && !consent && <span className="field-error">Без согласия регистрация невозможна</span>}
-        <ErrorAlert error={error} />
-        <button className="btn btn--primary" type="submit" disabled={busy}>
-          {busy ? 'Создаём кабинет…' : 'Зарегистрироваться'}
-        </button>
+        <EmailField id="r-email" label="E-mail" registration={form.register('email')} error={errors.email} />
+        <PasswordField
+          id="r-password"
+          label="Пароль"
+          autoComplete="new-password"
+          registration={form.register('password', { deps: ['passwordRepeat'] })}
+          error={errors.password}
+          hint={PASSWORD_HINT}
+        />
+        <PasswordField
+          id="r-password2"
+          label="Повторите пароль"
+          autoComplete="new-password"
+          registration={form.register('passwordRepeat')}
+          error={errors.passwordRepeat}
+        />
+        <CheckboxField id="r-consent" registration={form.register('consent')} error={errors.consent}>
+          Я согласен(на) с обработкой моих данных по правилам Datenschutz. В тестовой версии загружайте только примеры писем.
+        </CheckboxField>
+        <FormError message={formError} />
+        <SubmitButton submitting={isSubmitting} busyText="Создаём кабинет…">
+          Зарегистрироваться
+        </SubmitButton>
       </form>
       <span className="small text-2">
         Уже есть аккаунт?{' '}
@@ -154,25 +142,24 @@ export function RegisterPage() {
 
 export function ForgotPage() {
   const [forgotPassword] = useForgotPasswordMutation();
-  const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<z.input<typeof ForgotFormSchema>, unknown, z.output<typeof ForgotFormSchema>>({
+    resolver: zodResolver(ForgotFormSchema),
+    mode: 'onTouched',
+    defaultValues: { email: '' },
+  });
+  const { errors, isSubmitting } = form.formState;
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (busy || !email) return;
-    setBusy(true);
-    setError(null);
+  const submit = form.handleSubmit(async ({ email }) => {
+    setFormError(null);
     try {
-      await forgotPassword(email.trim().toLowerCase()).unwrap();
+      await forgotPassword(email).unwrap();
       setSent(true);
     } catch (err) {
-      setError(err);
-    } finally {
-      setBusy(false);
+      setFormError(applyServerError(err, form.setError, ['email']));
     }
-  }
+  });
 
   return (
     <AuthCard title="Забыли пароль?">
@@ -183,14 +170,9 @@ export function ForgotPage() {
       ) : (
         <form className="stack" onSubmit={submit} noValidate>
           <p className="small text-2">Введите e-mail, с которым вы регистрировались. Придёт письмо со ссылкой для нового пароля.</p>
-          <div className="field">
-            <label htmlFor="f-email">E-mail</label>
-            <input id="f-email" className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <ErrorAlert error={error} />
-          <button className="btn btn--primary" type="submit" disabled={busy || !email}>
-            Отправить ссылку
-          </button>
+          <EmailField id="f-email" label="E-mail" registration={form.register('email')} error={errors.email} />
+          <FormError message={formError} />
+          <SubmitButton submitting={isSubmitting}>Отправить ссылку</SubmitButton>
         </form>
       )}
       <Link to="/login" className="link">
@@ -205,28 +187,23 @@ export function ResetPage() {
   const [search] = useSearchParams();
   const navigate = useNavigate();
   const token = search.get('token') ?? '';
-  const [pw, setPw] = useState('');
-  const [pw2, setPw2] = useState('');
-  const [touched, setTouched] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
-  const problem = passwordProblem(pw) ?? (pw !== pw2 ? 'Пароли не совпадают' : null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<z.input<typeof ResetFormSchema>, unknown, z.output<typeof ResetFormSchema>>({
+    resolver: zodResolver(ResetFormSchema),
+    mode: 'onTouched',
+    defaultValues: { newPassword: '', newPasswordRepeat: '' },
+  });
+  const { errors, isSubmitting } = form.formState;
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setTouched(true);
-    if (busy || problem) return;
-    setBusy(true);
-    setError(null);
+  const submit = form.handleSubmit(async ({ newPassword }) => {
+    setFormError(null);
     try {
-      await resetPassword({ token, newPassword: pw }).unwrap();
+      await resetPassword({ token, newPassword }).unwrap();
       navigate('/login?reset=1', { replace: true });
     } catch (err) {
-      setError(err);
-    } finally {
-      setBusy(false);
+      setFormError(applyServerError(err, form.setError, ['newPassword']));
     }
-  }
+  });
 
   if (!token) {
     return (
@@ -242,19 +219,23 @@ export function ResetPage() {
   return (
     <AuthCard title="Новый пароль">
       <form className="stack" onSubmit={submit} noValidate>
-        <div className="field">
-          <label htmlFor="n-pw">Новый пароль</label>
-          <input id="n-pw" className="input" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="n-pw2">Повторите пароль</label>
-          <input id="n-pw2" className="input" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
-        </div>
-        {touched && problem && <span className="field-error">{problem}</span>}
-        <ErrorAlert error={error} />
-        <button className="btn btn--primary" type="submit" disabled={busy}>
-          Сохранить пароль
-        </button>
+        <PasswordField
+          id="n-pw"
+          label="Новый пароль"
+          autoComplete="new-password"
+          registration={form.register('newPassword', { deps: ['newPasswordRepeat'] })}
+          error={errors.newPassword}
+          hint={PASSWORD_HINT}
+        />
+        <PasswordField
+          id="n-pw2"
+          label="Повторите пароль"
+          autoComplete="new-password"
+          registration={form.register('newPasswordRepeat')}
+          error={errors.newPasswordRepeat}
+        />
+        <FormError message={formError} />
+        <SubmitButton submitting={isSubmitting}>Сохранить пароль</SubmitButton>
       </form>
       <Link to="/forgot" className="link">
         Запросить новое письмо

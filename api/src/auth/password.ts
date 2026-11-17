@@ -1,15 +1,15 @@
 import bcrypt from 'bcryptjs';
+import { PASSWORD_MAX_BYTES, utf8Bytes } from '@jasno/shared';
 import { ApiError } from '../common/api-error.js';
 
 /** ТЗ v2 раздел 11: bcryptjs, cost 12. */
 export const BCRYPT_COST = 12;
-export const PASSWORD_MIN_CHARS = 10;
-/** bcrypt учитывает только первые 72 байта: длиннее не обрезаем молча, а отклоняем (ТЗ v4 раздел 9). */
-export const PASSWORD_MAX_BYTES = 72;
+/** Правила длины пароля общие с сайтом: packages/shared. bcrypt учитывает только 72 байта. */
+export { PASSWORD_MAX_BYTES, PASSWORD_MIN_CHARS } from '@jasno/shared';
 
 /** Бросает PASSWORD_TOO_LONG, если пароль длиннее 72 байт в UTF-8. */
 export function assertPasswordFits(password: string): void {
-  if (Buffer.byteLength(password, 'utf8') > PASSWORD_MAX_BYTES) {
+  if (utf8Bytes(password) > PASSWORD_MAX_BYTES) {
     throw new ApiError('PASSWORD_TOO_LONG');
   }
 }
@@ -23,8 +23,7 @@ export function verifyPassword(
   password: string,
   hash: string,
 ): Promise<boolean> {
-  if (Buffer.byteLength(password, 'utf8') > PASSWORD_MAX_BYTES)
-    return Promise.resolve(false);
+  if (utf8Bytes(password) > PASSWORD_MAX_BYTES) return Promise.resolve(false);
   return bcrypt.compare(password, hash);
 }
 

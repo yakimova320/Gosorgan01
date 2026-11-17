@@ -102,27 +102,19 @@ export const api = createApi({
       },
     }),
 
+    // STUB: эндпоинтов пароля и удаления аккаунта на сервере ещё нет (A01–A03).
+    // В режиме api честно отвечаем NOT_CONNECTED; подключение: задачи A01, A02, A03.
     forgotPassword: b.mutation<void, string>({
-      queryFn: async (email, _api, _x, base) => {
+      queryFn: async () => {
         if (isMock) return wait().then(() => ok(undefined));
-        return base({
-          method: 'POST',
-          path: '/auth/password/forgot',
-          body: { email },
-          auth: false,
-        }) as Promise<Result<void>>;
+        return notConnected();
       },
     }),
 
     resetPassword: b.mutation<void, { token: string; newPassword: string }>({
-      queryFn: async (body, _api, _x, base) => {
+      queryFn: async () => {
         if (isMock) return wait().then(() => ok(undefined));
-        return base({
-          method: 'POST',
-          path: '/auth/password/reset',
-          body,
-          auth: false,
-        }) as Promise<Result<void>>;
+        return notConnected();
       },
     }),
 
@@ -130,24 +122,16 @@ export const api = createApi({
       void,
       { oldPassword: string; newPassword: string }
     >({
-      queryFn: async (body, _api, _x, base) => {
+      queryFn: async () => {
         if (isMock) return wait().then(() => ok(undefined));
-        return base({
-          method: 'POST',
-          path: '/auth/password/change',
-          body,
-        }) as Promise<Result<void>>;
+        return notConnected();
       },
     }),
 
     deleteAccount: b.mutation<void, string>({
-      queryFn: async (password, _api, _x, base) => {
+      queryFn: async () => {
         if (isMock) return wait().then(() => ok(undefined));
-        return base({
-          method: 'DELETE',
-          path: '/cabinet',
-          body: { password },
-        }) as Promise<Result<void>>;
+        return notConnected();
       },
     }),
 

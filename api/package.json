@@ -20,6 +20,7 @@
     "llm:check": "tsc -p tsconfig.build.json && node dist/scripts/llm-check.js"
   },
   "dependencies": {
+    "@jasno/shared": "workspace:*",
     "@nestjs/common": "^12.4.2",
     "@nestjs/core": "^12.4.2",
     "@nestjs/platform-express": "^12.4.2",

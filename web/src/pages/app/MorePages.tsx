@@ -1,4 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { PASSWORD_MIN_CHARS } from '@jasno/shared';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
+import { FormError, PasswordField, SubmitButton } from '../../components/form';
+import { ChangePasswordFormSchema, DeleteAccountFormSchema } from '../../forms/schemas';
+import { applyServerError } from '../../forms/serverErrors';
 import { useNavigate } from 'react-router';
 import { useAppDispatch } from '../../store';
 import { useCabinetQuery, useChangePasswordMutation, useDeleteAccountMutation, useLogoutMutation } from '../../store/api';
@@ -66,53 +73,45 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const cabinet = useCabinetQuery();
 
-  const [oldPw, setOldPw] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [newPw2, setNewPw2] = useState('');
   const [pwMsg, setPwMsg] = useState<string | null>(null);
-  const [pwErr, setPwErr] = useState<unknown>(null);
+  const [pwErr, setPwErr] = useState<string | null>(null);
+  const pwForm = useForm<z.input<typeof ChangePasswordFormSchema>, unknown, z.output<typeof ChangePasswordFormSchema>>({
+    resolver: zodResolver(ChangePasswordFormSchema),
+    mode: 'onTouched',
+    defaultValues: { oldPassword: '', newPassword: '', newPasswordRepeat: '' },
+  });
 
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [delPw, setDelPw] = useState('');
-  const [delErr, setDelErr] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
+  const [delErr, setDelErr] = useState<string | null>(null);
+  const delForm = useForm<z.input<typeof DeleteAccountFormSchema>, unknown, z.output<typeof DeleteAccountFormSchema>>({
+    resolver: zodResolver(DeleteAccountFormSchema),
+    mode: 'onTouched',
+    defaultValues: { password: '' },
+  });
 
-  async function changePassword(e: FormEvent) {
-    e.preventDefault();
+  const changePassword = pwForm.handleSubmit(async ({ oldPassword, newPassword }) => {
     setPwMsg(null);
     setPwErr(null);
-    if (newPw.length < 10) return setPwMsg('Новый пароль: не меньше 10 знаков');
-    if (newPw !== newPw2) return setPwMsg('Пароли не совпадают');
-    setBusy(true);
     try {
-      await changePasswordReq({ oldPassword: oldPw, newPassword: newPw }).unwrap();
+      await changePasswordReq({ oldPassword, newPassword }).unwrap();
       setPwMsg('Пароль изменён. На других устройствах нужно войти заново.');
-      setOldPw('');
-      setNewPw('');
-      setNewPw2('');
+      pwForm.reset();
     } catch (err) {
-      setPwErr(err);
-    } finally {
-      setBusy(false);
+      setPwErr(applyServerError(err, pwForm.setError, ['oldPassword', 'newPassword']));
     }
-  }
+  });
 
-  async function deleteAccount(e: FormEvent) {
-    e.preventDefault();
-    if (!delPw) return;
-    setBusy(true);
+  const deleteAccount = delForm.handleSubmit(async ({ password }) => {
     setDelErr(null);
     try {
-      await deleteAccountReq(delPw).unwrap();
+      await deleteAccountReq(password).unwrap();
       // Сначала уйти с закрытой страницы (flushSync: сразу), иначе она сама перенаправит на вход.
       await navigate('/', { replace: true, flushSync: true });
       signOut();
     } catch (err) {
-      setDelErr(err);
-    } finally {
-      setBusy(false);
+      setDelErr(applyServerError(err, delForm.setError, ['password']));
     }
-  }
+  });
 
   async function logout() {
     try {
@@ -163,23 +162,37 @@ export function ProfilePage() {
           </h2>
           <form className="card stack" onSubmit={changePassword} noValidate>
             <h3>Сменить пароль</h3>
-            <div className="field">
-              <label htmlFor="pw-old">Старый пароль</label>
-              <input id="pw-old" className="input" type="password" autoComplete="current-password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="pw-new">Новый пароль</label>
-              <input id="pw-new" className="input" type="password" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="pw-new2">Повторите новый пароль</label>
-              <input id="pw-new2" className="input" type="password" autoComplete="new-password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} />
-            </div>
-            {pwMsg && <div className="alert alert--info">{pwMsg}</div>}
-            <ErrorAlert error={pwErr} />
-            <button type="submit" className="btn btn--navy btn--small" disabled={busy || !oldPw || !newPw}>
+            <PasswordField
+              id="pw-old"
+              label="Старый пароль"
+              autoComplete="current-password"
+              registration={pwForm.register('oldPassword')}
+              error={pwForm.formState.errors.oldPassword}
+            />
+            <PasswordField
+              id="pw-new"
+              label="Новый пароль"
+              autoComplete="new-password"
+              registration={pwForm.register('newPassword', { deps: ['newPasswordRepeat'] })}
+              error={pwForm.formState.errors.newPassword}
+              hint={`Не меньше ${PASSWORD_MIN_CHARS} знаков`}
+            />
+            <PasswordField
+              id="pw-new2"
+              label="Повторите новый пароль"
+              autoComplete="new-password"
+              registration={pwForm.register('newPasswordRepeat')}
+              error={pwForm.formState.errors.newPasswordRepeat}
+            />
+            {pwMsg && (
+              <div className="alert alert--info" role="status">
+                {pwMsg}
+              </div>
+            )}
+            <FormError message={pwErr} />
+            <SubmitButton submitting={pwForm.formState.isSubmitting} className="btn btn--navy btn--small">
               Сменить пароль
-            </button>
+            </SubmitButton>
           </form>
 
           <div className="card stack">
@@ -194,15 +207,18 @@ export function ProfilePage() {
             ) : (
               <form className="stack" onSubmit={deleteAccount} noValidate>
                 <div className="alert alert--error">Вы уверены? Это нельзя отменить.</div>
-                <div className="field">
-                  <label htmlFor="del-pw">Введите пароль для подтверждения</label>
-                  <input id="del-pw" className="input" type="password" autoComplete="current-password" value={delPw} onChange={(e) => setDelPw(e.target.value)} />
-                </div>
-                <ErrorAlert error={delErr} />
+                <PasswordField
+                  id="del-pw"
+                  label="Введите пароль для подтверждения"
+                  autoComplete="current-password"
+                  registration={delForm.register('password')}
+                  error={delForm.formState.errors.password}
+                />
+                <FormError message={delErr} />
                 <div className="row wrap">
-                  <button type="submit" className="btn btn--danger btn--small" disabled={busy || !delPw}>
+                  <SubmitButton submitting={delForm.formState.isSubmitting} className="btn btn--danger btn--small">
                     Удалить навсегда
-                  </button>
+                  </SubmitButton>
                   <button type="button" className="btn btn--ghost btn--small" onClick={() => setConfirmDelete(false)}>
                     Отмена
                   </button>

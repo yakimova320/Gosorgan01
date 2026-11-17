@@ -99,6 +99,13 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       .send({ email: 'new@example.org', password: PASSWORD })
       .expect(400);
     expect(noConsent.body.code).toBe('CONSENT_REQUIRED');
+    expect(noConsent.body.details.fields).toHaveProperty('consent');
+
+    const consentFalse = await http()
+      .post('/auth/register')
+      .send({ email: 'new@example.org', password: PASSWORD, consent: false })
+      .expect(400);
+    expect(consentFalse.body.code).toBe('CONSENT_REQUIRED');
 
     const tooLong = await http()
       .post('/auth/register')
@@ -109,12 +116,16 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       })
       .expect(400);
     expect(tooLong.body.code).toBe('PASSWORD_TOO_LONG');
+    expect(tooLong.body.details.fields).toHaveProperty('password');
 
     const short = await http()
       .post('/auth/register')
       .send({ email: 'new@example.org', password: 'short', consent: true })
       .expect(400);
     expect(short.body.code).toBe('VALIDATION_FAILED');
+    expect(short.body.details).toEqual({
+      fields: { password: expect.any(String) },
+    });
 
     expect(
       await db.cabinet.count({ where: { email: 'new@example.org' } }),
@@ -205,6 +216,17 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       .send({ email: 'other@example.org' })
       .expect(400);
     expect(bad.body.code).toBe('VALIDATION_FAILED');
+    // Лишнее поле: ошибка без пути попадает в details.form
+    expect(bad.body.details.form).toHaveLength(1);
+
+    const nested = await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ profile: { numbers: [{ label: 'Kundennummer', value: '' }] } })
+      .expect(400);
+    expect(nested.body.details.fields).toHaveProperty([
+      'profile.numbers.0.value',
+    ]);
 
     const cleared = await http()
       .patch('/cabinet')
