@@ -739,3 +739,6 @@ details.faq .faq-body {
 .input[aria-invalid='true'] {
   border-color: var(--c-orange-dark);
 }
+.field label.checkbox {
+  font-weight: 400;
+}
