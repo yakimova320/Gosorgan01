@@ -95,7 +95,9 @@ export class LlmService {
         provider: this.adapter.provider,
         model: this.adapter.model,
         input,
-        output: lastOutput,
+        // Выход тоже маскируется: ответ на фото содержит исходные личные данные.
+        output:
+          lastOutput === null ? null : this.masking.mask(lastOutput, table),
         ok,
         error: ok ? null : lastError,
         attempts,

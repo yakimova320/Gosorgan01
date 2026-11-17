@@ -490,6 +490,277 @@
           ]
         }
       ]
+    },
+    {
+      "name": "02 Письма и факты",
+      "item": [
+        {
+          "name": "POST /auth/register (кабинет для писем)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{lettersEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('lettersEmail', `postman-letters-${Date.now()}@example.org`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('sessionToken', pm.response.json().sessionToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: PDF с текстом (01)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('письмо во входящих', () => pm.expect(b.letter.caseId).to.eql(null));",
+                  "pm.test('текст письма', () => pm.expect(b.letter.text).to.include('Jobcenter'));",
+                  "pm.test('нет ключей хранения', () => pm.expect(JSON.stringify(b)).to.not.include('fileKey'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: фото (08)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.test('источник IMAGE', () => pm.expect(pm.response.json().letter.sourceType).to.eql('IMAGE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: нечитаемое фото (11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/11_bad_photo.jpg"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 422', () => pm.response.to.have.status(422));",
+                  "pm.test('code UNREADABLE', () => pm.expect(pm.response.json().code).to.eql('UNREADABLE'));",
+                  "pm.test('страница в details', () => pm.expect(pm.response.json().details.pages).to.eql([1]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: скан PDF (09)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/09_scan.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 422', () => pm.response.to.have.status(422));",
+                  "pm.test('code SCAN_PDF_NOT_SUPPORTED', () => pm.expect(pm.response.json().code).to.eql('SCAN_PDF_NOT_SUPPORTED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: текст вместо PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.txt"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 415', () => pm.response.to.have.status(415));",
+                  "pm.test('code UNSUPPORTED_TYPE', () => pm.expect(pm.response.json().code).to.eql('UNSUPPORTED_TYPE'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

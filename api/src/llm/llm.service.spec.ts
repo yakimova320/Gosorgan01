@@ -14,6 +14,10 @@ import { LlmService, MAX_ATTEMPTS } from './llm.service.js';
 import { MaskingService } from './masking.service.js';
 import { PromptRegistry } from './prompt-registry.js';
 import { ExtractSchema } from './schemas/extract.schema.js';
+import {
+  TranscribeSchema,
+  checkTranscribe,
+} from './schemas/transcribe.schema.js';
 import type { TraceEntry, TraceService } from './trace.service.js';
 
 const fixture = (name: string) =>
@@ -267,6 +271,43 @@ describe('LlmService: маскирование', () => {
     expect(masking.mask('a@b.de und a@b.de', table)).toBe(
       '[EMAIL_1] und [EMAIL_1]',
     );
+  });
+
+  it('ответ модели на фото маскируется перед записью в LlmCall.output', async () => {
+    const { service, traces } = setup([
+      JSON.stringify({
+        text: 'Bitte überweisen Sie auf DE89 3704 0044 0532 0130 00. Mail: anna@example.org',
+        readable: true,
+        reason: null,
+      }),
+    ]);
+    const res = await service.call({
+      prompt: 'transcribe',
+      variables: {},
+      images: [{ mime: 'image/jpeg', data: Buffer.from('x') }],
+      schema: TranscribeSchema,
+      context: { cabinetId: 'c1', letterId: 'l1' },
+    });
+    expect(res.text).toContain('DE89 3704 0044 0532 0130 00'); // приложению нужен настоящий текст
+    expect(traces[0].output).not.toContain('DE89 3704');
+    expect(traces[0].output).not.toContain('anna@example.org');
+    expect(traces[0].context).toEqual({ cabinetId: 'c1', letterId: 'l1' });
+  });
+
+  it('transcribe: readable true с пустым текстом не принимается', async () => {
+    const empty = JSON.stringify({ text: '  ', readable: true, reason: null });
+    const { service, adapter } = setup([empty, empty, empty]);
+    await expect(
+      service.call({
+        prompt: 'transcribe',
+        variables: {},
+        images: [{ mime: 'image/jpeg', data: Buffer.from('x') }],
+        schema: TranscribeSchema,
+        check: checkTranscribe,
+        context: { cabinetId: 'c1' },
+      }),
+    ).rejects.toMatchObject({ code: 'LLM_FAILED' });
+    expect(adapter.requests).toHaveLength(MAX_ATTEMPTS);
   });
 
   it('фото в журнале только описанием размера', async () => {
