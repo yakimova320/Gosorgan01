@@ -55,14 +55,14 @@
 | T08 | #75 | открыт | medium | закрыть как «not planned»: чат-помощник не строим |
 | P01 | #76 | открыт | medium | без изменений |
 | L01–L08 | #77–#84 | открыты | later | без изменений |
-| S05 | новый | | high | создать (этот PR) |
-| B17 | новый | | high | создать: PostgreSQL |
-| F06 | новый | | high | создать: фронтенд-основа |
-| F07 | новый | | high | создать: общие схемы и поля |
-| B18 | новый | | high | создать: лимиты запросов и расходов модели |
-| B19 | новый | | high | создать: seed и demo-runbook |
+| S05 | #92 | открыт | high | создан 17.11 |
+| B17 | #93 | открыт | high | создан 17.11 |
+| F06 | #94 | открыт | high | создан 17.11 |
+| F07 | #95 | открыт | high | создан 17.11 |
+| B18 | #96 | открыт | high | создан 17.11 |
+| B19 | #97 | открыт | high | создан 17.11 |
 
-Номера новых Issues появятся после создания. Их нужно вписать в эту таблицу отдельным коммитом.
+Новые Issues созданы 17.11, номера вписаны.
 
 ## 2. Как работать над Issue: Настя с Claude Code
 
@@ -115,7 +115,7 @@
 
 ---
 
-### Новый: [S05] Настя: TechBriefing v5, номера задач, тексты Issues
+### #92 [S05] Настя: TechBriefing v5, номера задач, тексты Issues
 
 Метки: `person:nastja`, `area:org`, `prio:high`.
 
@@ -131,7 +131,7 @@ TechBriefing v5, AGENTS.md, таблица «код → номер Issue», но
 - [ ] номера новых Issues вписаны в таблицу
 ```
 
-### Новый: [B17] Настя: PostgreSQL вместо SQLite
+### #93 [B17] Настя: PostgreSQL вместо SQLite
 
 Метки: `person:nastja`, `area:backend`, `area:database`, `prio:high`.
 
@@ -143,7 +143,7 @@ TechBriefing v5, AGENTS.md, таблица «код → номер Issue», но
 
 #### Текст для Claude
 ```text
-Задача B17, Issue #___, ветка b17-postgres. Раздел v5: 3.
+Задача B17, Issue #93, ветка b17-postgres. Раздел v5: 3.
 provider postgresql, @prisma/adapter-pg, убрать SQLite и better-sqlite3. Новая история миграций; старые миграции SQLite в api/prisma/migrations-sqlite-archive/.
 Обнови prisma.config.ts, генерацию клиента, database-url.ts, PrismaService, .env.example, команды db:*, docs/database.md, README.
 api/test/test-db.ts: отдельная схема на тестовый процесс, удаление после прогона.
@@ -161,7 +161,7 @@ Postman: запросы не меняются, проверь, что колле
 - [ ] данные переживают перезапуск контейнера базы
 ````
 
-### Новый: [F06] Настя: React Router, Redux Toolkit, RTK Query, перенос входа
+### #94 [F06] Настя: React Router, Redux Toolkit, RTK Query, перенос входа
 
 Метки: `person:nastja`, `area:frontend`, `prio:high`.
 
@@ -170,7 +170,7 @@ Postman: запросы не меняются, проверь, что колле
 
 #### Текст для Claude
 ```text
-Задача F06, Issue #___, ветка f06-frontend-base. Разделы v5: 4 и 6.
+Задача F06, Issue #94, ветка f06-frontend-base. Разделы v5: 4 и 6.
 React Router вместо web/src/app/router.tsx. Redux Toolkit store, slice сессии. RTK Query api: baseQuery с поведением http.ts (Bearer, таймаут, 204, FormData, ошибки, 401).
 Перенеси вход, регистрацию, выход, кабинет. 401 INVALID_CREDENTIALS при входе не завершает сессию.
 Очистка: выход, истёкшая сессия → resetApiState и сброс slices.
@@ -187,7 +187,7 @@ Playwright в web/e2e, pnpm test:e2e запускает и API, и браузе�
 - [ ] собственный роутер удалён
 ````
 
-### Новый: [F07] Настя: общие схемы и умные поля для существующих форм
+### #95 [F07] Настя: общие схемы и умные поля для существующих форм
 
 Метки: `person:nastja`, `area:frontend`, `prio:high`.
 
@@ -196,7 +196,7 @@ Playwright в web/e2e, pnpm test:e2e запускает и API, и браузе�
 
 #### Текст для Claude
 ```text
-Задача F07, Issue #___, ветка f07-shared-forms. Раздел v5: 5.
+Задача F07, Issue #95, ветка f07-shared-forms. Раздел v5: 5.
 packages/shared: Zod-схемы регистрации, входа, профиля; константы пароля (10 знаков, 72 байта UTF-8). Без Node, Nest, Prisma, bcrypt. api/src/auth/password.ts берёт константы оттуда.
 Пакет в workspace, сборке, lint, typecheck, CI.
 Единый формат ошибок: details.fields у полей, message общей ошибкой формы.
@@ -414,7 +414,7 @@ README: как найти письмо в storage/mail-outbox/ и как вкл�
 - [ ] настройка smtp описана; если сервис выбран, одно письмо пришло на адрес команды
 ````
 
-### Новый: [B18] Настя: лимиты запросов и расходов модели
+### #96 [B18] Настя: лимиты запросов и расходов модели
 
 Метки: `person:nastja`, `area:backend`, `area:ai`, `prio:high`.
 
@@ -426,7 +426,7 @@ README: как найти письмо в storage/mail-outbox/ и как вкл�
 
 #### Текст для Claude
 ```text
-Задача B18, Issue #___, ветка b18-limits. Раздел v5: 7.
+Задача B18, Issue #96, ветка b18-limits. Раздел v5: 7.
 @nestjs/throttler: вход, регистрация, forgot, загрузка письма.
 LLM_DAILY_OPS_PER_CABINET и LLM_DAILY_TOKEN_BUDGET в .env.example; подсчёт по LlmCall; проверка до вызова модели; 429 RATE_LIMITED или 503 LLM_QUOTA.
 Сайт показывает текст ошибки, без тихой подмены demo-ответом.
@@ -455,7 +455,7 @@ pnpm --dir api eval: все 15 писем через настоящий путь
 - [ ] отчёт одной командой, итог по правилам виден, цифры можно вставить в слайд
 ````
 
-### Новый: [B19] Настя: seed демо-кабинета и demo-runbook
+### #97 [B19] Настя: seed демо-кабинета и demo-runbook
 
 Метки: `person:nastja`, `area:backend`, `area:database`, `prio:high`.
 
@@ -464,7 +464,7 @@ pnpm --dir api eval: все 15 писем через настоящий путь
 
 #### Текст для Claude
 ```text
-Задача B19, Issue #___, ветка b19-seed. Разделы: ТЗ v4 раздел 18, v5 раздел 9.
+Задача B19, Issue #97, ветка b19-seed. Разделы: ТЗ v4 раздел 18, v5 раздел 9.
 pnpm db:seed: демо-кабинет без настоящих людей, 3 дела из писем 01, 04, 06 (у одного просроченный срок), подтверждённые факты, объяснение. Повторный запуск не создаёт дубли.
 Пароль демо-кабинета не в репозитории: из переменной DEMO_PASSWORD в .env (в .env.example без значения).
 docs/demo-runbook.md: запуск, вход, сценарий показа, запасной вариант в demo-режиме без сети.
@@ -719,6 +719,8 @@ docs/deploy.md: публикация по шагам; публикацию де�
 Без изменений.
 
 ## 4. Что применить в GitHub
+
+Состояние 17.11: пункты 1, 2, 3, 5 применены, вехи назначены задачам основного пути, B17, F06, F07, B19, D04, A01–A03, B18, B14, D03, B13. Пункт 4 ждёт приёмки человеком.
 
 После слияния PR S05, по порядку:
 
