@@ -1687,6 +1687,343 @@
           ]
         }
       ]
+    },
+    {
+      "name": "04 Черновик",
+      "item": [
+        {
+          "name": "POST /letters: письмо 01 для черновика",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('draftLetterId', b.letter.id);",
+                  "pm.collectionVariables.set('draftClaimIds', JSON.stringify(b.claims.map(c => c.id)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/claims/confirm: все факты",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{draftLetterId}}/claims/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{draftLetterId}}",
+                "claims",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": {{draftClaimIds}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/assign: новое дело",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{draftLetterId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{draftLetterId}}",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newCase\": {}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('draftCaseId', pm.response.json().caseId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id/draft-questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{draftLetterId}}/draft-questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{draftLetterId}}",
+                "draft-questions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('есть WHICH_DOCUMENTS', () => pm.expect(pm.response.json().questions.map(q => q.id)).to.include('WHICH_DOCUMENTS'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{draftCaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{draftCaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"CLARIFICATION\",\n  \"letterId\": \"{{draftLetterId}}\",\n  \"questionId\": \"WHICH_DOCUMENTS\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('draftId', b.id);",
+                  "pm.test('проверка пройдена', () => pm.expect(b.verification.passed).to.eql(true));",
+                  "pm.test('номер дела в тексте', () => pm.expect(b.germanText).to.include('Ihr Zeichen: JC-2026-1001'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /drafts/:id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drafts/{{draftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drafts",
+                "{{draftId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('не устарел', () => pm.expect(pm.response.json().stale).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft: AMOUNT без суммы",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{draftCaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{draftCaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"CLARIFICATION\",\n  \"letterId\": \"{{draftLetterId}}\",\n  \"questionId\": \"AMOUNT\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 422', () => pm.response.to.have.status(422));",
+                  "pm.test('code QUESTION_NOT_AVAILABLE', () => pm.expect(pm.response.json().code).to.eql('QUESTION_NOT_AVAILABLE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft: WIDERSPRUCH",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{draftCaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{draftCaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"WIDERSPRUCH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 422', () => pm.response.to.have.status(422));",
+                  "pm.test('code LEGAL_REFERRAL', () => pm.expect(pm.response.json().code).to.eql('LEGAL_REFERRAL'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

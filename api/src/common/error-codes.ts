@@ -42,6 +42,15 @@ export const ERROR_CODES = {
     status: 409,
     message: 'Нет фактов для объяснения. Проверьте факты письма',
   },
+  DRAFT_SOURCES_CHANGED: {
+    status: 409,
+    message:
+      'Факты или профиль изменились, пока собирался черновик. Соберите черновик ещё раз',
+  },
+  PROFILE_INCOMPLETE: {
+    status: 409,
+    message: 'Заполните имя, фамилию и адрес в профиле',
+  },
   NO_CONFIRMED_CLAIMS: {
     status: 409,
     message: 'Сначала подтвердите факты письма',
@@ -82,6 +91,10 @@ export const ERROR_CODES = {
   DRAFT_VERIFICATION_FAILED: {
     status: 422,
     message: 'Черновик не прошёл проверку',
+  },
+  QUESTION_NOT_AVAILABLE: {
+    status: 422,
+    message: 'Этот вопрос недоступен для письма: нет подтверждённого факта',
   },
   LEGAL_REFERRAL: {
     status: 422,
