@@ -119,10 +119,10 @@ describe('Приём письма POST /letters (e2e)', () => {
     expect(letter.files).toEqual([
       { n: 1, mime: 'application/pdf', bytes: expect.any(Number) },
     ]);
+    expect(res.body.claims.length).toBeGreaterThan(0);
     expect(res.body).toMatchObject({
-      claims: [],
-      deadlines: [],
       suggestions: [],
+      extraction: { dropped: 0 },
     });
     expect(JSON.stringify(res.body)).not.toMatch(
       /fileKey|letters\/|brief\.pdf|jasno-storage/,
@@ -145,8 +145,10 @@ describe('Приём письма POST /letters (e2e)', () => {
     expect(res.body.letter.text).toContain('Aktenzeichen');
     const calls = await db.llmCall.findMany({
       where: { letterId: res.body.letter.id },
+      orderBy: { createdAt: 'asc' },
     });
-    expect(calls).toHaveLength(1);
+    expect(calls.map((c) => c.promptName)).toEqual(['transcribe', 'extract']);
+    expect(calls[1]).toMatchObject({ cabinetId, ok: true });
     expect(calls[0]).toMatchObject({
       cabinetId,
       promptName: 'transcribe',
@@ -202,7 +204,7 @@ describe('Приём письма POST /letters (e2e)', () => {
     expect(calls).toHaveLength(before + 1);
     expect(calls[0]).toMatchObject({
       ok: false,
-      attempts: 3,
+      attempts: 2, // transcribe: не больше 2 из общих 3
       promptName: 'transcribe',
     });
     expect(await db.letter.count({ where: { id: calls[0].letterId! } })).toBe(
@@ -322,11 +324,12 @@ describe('Приём письма POST /letters (e2e)', () => {
   });
 
   it('ошибка базы после записи файла: файл удаляется, письма нет', async () => {
-    vi.spyOn(db.letter, 'create').mockRejectedValueOnce(new Error('db down'));
+    vi.spyOn(db, '$transaction').mockRejectedValueOnce(new Error('db down'));
     await expectRejected(
       upload(fixture('01_jobcenter_request.pdf'), 'a.pdf'),
       500,
       'INTERNAL_ERROR',
+      true, // extract уже был вызван
     );
   });
 
@@ -335,7 +338,7 @@ describe('Приём письма POST /letters (e2e)', () => {
     const id = res.body.letter.id as string;
     const row = await db.letter.findUniqueOrThrow({ where: { id } });
     const key = (row.files as { fileKey: string }[])[0].fileKey;
-    expect(await db.llmCall.count({ where: { letterId: id } })).toBe(1);
+    expect(await db.llmCall.count({ where: { letterId: id } })).toBe(2);
 
     expect(await app.get(LettersService).removeLetter(cabinetId, id)).toBe(
       true,
