@@ -1,5 +1,5 @@
 // Схема базы Ja!sno. Источник: ТЗ v2 раздел 7 с изменениями ТЗ v4 раздел 8.
-// Это единственный файл, который правят руками. PostgreSQL-вариант создаёт `pnpm db:pg`.
+// База только PostgreSQL (TechBriefing v5, раздел 3).
 // Простыми словами о таблицах: docs/database.md.
 
 generator client {
@@ -10,7 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 enum CaseStatus {

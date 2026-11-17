@@ -6,7 +6,10 @@ describe('Служебное (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    app = await createApp({ env: { LLM_MODE: 'demo', NODE_ENV: 'test' }, logger: false });
+    app = await createApp({
+      env: { LLM_MODE: 'demo', NODE_ENV: 'test' },
+      logger: false,
+    });
     await app.init();
   });
 
@@ -37,11 +40,15 @@ describe('Служебное (e2e)', () => {
     const res = await request(app.getHttpServer())
       .get('/health')
       .set('Origin', 'http://localhost:5173');
-    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(res.headers['access-control-allow-origin']).toBe(
+      'http://localhost:5173',
+    );
   });
 
   it('CORS не разрешает чужой адрес', async () => {
-    const res = await request(app.getHttpServer()).get('/health').set('Origin', 'http://evil.test');
+    const res = await request(app.getHttpServer())
+      .get('/health')
+      .set('Origin', 'http://evil.test');
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
   });
 });

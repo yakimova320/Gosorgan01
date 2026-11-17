@@ -1,0 +1,21 @@
+# База PostgreSQL для разработки и тестов. Запуск: pnpm db:up
+# Контейнер приложения добавляет задача B13.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: jasno
+      POSTGRES_PASSWORD: jasno
+      POSTGRES_DB: jasno
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - jasno-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jasno -d jasno']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  jasno-db:

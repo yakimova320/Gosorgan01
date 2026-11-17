@@ -7,5 +7,6 @@ allowBuilds:
   '@prisma/engines': true
   prisma: true
   esbuild: true
-  better-sqlite3: true
+  # нужен только Prisma CLI для SQLite, у нас PostgreSQL
+  better-sqlite3: false
   '@scarf/scarf': false

@@ -3,7 +3,7 @@ import { PrismaService } from './prisma.service.js';
 
 describe('Схема базы: каскадное удаление', () => {
   let db: PrismaService;
-  let cleanup: () => void;
+  let cleanup: () => Promise<void>;
 
   beforeAll(() => {
     const test = createTestDatabase();
@@ -13,7 +13,7 @@ describe('Схема базы: каскадное удаление', () => {
 
   afterAll(async () => {
     await db.$disconnect();
-    cleanup();
+    await cleanup();
   });
 
   /** Кабинет со всем, что в нём бывает: дело, письма, факты, срок, черновик, история. */

@@ -46,6 +46,10 @@ Ja!sno помогает русскоязычным людям в Германи�
    pnpm -v
    ```
 
+### Docker Desktop (для базы)
+
+База PostgreSQL работает в Docker. Установить Docker Desktop: https://www.docker.com/products/docker-desktop/ и запустить его.
+
 ### Запуск проекта (Mac и Windows)
 
 В терминале перейти в папку проекта (`cd` и путь к папке `Gosorgan01`) и выполнить:
@@ -61,7 +65,13 @@ pnpm install
 
 Без изменений файл работает в режиме `LLM_MODE=demo` (без настоящей модели). Для настоящей модели вписать в `api/.env` значения `LLM_MODE=openai`, `LLM_API_KEY` и `LLM_MODEL`. Ключ никому не отправлять и в git не добавлять.
 
-Создать базу (файл `api/dev.db`) или обновить её после новых миграций:
+Запустить базу PostgreSQL (Docker Desktop должен быть запущен):
+
+```bash
+pnpm db:up
+```
+
+Создать таблицы или обновить их после новых миграций:
 
 ```bash
 pnpm db:migrate

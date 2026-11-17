@@ -23,8 +23,8 @@
     "db:migrate": "pnpm --filter jasno-api db:migrate",
     "db:studio": "pnpm --filter jasno-api db:studio",
     "db:seed": "pnpm --filter jasno-api db:seed",
-    "db:check": "pnpm --filter jasno-api db:check",
-    "db:pg": "pnpm --filter jasno-api db:pg",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose stop db",
     "llm:check": "pnpm --filter jasno-api llm:check"
   },
   "devDependencies": {

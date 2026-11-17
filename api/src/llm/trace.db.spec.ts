@@ -9,7 +9,7 @@ import { TraceService } from './trace.service.js';
 
 describe('LlmCall в базе', () => {
   let db: PrismaService;
-  let cleanup: () => void;
+  let cleanup: () => Promise<void>;
 
   beforeAll(() => {
     const test = createTestDatabase();
@@ -19,7 +19,7 @@ describe('LlmCall в базе', () => {
 
   afterAll(async () => {
     await db.$disconnect();
-    cleanup();
+    await cleanup();
   });
 
   it('вызов demo пишет строку, IBAN в input только меткой', async () => {

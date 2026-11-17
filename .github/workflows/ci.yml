@@ -7,9 +7,24 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: jasno
+          POSTGRES_PASSWORD: jasno
+          POSTGRES_DB: jasno
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jasno -d jasno"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
     env:
       LLM_MODE: demo
       NODE_ENV: test
+      DATABASE_URL: postgresql://jasno:jasno@localhost:5432/jasno
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -19,7 +34,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter jasno-api db:generate
-      - run: pnpm db:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
