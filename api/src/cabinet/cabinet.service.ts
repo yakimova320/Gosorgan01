@@ -66,6 +66,7 @@ export class CabinetService {
     input: UpdateCabinetInput,
   ): Promise<CabinetView> {
     const data: Prisma.CabinetUpdateInput = {};
+    let senderChanged = false;
     if (input.language !== undefined) data.language = input.language;
     if (input.profile !== undefined) {
       // Частичное изменение: объединяем с сохранённым и проверяем итог целиком.
@@ -88,8 +89,20 @@ export class CabinetService {
         throw new ApiError('VALIDATION_FAILED', { fields });
       }
       data.profile = checked.data;
+      const before = (current.profile ?? {}) as Partial<Profile>;
+      senderChanged = (['firstName', 'lastName', 'address'] as const).some(
+        (k) => before[k] !== checked.data[k],
+      );
     }
-    await this.db.cabinet.update({ where: { id: cabinetId }, data });
+    await this.db.$transaction(async (tx) => {
+      await tx.cabinet.update({ where: { id: cabinetId }, data });
+      // Отправитель в черновиках — из профиля: после изменения имени или адреса черновики устаревают.
+      if (senderChanged)
+        await tx.draft.updateMany({
+          where: { case: { cabinetId }, stale: false, status: 'PREPARED' },
+          data: { stale: true },
+        });
+    });
     return this.get(cabinetId);
   }
 }

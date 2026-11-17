@@ -283,4 +283,33 @@ describe('Черновик «запрос уточнения» (e2e, B10)', () =
         .stale,
     ).toBe(true);
   });
+
+  it('изменение имени или адреса в профиле делает черновики устаревшими; язык — нет', async () => {
+    const { caseId, letterId } = await letterInCase('04_buergeramt.pdf', true);
+    const res = await draft(caseId, {
+      kind: 'CLARIFICATION',
+      letterId,
+      questionId: 'REASON',
+    }).expect(201);
+    await http()
+      .patch('/cabinet')
+      .set(auth())
+      .send({ language: 'ru' })
+      .expect(200);
+    expect(
+      (await http().get(`/drafts/${res.body.id}`).set(auth())).body.stale,
+    ).toBe(false);
+    await http()
+      .patch('/cabinet')
+      .set(auth())
+      .send({ profile: { address: 'Andere Str. 3, 50667 Köln' } })
+      .expect(200);
+    expect(
+      (await http().get(`/drafts/${res.body.id}`).set(auth())).body.stale,
+    ).toBe(true);
+    await db.cabinet.update({
+      where: { id: cabinetId },
+      data: { profile: PERSON },
+    });
+  });
 });
