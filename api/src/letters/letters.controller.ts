@@ -33,6 +33,8 @@ import { CurrentAuth } from '../auth/session.guard.js';
 import { LetterUploadInterceptor } from '../documents/upload.interceptor.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import {
+  AssignLetterSchema,
+  type AssignLetterInput,
   ConfirmClaimsSchema,
   CorrectClaimSchema,
   DeleteLetterQuerySchema,
@@ -295,5 +297,36 @@ export class LettersController {
     @Query(new ZodPipe(DeleteLetterQuerySchema)) query: { mode?: 'inbox' },
   ): Promise<void> {
     await this.letters.remove(auth.cabinetId, id, query.mode);
+  }
+
+  @Post(':id/assign')
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Письмо в дело: существующее ({ caseId }) или новое ({ newCase: { title? } })',
+    description:
+      'Письмо, факты и сроки переносятся одной транзакцией. Повтор в то же дело ничего не меняет. ' +
+      'Новое дело: ведомство и номер только из подтверждённых фактов, иначе название «Новое дело». ' +
+      'Перенос из другого дела сбрасывает объяснение и помечает черновики старого дела устаревшими.',
+  })
+  @ApiBody({
+    schema: {
+      examples: {
+        existing: { value: { caseId: 'cm0case1' } },
+        fresh: { value: { newCase: {} } },
+      },
+    },
+  })
+  @ApiOkResponse({ schema: { example: { caseId: 'cm0case1', changed: true } } })
+  @ApiNotFoundResponse(NOT_FOUND)
+  @ApiConflictResponse(
+    err('CASE_CLOSED', 'Дело завершено. Откройте его снова или создайте новое'),
+  )
+  assign(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') id: string,
+    @Body(new ZodPipe(AssignLetterSchema)) body: AssignLetterInput,
+  ): Promise<{ caseId: string; changed: boolean }> {
+    return this.letters.assign(auth.cabinetId, id, body);
   }
 }

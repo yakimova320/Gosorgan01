@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { buildClaims, checkUserValue, claimText } from './claims.builder.js';
 import type {
   ClaimView,
+  AssignLetterInput,
   ConfirmClaimsInput,
   CorrectClaimInput,
   DeadlineView,
@@ -245,6 +246,17 @@ export class LettersService {
         if (res.count !== toChange.length)
           throw new ApiError('CLAIM_STATE', { reason: 'changed-concurrently' });
         changed.push(...toChange);
+        // История дела: только реально изменённые факты, повтор события не создаёт.
+        if (letter.caseId)
+          await addEvent(
+            tx,
+            letter.caseId,
+            target === 'CONFIRMED' ? 'CLAIM_CONFIRMED' : 'CLAIM_REJECTED',
+            {
+              letterId,
+              claimIds: toChange,
+            },
+          );
       }
       if (changed.length) await this.invalidate(tx, letter, changed);
     });
@@ -321,6 +333,12 @@ export class LettersService {
         });
       }
       await this.invalidate(tx, letter, [old.id]);
+      if (letter.caseId)
+        await addEvent(tx, letter.caseId, 'REVISION', {
+          letterId,
+          claimId: created.id,
+          text: 'Факт исправлен',
+        });
     });
     return this.detail(cabinetId, letterId);
   }
@@ -342,6 +360,11 @@ export class LettersService {
         const letter = await this.ownLetter(tx, cabinetId, letterId);
         if (letter.caseId === null) return;
         await this.invalidate(tx, letter, 'all');
+        await addEvent(tx, letter.caseId, 'REVISION', {
+          letterId,
+          text: 'Письмо убрано из дела во входящие',
+        });
+        await touchCase(tx, letter.caseId);
         await tx.claim.updateMany({
           where: { letterId },
           data: { caseId: null },
@@ -372,12 +395,111 @@ export class LettersService {
     if (!letter) return false;
     await this.db.$transaction(async (tx) => {
       await this.invalidate(tx, letter, 'all');
+      if (letter.caseId) {
+        await addEvent(tx, letter.caseId, 'REVISION', {
+          letterId,
+          text: 'Письмо удалено',
+        });
+        await touchCase(tx, letter.caseId);
+      }
       await tx.llmCall.deleteMany({ where: { letterId } });
       await tx.letter.delete({ where: { id: letterId } });
     });
     for (const f of (letter.files as unknown as StoredFile[]) ?? [])
       await this.storage.remove(f.fileKey);
     return true;
+  }
+
+  // ---------- В дело (B07) ----------
+
+  /**
+   * Письмо в дело: одна транзакция. Строка письма блокируется первым UPDATE,
+   * поэтому параллельные назначения идут по очереди и не создают два новых дела.
+   * Повтор в то же дело: без изменений и без событий.
+   * Перенос из другого дела: объяснение письма сбрасывается, черновики старого дела с его фактами — stale.
+   * Новое дело: ведомство и номер только из подтверждённых фактов, иначе null и «Новое дело».
+   */
+  async assign(
+    cabinetId: string,
+    letterId: string,
+    input: AssignLetterInput,
+  ): Promise<{ caseId: string; changed: boolean }> {
+    return this.db.$transaction(async (tx) => {
+      const locked = await tx.letter.updateMany({
+        where: { id: letterId, cabinetId },
+        data: { cabinetId },
+      });
+      if (locked.count !== 1) throw new ApiError('NOT_FOUND');
+      const letter = await tx.letter.findUniqueOrThrow({
+        where: { id: letterId },
+        select: { id: true, caseId: true },
+      });
+
+      let targetId: string;
+      if ('caseId' in input) {
+        const target = await tx.case.findFirst({
+          where: { id: input.caseId, cabinetId },
+          select: { id: true, status: true },
+        });
+        if (!target) throw new ApiError('NOT_FOUND');
+        if (letter.caseId === target.id)
+          return { caseId: target.id, changed: false };
+        if (target.status === 'CLOSED') throw new ApiError('CASE_CLOSED');
+        targetId = target.id;
+      } else {
+        if (letter.caseId)
+          throw new ApiError('LETTER_IN_CASE', { caseId: letter.caseId });
+        const confirmed = await tx.claim.findMany({
+          where: { letterId, status: 'CONFIRMED' },
+          orderBy: { createdAt: 'asc' },
+          select: { kind: true, value: true },
+        });
+        const first = (k: string) =>
+          confirmed.find((c) => c.kind === k)?.value ?? null;
+        const authority = first('AUTHORITY');
+        const requirement = first('REQUIREMENT');
+        const title =
+          input.newCase.title ??
+          (authority && requirement
+            ? `${authority}: ${requirement}`
+            : (authority ?? 'Новое дело')
+          ).slice(0, 120);
+        const created = await tx.case.create({
+          data: {
+            cabinetId,
+            title,
+            authority,
+            caseNumber: first('CASE_NUMBER'),
+          },
+        });
+        targetId = created.id;
+        await addEvent(tx, targetId, 'CASE_CREATED_FROM_LETTER', { letterId });
+      }
+
+      if (letter.caseId) {
+        await this.invalidate(tx, letter, 'all');
+        await addEvent(tx, letter.caseId, 'REVISION', {
+          letterId,
+          text: 'Письмо перенесено в другое дело',
+        });
+        await touchCase(tx, letter.caseId);
+      }
+      await tx.letter.update({
+        where: { id: letterId },
+        data: { caseId: targetId },
+      });
+      await tx.claim.updateMany({
+        where: { letterId },
+        data: { caseId: targetId },
+      });
+      await tx.deadline.updateMany({
+        where: { letterId },
+        data: { caseId: targetId },
+      });
+      await addEvent(tx, targetId, 'LETTER_RECEIVED', { letterId });
+      await touchCase(tx, targetId);
+      return { caseId: targetId, changed: true };
+    });
   }
 
   // ---------- Общее ----------
@@ -434,7 +556,7 @@ export class LettersService {
   }
 }
 
-function toClaimView(c: {
+export function toClaimView(c: {
   id: string;
   kind: string;
   value: string;
@@ -480,4 +602,29 @@ function toLetterView(row: {
     files: files.map(({ n, mime, bytes }) => ({ n, mime, bytes })),
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+type EventType =
+  | 'LETTER_RECEIVED'
+  | 'CASE_CREATED_FROM_LETTER'
+  | 'CLAIM_CONFIRMED'
+  | 'CLAIM_REJECTED'
+  | 'REVISION';
+
+/** Событие истории дела. */
+export async function addEvent(
+  tx: Tx,
+  caseId: string,
+  type: EventType,
+  details: Record<string, unknown>,
+): Promise<void> {
+  await tx.event.create({ data: { caseId, type, details: details as object } });
+}
+
+/** Дело изменилось: обновить updatedAt (статус считается при чтении). */
+async function touchCase(tx: Tx, caseId: string): Promise<void> {
+  await tx.case.update({
+    where: { id: caseId },
+    data: { updatedAt: new Date() },
+  });
 }

@@ -1116,6 +1116,465 @@
           ]
         }
       ]
+    },
+    {
+      "name": "03 Дела",
+      "item": [
+        {
+          "name": "POST /letters: письмо 01 для дела",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('caseLetterId', pm.response.json().letter.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/assign: новое дело",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{caseLetterId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{caseLetterId}}",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newCase\": {}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('caseId', pm.response.json().caseId);",
+                  "pm.test('изменено', () => pm.expect(pm.response.json().changed).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/assign: повтор",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{caseLetterId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{caseLetterId}}",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caseId\": \"{{caseId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('без изменений', () => pm.expect(pm.response.json().changed).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/assign: новое дело ещё раз",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{caseLetterId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{caseLetterId}}",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newCase\": {}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 409', () => pm.response.to.have.status(409));",
+                  "pm.test('code LETTER_IN_CASE', () => pm.expect(pm.response.json().code).to.eql('LETTER_IN_CASE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('дело в списке со stage', () => { const c = pm.response.json().find(x => x.id === pm.collectionVariables.get('caseId')); pm.expect(c.stage).to.eql('NEEDS_CHECK'); pm.expect(c.title).to.eql('Новое дело'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases/:id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{caseId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('письмо и история', () => { const b = pm.response.json(); pm.expect(b.letters.length).to.eql(1); pm.expect(b.timeline.length).to.eql(2); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases/:id/trace",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/trace",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{caseId}}",
+                "trace"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('вызовы модели по письму', () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('есть события', () => pm.expect(pm.response.json().items.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /history?type=неизвестный",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/history?type=other",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "other"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cases/:id: завершить",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{caseId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CLOSED\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('stage CLOSED', () => pm.expect(pm.response.json().stage).to.eql('CLOSED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /cases/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{caseId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases/:id после удаления",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{caseId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

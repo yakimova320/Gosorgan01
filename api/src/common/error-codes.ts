@@ -25,6 +25,14 @@ export const ERROR_CODES = {
     status: 409,
     message: 'Этот факт уже изменён. Обновите страницу',
   },
+  CASE_CLOSED: {
+    status: 409,
+    message: 'Дело завершено. Откройте его снова или создайте новое',
+  },
+  LETTER_IN_CASE: {
+    status: 409,
+    message: 'Письмо уже в деле. Выберите дело из списка, чтобы перенести его',
+  },
   NO_CONFIRMED_CLAIMS: {
     status: 409,
     message: 'Сначала подтвердите факты письма',

@@ -9,6 +9,8 @@ import { ErrorAlert, Loading, PageHeader } from '../../components/ui';
 import { formatDate } from '../../lib/dates';
 import { CLAIM_KIND } from '../../lib/labels';
 import {
+  useAssignLetterMutation,
+  useCasesQuery,
   useConfirmClaimsMutation,
   useCorrectClaimMutation,
   useDeleteLetterMutation,
@@ -381,7 +383,7 @@ export function LetterCheckPage({ id }: { id: string }) {
       return { ...x, [cid]: d };
     });
 
-  async function save() {
+  async function save(): Promise<boolean> {
     setNotice(null);
     setConflict(false);
     const confirm = Object.keys(decisions).filter((cid) => decisions[cid] === 'ok');
@@ -390,9 +392,11 @@ export function LetterCheckPage({ id }: { id: string }) {
       await confirmClaims({ id, confirm, reject }).unwrap();
       setDecisions({});
       setNotice({ tone: 'info', text: 'Проверка сохранена.' });
+      return true;
     } catch (err) {
       if (errorCode(err) === 'CLAIM_STATE') setConflict(true);
       else setNotice({ tone: 'error', text: errorText(err) });
+      return false;
     }
   }
 
@@ -552,7 +556,7 @@ export function LetterCheckPage({ id }: { id: string }) {
       )}
 
       {claims.length > 0 && (
-        <button type="button" className="btn btn--primary" disabled={pending === 0 || saving.isLoading} onClick={save}>
+        <button type="button" className="btn btn--primary" disabled={pending === 0 || saving.isLoading} onClick={() => void save()}>
           {saving.isLoading ? 'Сохраняем…' : `Сохранить проверку${pending ? ` (${pending})` : ''}`}
         </button>
       )}
@@ -571,12 +575,14 @@ export function LetterCheckPage({ id }: { id: string }) {
             Похоже на дело «{s.title}»: {s.reason}.
           </span>
         ))}
-        <button type="button" className="btn btn--primary btn--small" disabled aria-describedby="assign-later">
-          В дело
-        </button>
-        <span id="assign-later" className="small text-2">
-          Назначение в дело подключается в следующем обновлении.
-        </span>
+        <AssignBlock
+          letterId={id}
+          suggestions={fromUpload?.suggestions ?? []}
+          pending={pending}
+          onSave={save}
+          onDiscard={() => setDecisions({})}
+          onError={(text) => setNotice({ tone: 'error', text })}
+        />
         <button type="button" className="btn btn--secondary btn--small" onClick={() => navigate('/app')}>
           Оставить во входящих
         </button>
@@ -599,5 +605,115 @@ export function LetterCheckPage({ id }: { id: string }) {
         )}
       </section>
     </>
+  );
+}
+
+/**
+ * «В дело»: подсказка по номеру дела, открытое дело или новое.
+ * Несохранённые решения не теряются молча: сначала «Сохранить и положить» или «Отменить решения».
+ */
+function AssignBlock({
+  letterId,
+  suggestions,
+  pending,
+  onSave,
+  onDiscard,
+  onError,
+}: {
+  letterId: string;
+  suggestions: CaseSuggestion[];
+  pending: number;
+  onSave: () => Promise<boolean>;
+  onDiscard: () => void;
+  onError: (text: string) => void;
+}) {
+  const cases = useCasesQuery();
+  const [assignLetter, assigning] = useAssignLetterMutation();
+  const navigate = useNavigate();
+  const open = (cases.data ?? []).filter((c) => c.stage !== 'CLOSED');
+  const options = [
+    ...suggestions.map((s) => ({ id: s.caseId, title: s.title, note: s.reason })),
+    ...open.filter((c) => !suggestions.some((s) => s.caseId === c.id)).map((c) => ({ id: c.id, title: c.title, note: c.caseNumber ?? '' })),
+  ];
+  const [choice, setChoice] = useState<string>(suggestions[0]?.caseId ?? 'new');
+  const [title, setTitle] = useState('');
+  const [askPending, setAskPending] = useState(false);
+
+  async function assign() {
+    try {
+      const target = choice === 'new' ? { newCase: title.trim() ? { title: title.trim() } : {} } : { caseId: choice };
+      await assignLetter({ id: letterId, target }).unwrap();
+      await navigate('/app', { replace: true, flushSync: true });
+    } catch (err) {
+      onError(errorText(err));
+    }
+  }
+
+  async function start() {
+    if (pending > 0) return setAskPending(true);
+    await assign();
+  }
+
+  return (
+    <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
+      <legend className="small text-2">Положить письмо в дело</legend>
+      {options.map((o) => (
+        <label key={o.id} className="checkbox">
+          <input type="radio" name="case" checked={choice === o.id} onChange={() => setChoice(o.id)} />
+          <span>
+            {o.title}
+            {o.note ? <span className="small text-2"> · {o.note}</span> : null}
+          </span>
+        </label>
+      ))}
+      <label className="checkbox">
+        <input type="radio" name="case" checked={choice === 'new'} onChange={() => setChoice('new')} />
+        <span>Новое дело</span>
+      </label>
+      {choice === 'new' && (
+        <div className="field">
+          <label htmlFor="new-case-title">Название (необязательно)</label>
+          <input
+            id="new-case-title"
+            className="input"
+            value={title}
+            maxLength={120}
+            placeholder="Из подтверждённых фактов или «Новое дело»"
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+      )}
+      {askPending && pending > 0 ? (
+        <div className="alert alert--warn stack-s" role="alertdialog" aria-label="Несохранённые решения перед делом">
+          <span>Есть несохранённые решения ({pending}). Сохранить их перед тем, как положить письмо в дело?</span>
+          <div className="row wrap">
+            <button
+              type="button"
+              className="btn btn--primary btn--small"
+              disabled={assigning.isLoading}
+              onClick={async () => {
+                if (await onSave()) await assign();
+              }}
+            >
+              Сохранить и положить
+            </button>
+            <button
+              type="button"
+              className="btn btn--secondary btn--small"
+              onClick={() => {
+                onDiscard();
+                setAskPending(false);
+              }}
+            >
+              Отменить решения
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="btn btn--primary btn--small" disabled={assigning.isLoading} onClick={() => void start()}>
+          В дело
+        </button>
+      )}
+    </fieldset>
   );
 }
