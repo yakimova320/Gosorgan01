@@ -1,6 +1,14 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { MOCK_CABINET, MOCK_CASES } from '../mocks/data';
 import {
+  mockCaseDetail,
+  mockCaseLetter,
+  mockDeleteCase,
+  mockExplanation,
+  mockHistory,
+  mockSetCaseStatus,
+} from '../mocks/cases';
+import {
   mockAssign,
   mockConfirm,
   mockCorrect,
@@ -12,14 +20,16 @@ import {
 import { DATA_MODE } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import type {
+  ApiCaseDetail,
+  ApiExplanation,
   Cabinet,
   CaseDetail,
   CaseSummary,
   Draft,
   DraftKind,
-  Explanation,
   Health,
-  HistoryItem,
+  HistoryGroup,
+  HistoryPageResult,
   LetterDetail,
   UploadResponse,
 } from '../api/types';
@@ -246,6 +256,8 @@ export const api = createApi({
     letter: b.query<LetterDetail, string>({
       queryFn: (id, _api, _x, base) => {
         if (isMock) {
+          const fromCase = mockCaseLetter(id);
+          if (fromCase) return ok(fromCase);
           const r = mockLetter(id);
           return 'code' in r ? { error: r } : ok(r);
         }
@@ -355,44 +367,105 @@ export const api = createApi({
       providesTags: [{ type: 'Case', id: 'LIST' }],
     }),
 
-    caseDetail: b.query<CaseDetail, string>({
-      queryFn: (id) => {
-        if (!isMock) return notConnected();
-        const found = MOCK_CASES.find((c) => c.id === id);
-        return found ? ok(found) : fail('NOT_FOUND', 404);
+    /** Дело (B07). Не храним после ухода с экрана: после удаления данных дела в кэше не остаётся. */
+    caseDetail: b.query<ApiCaseDetail, string>({
+      queryFn: (id, _api, _x, base) => {
+        if (isMock) {
+          const r = mockCaseDetail(id);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({ path: `/cases/${encodeURIComponent(id)}` }) as Promise<
+          Result<ApiCaseDetail>
+        >;
       },
+      keepUnusedDataFor: 0,
       providesTags: (_r, _e, id) => [{ type: 'Case', id }],
     }),
 
-    history: b.query<HistoryItem[], void>({
-      queryFn: () =>
-        isMock
-          ? ok(
-              MOCK_CASES.flatMap((c) =>
-                c.timeline.map((t) => ({
-                  ...t,
-                  caseId: c.id,
-                  caseTitle: c.title,
-                })),
-              ).sort((a, b) => b.at.localeCompare(a.at)),
-            )
-          : notConnected(),
+    updateCase: b.mutation<
+      ApiCaseDetail,
+      { id: string; status?: 'OPEN' | 'CLOSED'; title?: string }
+    >({
+      queryFn: ({ id, ...body }, _api, _x, base) => {
+        if (isMock) {
+          const r = mockSetCaseStatus(id, body.status ?? 'OPEN');
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'PATCH',
+          path: `/cases/${encodeURIComponent(id)}`,
+          body,
+        }) as Promise<Result<ApiCaseDetail>>;
+      },
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Case', id: a.id },
+        { type: 'Case', id: 'LIST' },
+        'Cabinet',
+        'History',
+      ],
+    }),
+
+    deleteCase: b.mutation<void, string>({
+      queryFn: async (id, _api, _x, base) => {
+        if (isMock) {
+          const r = mockDeleteCase(id);
+          return r ? { error: r } : ok(undefined);
+        }
+        return base({
+          method: 'DELETE',
+          path: `/cases/${encodeURIComponent(id)}`,
+        }) as Promise<Result<void>>;
+      },
+      invalidatesTags: [
+        { type: 'Case', id: 'LIST' },
+        'Cabinet',
+        'History',
+        'Letters',
+        'Letter',
+      ],
+    }),
+
+    /**
+     * История одной страницей (GET /history). Страницы собирает экран; при смене фильтра он начинает заново.
+     * Группы → типы событий API: letter (письмо получено, дело создано, факты подтверждены и отклонены,
+     * изменения), question (вопросы по делу), draft (черновик подготовлен и отправлен, «Я отправил(а)»).
+     */
+    historyPage: b.query<
+      HistoryPageResult,
+      { type?: HistoryGroup; cursor?: string }
+    >({
+      queryFn: ({ type, cursor }, _api, _x, base) => {
+        if (isMock) return ok(mockHistory(type));
+        const q = new URLSearchParams();
+        if (type) q.set('type', type);
+        if (cursor) q.set('cursor', cursor);
+        const qs = q.toString();
+        return base({ path: `/history${qs ? `?${qs}` : ''}` }) as Promise<
+          Result<HistoryPageResult>
+        >;
+      },
+      keepUnusedDataFor: 0,
       providesTags: ['History'],
     }),
 
-    // ---------- Объяснение и черновик (B08, B10) ----------
-
-    explain: b.query<Explanation, string>({
-      queryFn: async (letterId) => {
-        if (!isMock) return notConnected();
-        await wait(900);
-        const letter = MOCK_CASES.flatMap((c) => c.letters).find(
-          (l) => l.id === letterId,
-        );
-        return letter?.explanation
-          ? ok(letter.explanation)
-          : fail('DATES_NOT_VERIFIED', 422);
+    /**
+     * Объяснение (B08). Запрос — только при открытии экрана или по кнопке, не в фоне после изменения фактов:
+     * у этого запроса нет тегов, изменения фактов его не перезапускают. Сервер отдаёт кэш, если факты не менялись.
+     */
+    explanation: b.query<ApiExplanation, string>({
+      queryFn: async (letterId, _api, _x, base) => {
+        if (isMock) {
+          await wait(600);
+          const r = mockExplanation(letterId);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'POST',
+          path: `/letters/${encodeURIComponent(letterId)}/explain?lang=ru`,
+          timeoutMs: UPLOAD_TIMEOUT_MS,
+        }) as Promise<Result<ApiExplanation>>;
       },
+      keepUnusedDataFor: 0,
     }),
 
     draft: b.query<
@@ -427,8 +500,10 @@ export const {
   useUploadLetterMutation,
   useCasesQuery,
   useCaseDetailQuery,
-  useHistoryQuery,
-  useExplainQuery,
+  useLazyHistoryPageQuery,
+  useExplanationQuery,
+  useUpdateCaseMutation,
+  useDeleteCaseMutation,
   useDraftQuery,
   useLettersQuery,
   useLetterQuery,

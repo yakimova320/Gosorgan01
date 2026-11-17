@@ -19,13 +19,8 @@ import {
   AnswerSendPage,
   DonePage,
 } from '../pages/app/AnswerPages';
-import {
-  CabinetPage,
-  CasePage,
-  CasesPage,
-  HistoryPage,
-  LetterPage,
-} from '../pages/app/CabinetPages';
+import { CabinetPage, CasesPage } from '../pages/app/CabinetPages';
+import { CasePage, HistoryPage, LetterPage } from '../pages/app/CasePages';
 import { AskPage, ProfilePage, WritePage } from '../pages/app/MorePages';
 import {
   LetterCheckPage,
@@ -78,7 +73,7 @@ export const ROUTES: Route[] = [
   {
     path: '/app/cases/:id',
     area: 'cabinet',
-    render: (p) => <CasePage id={p.id} />,
+    render: (p) => <CasePage key={p.id} id={p.id} />,
   },
   {
     path: '/app/cases/:id/answer',
@@ -108,7 +103,7 @@ export const ROUTES: Route[] = [
   {
     path: '/app/letters/:id',
     area: 'cabinet',
-    render: (p, s) => <LetterPage id={p.id} caseId={s.get('case')} />,
+    render: (p) => <LetterPage key={p.id} id={p.id} />,
   },
   { path: '/app/scan', area: 'cabinet', render: () => <ScanStartPage /> },
   { path: '/app/scan/pages', area: 'cabinet', render: () => <ScanPagesPage /> },

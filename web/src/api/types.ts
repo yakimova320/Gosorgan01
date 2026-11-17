@@ -206,3 +206,53 @@ export interface UploadResponse extends LetterDetail {
   /** сколько полей ответа модели не прошло проверку цитат и значений */
   extraction: { dropped: number };
 }
+
+// ---------- Дела, объяснение, история из API (B07, B08) ----------
+
+export interface ApiTimelineItem {
+  id: string;
+  type: string;
+  at: string;
+  title: string;
+  subtitle?: string;
+  letterId?: string;
+  draftId?: string;
+}
+
+export interface ApiCaseDetail extends CaseSummary {
+  status?: 'OPEN' | 'CLOSED';
+  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE'; authority: string | null; unconfirmed: number }[];
+  claims: LetterClaim[];
+  deadlines: LetterDeadline[];
+  drafts: { id: string; kind: string; status: string; stale: boolean; createdAt: string }[];
+  timeline: ApiTimelineItem[];
+}
+
+export interface ApiHistoryItem extends ApiTimelineItem {
+  caseId: string;
+  caseTitle: string;
+}
+
+export interface HistoryPageResult {
+  items: ApiHistoryItem[];
+  nextCursor: string | null;
+}
+
+/** Группы истории на сайте и типы событий API (GET /history?type=). */
+export type HistoryGroup = 'letter' | 'question' | 'draft';
+
+export interface ExplanationStatement {
+  text: string;
+  claimIds: string[];
+  unconfirmed: boolean;
+}
+
+/** Ответ POST /letters/:id/explain */
+export interface ApiExplanation {
+  lang: 'ru';
+  about: ExplanationStatement;
+  actions: ExplanationStatement[];
+  deadlines: { date: string; claimId: string; kind: DeadlineKind; confirmed: boolean }[];
+  unconfirmed: boolean;
+  cached: boolean;
+}
