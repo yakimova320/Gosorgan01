@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/api-error.js';
-import { LlmService } from '../llm/llm.service.js';
+import { LlmService, type LlmOperationHandle } from '../llm/llm.service.js';
 import {
   TranscribeSchema,
   checkTranscribe,
@@ -92,6 +92,8 @@ export class DocumentsService {
     data: Buffer,
     kind: FileKind,
     context: { cabinetId: string; letterId: string },
+    /** B18: операция загрузки; transcribe и extract делят её предел попыток и резерв лимита. */
+    operation?: LlmOperationHandle,
   ): Promise<DocumentText> {
     if (kind === 'pdf') {
       const pageTexts = await readPdfText(data);
@@ -114,6 +116,7 @@ export class DocumentsService {
       check: checkTranscribe,
       maxAttempts: TRANSCRIBE_MAX_ATTEMPTS,
       context,
+      operation,
     });
     if (!result.readable) {
       const reason = result.reason ?? 'OTHER';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { errorCode, errorText } from '../../api/errors';
+import { errorCode, errorText, isDailyLimit } from '../../api/errors';
 import type { ApiHistoryItem, CaseStage, HistoryGroup, LetterClaim, LetterDeadline } from '../../api/types';
 import { Icon } from '../../components/Icon';
 import { ErrorAlert, Loading, PageHeader, StageChip } from '../../components/ui';
@@ -345,7 +345,8 @@ export function LetterPage({ id }: { id: string }) {
             <button
               type="button"
               className="btn btn--secondary btn--small"
-              disabled={expl.isFetching}
+              // B18: при дневном лимите повтор сразу бесполезен, время ожидания — в тексте ошибки
+              disabled={expl.isFetching || isDailyLimit(expl.error)}
               onClick={() => void expl.refetch()}
             >
               {code === 'LLM_QUOTA' || expl.isError ? 'Попробовать ещё раз' : 'Обновить объяснение'}

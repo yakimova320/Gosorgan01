@@ -1,4 +1,15 @@
+import { isIP } from 'node:net';
 import { z } from 'zod';
+
+/** Элемент TRUST_PROXY: имя подсети Express, IP или подсеть CIDR. */
+export function isTrustedProxyEntry(entry: string): boolean {
+  if (['loopback', 'linklocal', 'uniquelocal'].includes(entry)) return true;
+  const [ip, bits, extra] = entry.split('/');
+  if (extra !== undefined || !isIP(ip)) return false;
+  if (bits === undefined) return true;
+  const max = isIP(ip) === 4 ? 32 : 128;
+  return /^\d+$/.test(bits) && Number(bits) <= max;
+}
 
 const bool = z
   .enum(['true', 'false', '1', '0'])
@@ -25,15 +36,18 @@ export const envSchema = z
         'DATABASE_URL: нужен адрес PostgreSQL (postgresql://...)',
       )
       .default('postgresql://jasno:jasno@localhost:5432/jasno'),
-    // A03: адреса доверенных прокси перед API (формат Express «trust proxy»: loopback, 10.0.0.0/8,
-    // число шагов). Пусто: X-Forwarded-For не учитывается, IP берётся из соединения.
+    // A03/B18: доверенные прокси перед API, только явные адреса: loopback, linklocal, uniquelocal,
+    // IP или подсеть (10.0.0.0/8), через запятую. Число шагов и true не принимаются: тогда клиент
+    // мог бы подставить свой IP в X-Forwarded-For. Пусто: заголовок не учитывается.
     TRUST_PROXY: z
       .string()
       .optional()
-      .transform((v) => (v && /^\d+$/.test(v) ? Number(v) : v))
-      .refine((v) => v !== 'true', {
-        message: 'true нельзя: тогда любой клиент подставит свой IP. Укажите адрес прокси или число шагов',
+      .refine((v) => v === undefined || v.split(',').every((p) => isTrustedProxyEntry(p.trim())), {
+        message:
+          'только loopback, linklocal, uniquelocal, IP или подсеть через запятую (число шагов и true нельзя)',
       }),
+    // B18: лимиты по IP (@nestjs/throttler). false только для тестов, в production запрещено.
+    RATE_LIMIT_IP: bool.default(true),
     CORS_ORIGIN: z
       .string()
       .default('http://localhost:5173')
@@ -66,6 +80,11 @@ export const envSchema = z
     RESET_TOKEN_TTL_MIN: int(60),
     SUPPORT_EMAIL: z.string().optional(),
 
+    // B18: операций с моделью (загрузка письма, объяснение) на кабинет за скользящие 24 часа. 0 — без лимита.
+    LLM_DAILY_OPS_PER_CABINET: z.coerce.number().int().min(0).default(30),
+    // B18: мягкий общий порог токенов за 24 часа (все кабинеты). 0 — выключен. Не гарантия расходов.
+    LLM_DAILY_TOKEN_BUDGET: z.coerce.number().int().min(0).default(0),
+
     UPLOAD_MAX_FILE_MB: int(10),
     UPLOAD_MAX_LETTER_MB: int(20),
     UPLOAD_MAX_FILES: int(10),
@@ -87,6 +106,13 @@ export const envSchema = z
         code: 'custom',
         path: ['SMTP_HOST'],
         message: 'нужно при MAIL_MODE=smtp',
+      });
+    }
+    if (env.NODE_ENV === 'production' && !env.RATE_LIMIT_IP) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RATE_LIMIT_IP'],
+        message: 'в production лимиты по IP выключать нельзя',
       });
     }
     if (env.NODE_ENV === 'production' && env.MAIL_MODE === 'file') {

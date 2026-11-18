@@ -4,6 +4,7 @@ import type { Env } from '../config/env.schema.js';
 import { DemoAdapter } from './adapters/demo.adapter.js';
 import { OpenAiAdapter } from './adapters/openai.adapter.js';
 import { LLM_ADAPTER, type LlmAdapter } from './llm.types.js';
+import { LlmLimitsService } from './llm-limits.service.js';
 import { LlmService } from './llm.service.js';
 import { MaskingService } from './masking.service.js';
 import { PromptRegistry } from './prompt-registry.js';
@@ -29,8 +30,9 @@ export function createAdapter(config: Env): LlmAdapter {
     { provide: PromptRegistry, useFactory: () => new PromptRegistry() },
     MaskingService,
     TraceService,
+    LlmLimitsService,
     LlmService,
   ],
-  exports: [LlmService, PromptRegistry, MaskingService],
+  exports: [LlmService, LlmLimitsService, PromptRegistry, MaskingService],
 })
 export class LlmModule {}

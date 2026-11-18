@@ -24,6 +24,8 @@ export interface TraceEntry {
   durationMs: number;
   tokensIn: number | null;
   tokensOut: number | null;
+  /** B18: операция пользователя (LlmOperation), null — без кабинета или резерва. */
+  operationId?: string | null;
 }
 
 /** Журнал обращений к модели (таблица LlmCall). */
@@ -63,6 +65,7 @@ export class TraceService {
             durationMs: entry.durationMs,
             tokensIn: entry.tokensIn,
             tokensOut: entry.tokensOut,
+            operationId: entry.operationId ?? null,
           },
         });
         return row.id;

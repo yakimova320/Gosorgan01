@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type { z } from 'zod';
 import { ApiError } from '../common/api-error.js';
 import {
@@ -7,12 +7,13 @@ import {
   type LlmAdapter,
   type LlmImage,
 } from './llm.types.js';
+import { LlmLimitsService } from './llm-limits.service.js';
+import { LlmOperationHandle, MAX_ATTEMPTS } from './llm-operation.js';
 import { MaskingService, type MaskTable } from './masking.service.js';
 import { PromptRegistry, render } from './prompt-registry.js';
 import { TraceService, type LlmContext } from './trace.service.js';
 
-/** ТЗ v4 раздел 10: не больше 3 обращений к модели на одну операцию, включая все проверки. */
-export const MAX_ATTEMPTS = 3;
+export { LlmOperationHandle, MAX_ATTEMPTS } from './llm-operation.js';
 /** Пауза при 429 только если провайдер просит подождать не дольше этого. */
 export const MAX_QUOTA_WAIT_MS = 5000;
 
@@ -33,6 +34,11 @@ export interface LlmCallOptions<S extends z.ZodType> {
    */
   maxAttempts?: number;
   context: LlmContext;
+  /**
+   * B18: операция пользователя. Все вызовы одной операции (фото = transcribe + extract) делят
+   * общий предел MAX_ATTEMPTS и один резерв лимита. Без неё вызов — отдельная операция.
+   */
+  operation?: LlmOperationHandle;
 }
 
 export interface LlmCallResult<T> {
@@ -54,7 +60,30 @@ export class LlmService {
     @Inject(PromptRegistry) private readonly prompts: PromptRegistry,
     @Inject(MaskingService) private readonly masking: MaskingService,
     @Inject(TraceService) private readonly trace: TraceService,
+    // B18: лимиты и учёт расхода. Нет в скриптах проверки модели (llm-check и т. п.).
+    @Optional()
+    @Inject(LlmLimitsService)
+    private readonly limits?: LlmLimitsService,
   ) {}
+
+  /** Учёт расхода не должен ломать ответ пользователю: ошибка записи только в лог. */
+  private async recordUsage(
+    sample: Parameters<LlmLimitsService['record']>[0],
+  ): Promise<void> {
+    try {
+      await this.limits?.record(sample);
+    } catch (e) {
+      this.logger.error(`учёт расхода модели не записан: ${(e as Error).name}`);
+    }
+  }
+
+  /** Новая операция пользователя для лимитов (B18). */
+  operation(
+    cabinetId: string | null,
+    kind: LlmOperationHandle['kind'],
+  ): LlmOperationHandle {
+    return new LlmOperationHandle(cabinetId, kind);
+  }
 
   get mode(): { provider: string; model: string } {
     return { provider: this.adapter.provider, model: this.adapter.model };
@@ -84,10 +113,16 @@ export class LlmService {
       ...images.map((img) => `image, ${Math.ceil(img.data.length / 1024)} KB`),
     ].join('\n\n');
 
-    const limit = Math.max(
-      1,
-      Math.min(options.maxAttempts ?? MAX_ATTEMPTS, MAX_ATTEMPTS),
+    const op =
+      options.operation ??
+      new LlmOperationHandle(options.context.cabinetId, 'OTHER');
+    // общий предел операции: попытки прошлых вызовов той же операции уже потрачены
+    const limit = Math.min(
+      options.maxAttempts ?? MAX_ATTEMPTS,
+      MAX_ATTEMPTS,
+      op.remaining,
     );
+    if (limit < 1) throw new ApiError('LLM_FAILED');
     const started = Date.now();
     let attempts = 0;
     let lastError: string | null = null;
@@ -113,10 +148,21 @@ export class LlmService {
         durationMs: Date.now() - started,
         tokensIn: tokensIn || null,
         tokensOut: tokensOut || null,
+        operationId: op.id,
       });
 
     while (attempts < limit) {
+      // B18: резерв операции (после проверки файла и кэша: до сюда без модели) и мягкий порог
+      // расхода — перед каждым обращением, включая повторы. Ошибка: модель не вызывается.
+      try {
+        await this.limits?.reserve(op);
+        await this.limits?.checkBudget(this.adapter.provider);
+      } catch (e) {
+        if (attempts > 0) await finish(false);
+        throw e;
+      }
       attempts++;
+      op.used++;
       const retryNote = lastError
         ? `\n\nПредыдущий ответ не принят: ${lastError}\nОтветь заново. Только JSON по описанной схеме.`
         : '';
@@ -133,8 +179,24 @@ export class LlmService {
         text = res.text;
         tokensIn += res.tokensIn ?? 0;
         tokensOut += res.tokensOut ?? 0;
+        await this.recordUsage({
+          provider: this.adapter.provider,
+          failed: false,
+          tokensIn: res.tokensIn,
+          tokensOut: res.tokensOut,
+          inputChars: prompt.system.length + user.length + retryNote.length,
+          outputChars: text.length,
+          images: images.length,
+        });
       } catch (e) {
         if (!(e instanceof AdapterError)) throw e;
+        await this.recordUsage({
+          provider: this.adapter.provider,
+          failed: true,
+          inputChars: 0,
+          outputChars: 0,
+          images: 0,
+        });
         lastError = e.message;
         if (e.kind === 'QUOTA') {
           const wait = e.retryAfterMs ?? 1000;

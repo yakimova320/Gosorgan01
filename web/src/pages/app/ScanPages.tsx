@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useBeforeUnload, useBlocker, useLocation, useNavigate } from 'react-router';
-import { errorCode, errorText, isApiError } from '../../api/errors';
+import { errorCode, errorText, isApiError, isDailyLimit } from '../../api/errors';
 import type { CaseSuggestion, LetterClaim, LetterDetail } from '../../api/types';
 import { useFlow } from '../../app/flow';
 import { Icon } from '../../components/Icon';
@@ -202,13 +202,16 @@ export function ScanReadingPage() {
         )}
         {problem === 'busy' && (
           <>
-            <div className="alert alert--warn" role="alert" style={{ width: '100%' }}>
-              {errorText(error)} Письмо не сохранено, файл остался выбранным.
+            <div className="alert alert--warn" role="alert" style={{ width: '100%' }} data-testid="upload-busy">
+              {errorText(error)}. Письмо не сохранено{isDailyLimit(error) ? '.' : ', файл остался выбранным.'}
             </div>
             <div className="row wrap" style={{ justifyContent: 'center' }}>
-              <button type="button" className="btn btn--primary btn--small" onClick={() => setAttempt((a) => a + 1)}>
-                Попробовать ещё раз
-              </button>
+              {/* B18: при дневном лимите повтор сразу бесполезен — кнопки нет */}
+              {!isDailyLimit(error) && (
+                <button type="button" className="btn btn--primary btn--small" onClick={() => setAttempt((a) => a + 1)}>
+                  Попробовать ещё раз
+                </button>
+              )}
               <Link to="/app" className="btn btn--secondary btn--small">
                 В кабинет
               </Link>

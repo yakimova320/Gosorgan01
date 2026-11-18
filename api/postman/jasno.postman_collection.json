@@ -631,6 +631,56 @@
           ]
         },
         {
+          "name": "POST /letters: лимит операций с моделью (B18)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            },
+            "description": "Лимит LLM_DAILY_OPS_PER_CABINET за скользящие 24 часа. Чтобы увидеть 429, запустите API с LLM_DAILY_OPS_PER_CABINET=1: первая загрузка папки проходит, этот запрос получает 429. С обычным лимитом ответ 201."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 429) {",
+                  "  const b = pm.response.json();",
+                  "  pm.test('RATE_LIMITED: лимит операций', () => pm.expect(b.details.reason).to.eql('LLM_DAILY_OPS'));",
+                  "  pm.test('текст со временем ожидания', () => pm.expect(b.message).to.include('Следующее будет доступно через'));",
+                  "  pm.test('Retry-After', () => pm.expect(Number(pm.response.headers.get('Retry-After'))).to.be.above(0));",
+                  "} else {",
+                  "  pm.test('статус 201 (лимит не исчерпан)', () => pm.response.to.have.status(201));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "GET /letters?inbox=true",
           "request": {
             "method": "GET",
