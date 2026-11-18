@@ -7,6 +7,7 @@ import type { z } from 'zod';
 import { CheckboxField, EmailField, FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
 import { ForgotFormSchema, LoginFormSchema, RegisterFormSchema, ResetFormSchema } from '../../forms/schemas';
 import { applyServerError } from '../../forms/serverErrors';
+import { revalidateIfTouched } from '../../forms/revalidate';
 import { useAppDispatch, useSession } from '../../store';
 import { useForgotPasswordMutation, useLoginMutation, useRegisterMutation, useResetPasswordMutation } from '../../store/api';
 import { signedIn } from '../../store/session';
@@ -135,7 +136,7 @@ export function RegisterPage() {
           id="r-password"
           label="Пароль"
           autoComplete="new-password"
-          registration={form.register('password', { deps: ['passwordRepeat'] })}
+          registration={form.register('password', { onChange: revalidateIfTouched(form, 'passwordRepeat') })}
           error={errors.password}
           hint={PASSWORD_HINT}
         />
@@ -247,7 +248,7 @@ export function ResetPage() {
           id="n-pw"
           label="Новый пароль"
           autoComplete="new-password"
-          registration={form.register('newPassword', { deps: ['newPasswordRepeat'] })}
+          registration={form.register('newPassword', { onChange: revalidateIfTouched(form, 'newPasswordRepeat') })}
           error={errors.newPassword}
           hint={PASSWORD_HINT}
         />

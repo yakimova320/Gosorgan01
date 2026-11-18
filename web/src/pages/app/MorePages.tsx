@@ -6,6 +6,7 @@ import type { z } from 'zod';
 import { FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
 import { ChangePasswordFormSchema, DeleteAccountFormSchema, ProfileFormSchema } from '../../forms/schemas';
 import { applyServerError } from '../../forms/serverErrors';
+import { revalidateIfTouched } from '../../forms/revalidate';
 import { errorCode } from '../../api/errors';
 import { useNavigate } from 'react-router';
 import { useAppDispatch } from '../../store';
@@ -96,7 +97,10 @@ export function ProfilePage() {
     defaultValues: { password: '' },
   });
 
+  const changing = useRef(false);
   const changePassword = pwForm.handleSubmit(async ({ oldPassword, newPassword }) => {
+    if (changing.current) return; // повторное нажатие во время запроса
+    changing.current = true;
     setPwMsg(null);
     setPwErr(null);
     try {
@@ -104,7 +108,12 @@ export function ProfilePage() {
       setPwMsg('Пароль изменён. На других устройствах нужно войти заново.');
       pwForm.reset();
     } catch (err) {
-      setPwErr(applyServerError(err, pwForm.setError, ['oldPassword', 'newPassword']));
+      // неверный текущий пароль: ошибка у поля, сессия остаётся
+      if (errorCode(err) === 'INVALID_CREDENTIALS')
+        pwForm.setError('oldPassword', { type: 'server', message: 'Неверный пароль' }, { shouldFocus: true });
+      else setPwErr(applyServerError(err, pwForm.setError, ['oldPassword', 'newPassword']));
+    } finally {
+      changing.current = false;
     }
   });
 
@@ -185,7 +194,7 @@ export function ProfilePage() {
               id="pw-new"
               label="Новый пароль"
               autoComplete="new-password"
-              registration={pwForm.register('newPassword', { deps: ['newPasswordRepeat'] })}
+              registration={pwForm.register('newPassword', { onChange: revalidateIfTouched(pwForm, 'newPasswordRepeat') })}
               error={pwForm.formState.errors.newPassword}
               hint={`Не меньше ${PASSWORD_MIN_CHARS} знаков`}
             />

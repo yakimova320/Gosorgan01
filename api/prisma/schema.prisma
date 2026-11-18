@@ -117,6 +117,9 @@ model Session {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now())
+  // A02: момент пароля, которым подтверждена сессия (вход или смена пароля).
+  // Сессия действительна, только если passwordAt >= Cabinet.passwordChangedAt.
+  passwordAt DateTime @default(now())
 
   @@index([cabinetId])
 }
