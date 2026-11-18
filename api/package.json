@@ -16,7 +16,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed",
+    "db:seed": "tsc -p tsconfig.build.json && node dist/scripts/seed.js",
     "llm:check": "tsc -p tsconfig.build.json && node dist/scripts/llm-check.js",
     "llm:check:photo": "tsc -p tsconfig.build.json && node dist/scripts/transcribe-check.js",
     "llm:check:extract": "tsc -p tsconfig.build.json && node dist/scripts/extract-check.js",
