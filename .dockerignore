@@ -1,0 +1,29 @@
+# B13: в образ не попадают секреты, данные, отчёты и локальные сборки
+**/node_modules
+**/dist
+**/dist-offline
+**/.env
+**/.env.*
+!**/.env.example
+**/storage
+**/storage-e2e
+**/*.tsbuildinfo
+api/src/generated
+reports
+_import
+Claude outputs
+workflow
+.claude
+.git
+.github
+coverage
+web/test-results
+web/playwright-report
+.DS_Store
+**/*.db
+**/*.db-journal
+.cache
+.idea
+.pnpm-store
+api/test
+web/e2e

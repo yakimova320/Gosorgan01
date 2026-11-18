@@ -82,3 +82,6 @@ api/storage-e2e/
 web/dist-offline/
 web/test-results/
 web/playwright-report/
+
+# Резервные копии базы и файлов (docs/deploy.md): личные данные, не коммитить
+backup/

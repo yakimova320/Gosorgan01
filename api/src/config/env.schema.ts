@@ -66,6 +66,8 @@ export const envSchema = z
     LLM_TIMEOUT_MS: int(60000),
 
     STORAGE_DIR: z.string().min(1).default('./storage'),
+    // B13: папка собранного сайта (web/dist). Задана — API отдаёт и сайт (Docker). Пусто — только API.
+    WEB_DIST_DIR: z.string().optional(),
     SESSION_TTL_DAYS: int(30),
     CABINET_TTL_DAYS: int(90),
 

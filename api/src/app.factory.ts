@@ -7,6 +7,7 @@ import { AppModule } from './app.module.js';
 import { ApiErrorFilter } from './common/error.filter.js';
 import { APP_CONFIG } from './config/config.module.js';
 import type { Env } from './config/env.schema.js';
+import { serveWeb } from './web/web-static.js';
 
 /**
  * Собирает приложение одинаково для запуска (main.ts) и для e2e-тестов.
@@ -26,6 +27,8 @@ export async function createApp(options?: {
   app.enableCors({ origin: config.CORS_ORIGIN, credentials: false });
   app.useGlobalFilters(new ApiErrorFilter());
   app.enableShutdownHooks();
+  // B13: в Docker API отдаёт и собранный сайт
+  if (config.WEB_DIST_DIR) serveWeb(app, config.WEB_DIST_DIR);
 
   const doc = new DocumentBuilder()
     .setTitle('Ja!sno API')
