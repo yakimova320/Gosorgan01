@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ProfilePatchSchema } from '@jasno/shared';
 
+export { DeleteAccountSchema, type DeleteAccountInput } from '@jasno/shared';
+
 /** Профиль общий с сайтом: packages/shared. */
 export { ProfilePatchSchema, ProfileSchema, type Profile } from '@jasno/shared';
 

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export interface LlmContext {
@@ -32,29 +33,40 @@ export class TraceService {
 
   constructor(@Inject(PrismaService) private readonly db: PrismaService) {}
 
-  /** Ошибка записи журнала не ломает ответ пользователю, только пишется в лог. */
+  /**
+   * Ошибка записи журнала не ломает ответ пользователю, только пишется в лог.
+   * Запись кабинета идёт под блокировкой его строки: если аккаунт удаляется или уже удалён
+   * (запоздалый ответ модели), строка не пишется (A01).
+   */
   async record(entry: TraceEntry): Promise<string | null> {
+    const cabinetId = entry.context.cabinetId;
     try {
-      const row = await this.db.llmCall.create({
-        data: {
-          cabinetId: entry.context.cabinetId,
-          letterId: entry.context.letterId ?? null,
-          caseId: entry.context.caseId ?? null,
-          promptName: entry.promptName,
-          promptVersion: entry.promptVersion,
-          provider: entry.provider,
-          model: entry.model,
-          input: entry.input,
-          output: entry.output,
-          ok: entry.ok,
-          error: entry.error,
-          attempts: entry.attempts,
-          durationMs: entry.durationMs,
-          tokensIn: entry.tokensIn,
-          tokensOut: entry.tokensOut,
-        },
+      return await this.db.$transaction(async (tx) => {
+        if (cabinetId && !(await lockActiveCabinet(tx, cabinetId))) {
+          this.logger.log('LlmCall не записан: аккаунт удаляется или удалён');
+          return null;
+        }
+        const row = await tx.llmCall.create({
+          data: {
+            cabinetId,
+            letterId: entry.context.letterId ?? null,
+            caseId: entry.context.caseId ?? null,
+            promptName: entry.promptName,
+            promptVersion: entry.promptVersion,
+            provider: entry.provider,
+            model: entry.model,
+            input: entry.input,
+            output: entry.output,
+            ok: entry.ok,
+            error: entry.error,
+            attempts: entry.attempts,
+            durationMs: entry.durationMs,
+            tokensIn: entry.tokensIn,
+            tokensOut: entry.tokensOut,
+          },
+        });
+        return row.id;
       });
-      return row.id;
     } catch (e) {
       this.logger.error(
         `Не удалось записать LlmCall: ${e instanceof Error ? e.name : 'ошибка'}`,

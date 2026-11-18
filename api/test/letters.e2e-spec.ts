@@ -326,7 +326,23 @@ describe('Приём письма POST /letters (e2e)', () => {
   });
 
   it('ошибка базы после записи файла: файл удаляется, письма нет', async () => {
-    vi.spyOn(db, '$transaction').mockRejectedValueOnce(new Error('db down'));
+    // транзакция письма падает уже после записи файла (журнал LlmCall тоже пишется транзакцией)
+    let written = false;
+    const storage = app.get(StorageService);
+    const write = storage.write.bind(storage);
+    vi.spyOn(storage, 'write').mockImplementation(async (k, d) => {
+      await write(k, d);
+      written = true;
+    });
+    const original = db.$transaction.bind(db) as (
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => Promise<unknown>;
+    vi.spyOn(db, '$transaction').mockImplementation(((fn: unknown) =>
+      original(async (tx) => {
+        const result = await (fn as (t: unknown) => Promise<unknown>)(tx);
+        if (written) throw new Error('db down');
+        return result;
+      })) as never);
     await expectRejected(
       upload(fixture('01_jobcenter_request.pdf'), 'a.pdf'),
       500,

@@ -13,14 +13,20 @@ import { AuthService, type AuthContext } from './auth.service.js';
 
 const IS_PUBLIC = 'jasno:isPublic';
 
+const ALLOW_DELETING = 'jasno:allowWhileDeleting';
+
 /** Эндпоинт без входа: /health, /auth/register, /auth/login. */
 export const Public = () => SetMetadata(IS_PUBLIC, true);
+
+/** Эндпоинт доступен, пока аккаунт удаляется (только повтор DELETE /cabinet). */
+export const AllowWhileDeleting = () => SetMetadata(ALLOW_DELETING, true);
 
 type AuthedRequest = Request & { auth?: AuthContext };
 
 /**
  * Глобальная проверка сессии: всё, кроме @Public(), требует
  * Authorization: Bearer <токен>. Иначе 401 UNAUTHORIZED.
+ * Пока аккаунт удаляется: 409 ACCOUNT_DELETING на всё, кроме @AllowWhileDeleting().
  */
 @Injectable()
 export class SessionGuard implements CanActivate {
@@ -43,6 +49,14 @@ export class SessionGuard implements CanActivate {
 
     const auth = await this.auth.authenticate(match[1]);
     if (!auth) throw new ApiError('UNAUTHORIZED');
+    if (
+      auth.deleting &&
+      !this.reflector.getAllAndOverride<boolean>(ALLOW_DELETING, [
+        context.getHandler(),
+        context.getClass(),
+      ])
+    )
+      throw new ApiError('ACCOUNT_DELETING');
     req.auth = auth;
     return true;
   }

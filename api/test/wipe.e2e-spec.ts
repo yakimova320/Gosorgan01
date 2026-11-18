@@ -1,3 +1,4 @@
+import { StorageService } from '../src/documents/storage.service.js';
 import type { INestApplication } from '@nestjs/common';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -115,8 +116,20 @@ describe('Разовая очистка аккаунтов (e2e)', () => {
     const plan = await planWipe(db, storageDir, {
       emails: ['wipe-c@example.org'],
     });
-    await expect(executeWipe(db, '\u0000bad', plan)).rejects.toThrow();
-    expect(await db.cabinet.count({ where: { id: c } })).toBe(1);
+    const storage = new StorageService({ STORAGE_DIR: storageDir });
+    vi.spyOn(storage.ops, 'rename').mockRejectedValueOnce(
+      Object.assign(new Error('x'), { code: 'EACCES' }),
+    );
+    const failed = await executeWipe(db, storageDir, plan, storage);
+    expect(failed.failed).toEqual([c]);
+    expect(
+      await db.cabinet.findUnique({
+        where: { id: c },
+        select: { deletingAt: true },
+      }),
+    ).toEqual({ deletingAt: null });
+    expect(existsSync(join(storageDir, 'letters', c))).toBe(true);
+    expect(await db.accountErasure.count()).toBe(0);
     const retry = await planWipe(db, storageDir, {
       emails: ['wipe-c@example.org'],
     });

@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PASSWORD_MIN_CHARS } from '@jasno/shared';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
 import { ChangePasswordFormSchema, DeleteAccountFormSchema, ProfileFormSchema } from '../../forms/schemas';
 import { applyServerError } from '../../forms/serverErrors';
+import { errorCode } from '../../api/errors';
 import { useNavigate } from 'react-router';
 import { useAppDispatch } from '../../store';
 import {
@@ -107,15 +108,28 @@ export function ProfilePage() {
     }
   });
 
+  const deleting = useRef(false);
   const deleteAccount = delForm.handleSubmit(async ({ password }) => {
+    if (deleting.current) return; // повторное нажатие во время запроса
+    deleting.current = true;
     setDelErr(null);
     try {
-      await deleteAccountReq(password).unwrap();
+      const { pending } = await deleteAccountReq(password).unwrap();
       // Сначала уйти с закрытой страницы (flushSync: сразу), иначе она сама перенаправит на вход.
-      await navigate('/', { replace: true, flushSync: true });
+      // Выход сбрасывает сессию и весь кэш (store/index.ts).
+      await navigate('/', {
+        replace: true,
+        flushSync: true,
+        state: { accountDeleted: pending ? 'pending' : 'done' },
+      });
       signOut();
     } catch (err) {
-      setDelErr(applyServerError(err, delForm.setError, ['password']));
+      // неверный пароль: ошибка у поля, сессия остаётся
+      if (errorCode(err) === 'INVALID_CREDENTIALS')
+        delForm.setError('password', { type: 'server', message: 'Неверный пароль' }, { shouldFocus: true });
+      else setDelErr(applyServerError(err, delForm.setError, ['password']));
+    } finally {
+      deleting.current = false;
     }
   });
 

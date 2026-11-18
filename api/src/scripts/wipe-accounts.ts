@@ -81,10 +81,24 @@ try {
     );
     process.exitCode = 2;
   } else {
-    const { deleted } = await executeWipe(db, storageDir, plan);
+    const { deleted, pending, failed } = await executeWipe(
+      db,
+      storageDir,
+      plan,
+    );
     console.log(
       `\nУдалено кабинетов: ${deleted.length}. Повторный запуск должен показать 0.`,
     );
+    if (pending.length)
+      console.log(
+        `База удалена, файлы не дочищены: ${pending.length}. Запустите ещё раз (или их дочистит сервер).`,
+      );
+    if (failed.length) {
+      console.error(
+        `Не удалось удалить: ${failed.length}. Данные возвращены, запустите ещё раз.`,
+      );
+      process.exitCode = 1;
+    }
   }
 } catch (e) {
   console.error(

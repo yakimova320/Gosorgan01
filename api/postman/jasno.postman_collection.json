@@ -2024,6 +2024,368 @@
           ]
         }
       ]
+    },
+    {
+      "name": "05 Удаление аккаунта",
+      "description": "A01. DELETE /cabinet с текущим паролем. 204: удалено всё (строки кабинета, LlmCall, файлы). 202 DELETION_PENDING: база удалена, очистка файлов продолжается на сервере, повторять не нужно. Пока удаление идёт, другие запросы сессии: 409 ACCOUNT_DELETING. Сбой до удаления базы: 500 ERASURE_FAILED, данные и файлы возвращены.",
+      "item": [
+        {
+          "name": "POST /auth/register (кабинет для удаления)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{deleteEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('deleteEmail', `postman-delete-${Date.now()}@example.org`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('deleteToken', pm.response.json().sessionToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: письмо 01 (файл и журнал будут удалены)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /cabinet: без пароля",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('VALIDATION_FAILED', () => pm.expect(pm.response.json().code).to.eql('VALIDATION_FAILED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /cabinet: неверный пароль",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"falsches-Passwort-1\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 401', () => pm.response.to.have.status(401));",
+                  "pm.test('INVALID_CREDENTIALS', () => pm.expect(pm.response.json().code).to.eql('INVALID_CREDENTIALS'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cabinet: после неверного пароля сессия жива",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /cabinet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"postman-Passwort-123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 (всё удалено) или 202 (база удалена, файлы дочищаются)', () => pm.expect([204, 202]).to.include(pm.response.code));",
+                  "if (pm.response.code === 202) pm.test('DELETION_PENDING', () => pm.expect(pm.response.json()).to.eql({ code: 'DELETION_PENDING', message: 'Удаление аккаунта продолжается. Повторять запрос не нужно' }));",
+                  "if (pm.response.code === 204) pm.test('без тела', () => pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cabinet: старая сессия",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 401', () => pm.response.to.have.status(401));",
+                  "pm.test('UNAUTHORIZED', () => pm.expect(pm.response.json().code).to.eql('UNAUTHORIZED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /cabinet: повтор со старой сессией",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deleteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"postman-Passwort-123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login: удалённый аккаунт",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{deleteEmail}}\",\n  \"password\": \"postman-Passwort-123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 401', () => pm.response.to.have.status(401));",
+                  "pm.test('INVALID_CREDENTIALS', () => pm.expect(pm.response.json().code).to.eql('INVALID_CREDENTIALS'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -2037,6 +2399,14 @@
     },
     {
       "key": "sessionToken",
+      "value": ""
+    },
+    {
+      "key": "deleteEmail",
+      "value": ""
+    },
+    {
+      "key": "deleteToken",
       "value": ""
     }
   ]

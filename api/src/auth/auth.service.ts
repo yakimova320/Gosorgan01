@@ -21,6 +21,8 @@ const SEEN_UPDATE_MS = 60 * 1000;
 export interface AuthContext {
   cabinetId: string;
   sessionId: string;
+  /** A01: идёт удаление аккаунта, записи запрещены */
+  deleting?: boolean;
 }
 
 @Injectable()
@@ -101,7 +103,9 @@ export class AuthService {
   async authenticate(token: string): Promise<AuthContext | null> {
     const session = await this.db.session.findUnique({
       where: { tokenHash: hashToken(token) },
-      include: { cabinet: { select: { passwordChangedAt: true } } },
+      include: {
+        cabinet: { select: { passwordChangedAt: true, deletingAt: true } },
+      },
     });
     if (!session) return null;
 
@@ -112,6 +116,12 @@ export class AuthService {
     }
     const changedAt = session.cabinet.passwordChangedAt;
     if (changedAt && session.createdAt < changedAt) return null;
+    if (session.cabinet.deletingAt)
+      return {
+        cabinetId: session.cabinetId,
+        sessionId: session.id,
+        deleting: true,
+      };
 
     if (now.getTime() - session.lastSeenAt.getTime() > SEEN_UPDATE_MS) {
       await this.db.$transaction([

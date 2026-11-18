@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
+import { LoginLimiter } from '../auth/login-limiter.js';
+import { verifyPassword } from '../auth/password.js';
 import { ApiError } from '../common/api-error.js';
+import { AccountErasureService } from '../erasure/account-erasure.service.js';
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -26,7 +29,38 @@ const openDeadline = (cabinetId: string): Prisma.DeadlineWhereInput => ({
 
 @Injectable()
 export class CabinetService {
-  constructor(@Inject(PrismaService) private readonly db: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly db: PrismaService,
+    @Inject(LoginLimiter) private readonly limiter: LoginLimiter,
+    @Inject(AccountErasureService)
+    private readonly erasure: AccountErasureService,
+  ) {}
+
+  /**
+   * Удаление аккаунта (A01): пароль, затем задание удаления.
+   * Неверный пароль: 401 INVALID_CREDENTIALS (сессия остаётся), после 4 ошибок за 15 минут 429.
+   * DONE: всё удалено (204). PENDING: база удалена, файлы дочищаются (202).
+   */
+  async deleteAccount(
+    cabinetId: string,
+    password: string,
+  ): Promise<'DONE' | 'PENDING'> {
+    const key = `delete-account:${cabinetId}`;
+    if (this.limiter.isBlocked(key)) throw new ApiError('RATE_LIMITED');
+    const cabinet = await this.db.cabinet.findUnique({
+      where: { id: cabinetId },
+      select: { passwordHash: true },
+    });
+    if (!cabinet) throw new ApiError('UNAUTHORIZED');
+    if (!(await verifyPassword(password, cabinet.passwordHash))) {
+      this.limiter.recordFailure(key);
+      throw new ApiError('INVALID_CREDENTIALS');
+    }
+    this.limiter.reset(key);
+    const outcome = await this.erasure.erase(cabinetId);
+    if (outcome === 'DONE' || outcome === 'PENDING') return outcome;
+    throw new ApiError('ERASURE_FAILED');
+  }
 
   async get(cabinetId: string): Promise<CabinetView> {
     const cabinet = await this.db.cabinet.findUnique({
