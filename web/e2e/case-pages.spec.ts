@@ -188,6 +188,16 @@ test('состояния объяснения: DATES_NOT_VERIFIED, LLM_QUOTA, CL
       r.url() === `${API_URL}/letters/${letterId}` &&
       order.push('letter'),
   );
+  // Первый запрос письма после перезагрузки медленный: конфликт приходит, пока он ещё идёт.
+  // Его ответ мог быть собран до изменения фактов, поэтому нужен новый запрос письма.
+  let slowLetter = true;
+  await page.route(`${API_URL}/letters/${letterId}`, async (r) => {
+    if (r.request().method() === 'GET' && slowLetter) {
+      slowLetter = false;
+      await new Promise((done) => setTimeout(done, 800));
+    }
+    return r.continue();
+  });
   await page.reload();
   await expect(page.getByTestId('explanation')).toBeVisible();
   const afterConflict = order.slice(order.indexOf('explain') + 1);
