@@ -3107,6 +3107,158 @@
         }
       ],
       "description": "Смена пароля (A02) и восстановление (A03). Сброс по настоящей ссылке: ссылку взять из файла письма (README, «Восстановление пароля: где письмо») и открыть на сайте."
+    },
+    {
+      "name": "09 Docker (сайт из API)",
+      "description": "B13. Только с окружением «Ja!sno Docker» (docker compose up, http://localhost:8080). С окружением local запросы пропускаются.",
+      "item": [
+        {
+          "name": "GET /app/cases (страница сайта, прямое открытие)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/app/cases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "app",
+                "cases"
+              ]
+            },
+            "description": "SPA fallback: вложенный адрес сайта отдаёт index.html"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"dockerSite\") !== \"1\") {",
+                  "  console.log(\"Папка 09: только для окружения «Ja!sno Docker» (API отдаёт сайт)\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 и HTML\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/html\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /assets/gibt-es-nicht.js (нет файла: 404 JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assets/gibt-es-nicht.js",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets",
+                "gibt-es-nicht.js"
+              ]
+            },
+            "description": "Отсутствующий ресурс не подменяется страницей сайта"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"dockerSite\") !== \"1\") {",
+                  "  console.log(\"Папка 09: только для окружения «Ja!sno Docker» (API отдаёт сайт)\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 JSON, не HTML\", () => {",
+                  "  pm.response.to.have.status(404);",
+                  "  pm.expect(pm.response.json().code).to.eql(\"NOT_FOUND\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases (API без входа: 401 JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases"
+              ]
+            },
+            "description": "Адреса API не перекрываются сайтом"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get(\"dockerSite\") !== \"1\") {",
+                  "  console.log(\"Папка 09: только для окружения «Ja!sno Docker» (API отдаёт сайт)\");",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 JSON\", () => {",
+                  "  pm.response.to.have.status(401);",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"json\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

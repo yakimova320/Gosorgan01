@@ -149,6 +149,14 @@ pnpm dlx newman run api/postman/jasno.postman_collection.json -e api/postman/loc
 
 `pnpm db:seed` создаёт демо-кабинет `demo@example.org` (переменная `DEMO_EMAIL`) с паролем из `DEMO_PASSWORD` в `api/.env` — пароль в репозиторий не кладётся. Три дела из синтетических писем 01, 04 и 12 (у 12 срок просрочен), факты подтверждены, объяснения готовы. Модель внутри seed всегда demo. Повторный запуск пересоздаёт только демо-кабинет. Подготовка и сценарий показа: [docs/demo-runbook.md](docs/demo-runbook.md).
 
+## Всё приложение в Docker (B13)
+
+```bash
+docker compose up -d --build
+```
+
+Сайт и API на `http://localhost:8080` (один контейнер, база в соседнем). Модель по умолчанию `demo`, даже если в `api/.env` есть ключ; письма восстановления — файлы в томе. Данные в томах переживают перезапуск и `docker compose down` (без `-v`). Настройки, резервная копия и публикация: [docs/deploy.md](docs/deploy.md). Postman: окружение `api/postman/docker.postman_environment.json`, папка «09 Docker».
+
 ## Восстановление пароля: где письмо
 
 По умолчанию `MAIL_MODE=file`: письма никуда не отправляются, а сохраняются файлами. Так восстановление можно проверить без почтового сервиса.

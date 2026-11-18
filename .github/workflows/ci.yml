@@ -46,3 +46,21 @@ jobs:
           name: playwright-traces
           path: web/test-results/
           retention-days: 7
+
+  # B13: образ собирается и запускается на пустой базе (миграции при старте), сайт и API отвечают
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build --wait
+      - name: Сайт и API в контейнере
+        run: |
+          curl -fsS http://127.0.0.1:8080/health | grep -q '"llmMode":"demo"'
+          curl -fsS -H 'Accept: text/html' http://127.0.0.1:8080/app/cases | grep -q '<div id="root">'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/assets/gibt-es-nicht.js)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/cases)" = 401
+          docker compose exec -T db psql -U jasno -d jasno -tAc 'select count(*) from _prisma_migrations where finished_at is not null' | grep -qv '^0$'
+      - if: failure()
+        run: docker compose logs app
+      - if: always()
+        run: docker compose down -v

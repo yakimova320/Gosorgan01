@@ -1,21 +1,63 @@
-# База PostgreSQL для разработки и тестов. Запуск: pnpm db:up
-# Контейнер приложения добавляет задача B13.
+# Ja!sno в Docker.
+#   Только база для разработки и тестов:  pnpm db:up   (docker compose up -d --wait db)
+#   Всё приложение (B13):                  docker compose up -d --build   → http://localhost:8080
+# Публикация на сервер: docs/deploy.md.
+
+# Имя проекта и томов закреплено: другая папка или другое имя проекта не создадут незаметно новую пустую базу.
+name: gosorgan01
+
 services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: jasno
-      POSTGRES_PASSWORD: jasno
-      POSTGRES_DB: jasno
+      # действует только при первом создании тома; потом пароль меняется в самой базе (docs/deploy.md)
+      POSTGRES_USER: ${POSTGRES_USER:-jasno}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jasno}
+      POSTGRES_DB: ${POSTGRES_DB:-jasno}
     ports:
       - '127.0.0.1:5432:5432'
     volumes:
       - jasno-db:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U jasno -d jasno']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
       interval: 2s
       timeout: 3s
       retries: 30
+    restart: unless-stopped
+
+  app:
+    build: .
+    image: jasno-app:local
+    depends_on:
+      db:
+        condition: service_healthy
+    # api/.env, если есть: ключи модели, SMTP, DEMO_PASSWORD. Значения ниже главнее.
+    env_file:
+      - path: api/.env
+        required: false
+    environment:
+      NODE_ENV: ${JASNO_NODE_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: '3000'
+      DATABASE_URL: postgresql://${POSTGRES_USER:-jasno}:${POSTGRES_PASSWORD:-jasno}@db:5432/${POSTGRES_DB:-jasno}
+      STORAGE_DIR: /data/storage
+      WEB_DIST_DIR: /app/web/dist
+      APP_PUBLIC_URL: ${JASNO_PUBLIC_URL:-http://localhost:8080}
+      CORS_ORIGIN: ${JASNO_PUBLIC_URL:-http://localhost:8080}
+      # Настоящая модель только явно: JASNO_LLM_MODE=openai. Ключ из api/.env сам её не включает.
+      LLM_MODE: ${JASNO_LLM_MODE:-demo}
+      # file: письма восстановления — файлы в томе хранилища (mail-outbox). В production нужен smtp.
+      MAIL_MODE: ${JASNO_MAIL_MODE:-file}
+      TRUST_PROXY: ${JASNO_TRUST_PROXY:-}
+      RATE_LIMIT_IP: 'true'
+    ports:
+      - '127.0.0.1:${JASNO_PORT:-8080}:3000'
+    volumes:
+      - jasno-storage:/data/storage
+    restart: unless-stopped
 
 volumes:
   jasno-db:
+    name: gosorgan01_jasno-db
+  jasno-storage:
+    name: gosorgan01_jasno-storage
