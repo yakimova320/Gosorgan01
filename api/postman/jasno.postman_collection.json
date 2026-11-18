@@ -2438,6 +2438,129 @@
       ]
     },
     {
+      "name": "06 Демо-кабинет",
+      "description": "B19. Требует pnpm db:seed и demoPassword в окружении (локально).",
+      "item": [
+        {
+          "name": "POST /auth/login (демо-кабинет)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"{{demoPassword}}\"\n}"
+            },
+            "description": "Пароль берётся из окружения «Ja!sno local» (Current value, локально), в коллекции его нет. Сначала pnpm db:seed."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('demoPassword')) {",
+                  "  console.log('demoPassword не задан: впишите его в окружение «Ja!sno local» (Current value), не в коллекцию');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('demoToken', pm.response.json().sessionToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases (демо: 3 дела)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{demoToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('3 дела', () => pm.expect(pm.response.json()).to.have.lengthOf(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cabinet (демо: синтетические данные)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{demoToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('имя Alex Beispiel', () => pm.expect(pm.response.json().profile.lastName).to.eql('Beispiel'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "08 Пароль",
       "item": [
         {
@@ -3017,6 +3140,10 @@
     },
     {
       "key": "pwOtherToken",
+      "value": ""
+    },
+    {
+      "key": "demoToken",
       "value": ""
     }
   ]

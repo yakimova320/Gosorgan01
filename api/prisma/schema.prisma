@@ -103,6 +103,9 @@ model Cabinet {
   // A01: временная блокировка записей на время удаления аккаунта. Не мягкое удаление:
   // после успешного удаления строки кабинета нет; при откате отметка снимается.
   deletingAt          DateTime?
+  // B19: демо-кабинет из pnpm db:seed. Только такой кабинет seed может пересоздать;
+  // обычный аккаунт с тем же e-mail не трогается. Через API не меняется.
+  demo                Boolean              @default(false)
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   passwordResetMails  PasswordResetMail[]

@@ -17,7 +17,8 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
-    seed: 'node prisma/seed.mjs',
+    // B19: демо-кабинет (dist/scripts/seed.js); prisma migrate reset вызывает тот же seed
+    seed: 'pnpm run db:seed',
   },
   datasource: {
     url,
