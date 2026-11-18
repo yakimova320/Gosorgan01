@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { ApiErrorFilter } from './common/error.filter.js';
@@ -15,10 +16,12 @@ export async function createApp(options?: {
   env?: NodeJS.ProcessEnv;
   logger?: boolean;
 }): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule.forRoot(options?.env), {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(options?.env), {
     logger: options?.logger === false ? false : ['log', 'warn', 'error'],
   });
   const config = app.get<Env>(APP_CONFIG);
+  // IP клиента за доверенным прокси (лимит «Забыли пароль?» по IP). Без настройки заголовок не учитывается.
+  if (config.TRUST_PROXY !== undefined) app.set('trust proxy', config.TRUST_PROXY);
 
   app.enableCors({ origin: config.CORS_ORIGIN, credentials: false });
   app.useGlobalFilters(new ApiErrorFilter());

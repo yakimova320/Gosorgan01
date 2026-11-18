@@ -25,6 +25,15 @@ export const envSchema = z
         'DATABASE_URL: нужен адрес PostgreSQL (postgresql://...)',
       )
       .default('postgresql://jasno:jasno@localhost:5432/jasno'),
+    // A03: адреса доверенных прокси перед API (формат Express «trust proxy»: loopback, 10.0.0.0/8,
+    // число шагов). Пусто: X-Forwarded-For не учитывается, IP берётся из соединения.
+    TRUST_PROXY: z
+      .string()
+      .optional()
+      .transform((v) => (v && /^\d+$/.test(v) ? Number(v) : v))
+      .refine((v) => v !== 'true', {
+        message: 'true нельзя: тогда любой клиент подставит свой IP. Укажите адрес прокси или число шагов',
+      }),
     CORS_ORIGIN: z
       .string()
       .default('http://localhost:5173')

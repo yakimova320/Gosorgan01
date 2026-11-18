@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { StorageService } from '../documents/storage.service.js';
 import { AccountErasureService } from '../erasure/account-erasure.service.js';
+import { registerResetMailCleaner } from '../mail/mail.module.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
 /*
@@ -114,6 +115,7 @@ export async function executeWipe(
   storage: StorageService = new StorageService({ STORAGE_DIR: storageDir }),
 ): Promise<{ deleted: string[]; pending: string[]; failed: string[] }> {
   const erasure = new AccountErasureService(db, storage);
+  registerResetMailCleaner(erasure, storage);
   // сначала незаконченные задания прошлых запусков
   await erasure.recoverAll();
   const result = {

@@ -73,6 +73,38 @@ export class StorageService {
     }).catch(() => this.logger.error('не удалось удалить папку кабинета'));
   }
 
+  // ---------- Письма восстановления пароля (A03, MAIL_MODE=file) ----------
+  // STORAGE_DIR/mail-outbox/<cabinetId>/<id задания>.eml. В файле действующая ссылка: папки 0700,
+  // файлы 0600, статически не раздаются. Удаляются после сброса и смены пароля и при удалении аккаунта.
+
+  mailDir(cabinetId: string): string {
+    if (!SAFE_ID.test(cabinetId)) throw new Error('bad cabinetId');
+    return resolve(this.root, 'mail-outbox', cabinetId);
+  }
+
+  async writeMail(cabinetId: string, id: string, data: Buffer): Promise<string> {
+    if (!SAFE_ID.test(id)) throw new Error('bad mail id');
+    const dir = this.mailDir(cabinetId);
+    await this.ops.mkdir(dir, { recursive: true, mode: 0o700 });
+    const path = join(dir, `${id}.eml`);
+    try {
+      await writeFile(path, data, { flag: 'w', mode: 0o600 });
+    } catch (e) {
+      await this.ops.rm(path, { force: true }).catch(() => undefined);
+      throw e;
+    }
+    return path;
+  }
+
+  async removeMailFile(path: string): Promise<void> {
+    await this.ops.rm(path, { force: true });
+  }
+
+  /** Все письма кабинета. Нет папки: не ошибка. Ошибка удаления пробрасывается (решает вызывающий). */
+  async removeMailDir(cabinetId: string): Promise<void> {
+    await this.ops.rm(this.mailDir(cabinetId), { recursive: true, force: true });
+  }
+
   // ---------- Корзина удаления аккаунта (A01) ----------
   // Все операции повторяемые: решают по фактическому месту файлов, а не по записанному статусу.
 

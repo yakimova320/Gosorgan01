@@ -21,7 +21,7 @@ import {
   mockUpload,
 } from '../mocks/letters';
 import { DATA_MODE } from '../api/config';
-import { apiError, type ApiError } from '../api/errors';
+import type { ApiError } from '../api/errors';
 import type {
   ApiCaseDetail,
   ApiDraft,
@@ -44,8 +44,8 @@ import { takeUploadFiles } from './uploads';
  * Все обращения сайта к данным идут через RTK Query (TechBriefing v5, раздел 4).
  * Данные с сервера живут только в этом кэше, в slices их не копируем.
  * mock: примерные данные (mocks/data.ts), сервер не нужен.
- * api: настоящий сервер. Эндпоинты, которых на сервере ещё нет, отвечают NOT_CONNECTED:
- * экран честно говорит «ещё не подключено» и не делает вид, что сохранил.
+ * api: настоящий сервер. Все эндпоинты подключены; код NOT_CONNECTED остаётся в api/errors.ts
+ * для будущих функций: экран честно говорит «ещё не подключено» и не делает вид, что сохранил.
  */
 
 type Result<T> = { data: T } | { error: ApiError };
@@ -53,10 +53,6 @@ type Result<T> = { data: T } | { error: ApiError };
 const wait = (ms = 350): Promise<void> =>
   new Promise<void>((r) => setTimeout(r, ms));
 const ok = <T>(data: T): Result<T> => ({ data });
-const fail = (code: string, status?: number): { error: ApiError } => ({
-  error: apiError(code, status),
-});
-const notConnected = () => fail('NOT_CONNECTED');
 const isMock = DATA_MODE === 'mock';
 /** Загрузка фото: распознавание и извлечение фактов могут идти больше минуты. */
 const UPLOAD_TIMEOUT_MS = 180_000;
@@ -145,19 +141,34 @@ export const api = createApi({
       },
     }),
 
-    // STUB: эндпоинтов восстановления пароля на сервере ещё нет (A03).
-    // В режиме api честно отвечаем NOT_CONNECTED; подключение: задача A03.
+    /** A03: POST /auth/password/forgot. Ответ всегда один (202), есть адрес или нет. */
     forgotPassword: b.mutation<void, string>({
-      queryFn: async () => {
+      queryFn: async (email, _api, _x, base) => {
         if (isMock) return wait().then(() => ok(undefined));
-        return notConnected();
+        const res = (await base({
+          method: 'POST',
+          path: '/auth/password/forgot',
+          body: { email },
+          auth: false,
+        })) as Result<unknown>;
+        return 'error' in res ? res : ok(undefined);
       },
     }),
 
+    /**
+     * A03: POST /auth/password/reset, 204. Сервер завершает все сессии кабинета,
+     * поэтому страница после успеха сбрасывает и сессию этого браузера.
+     */
     resetPassword: b.mutation<void, { token: string; newPassword: string }>({
-      queryFn: async () => {
+      queryFn: async (body, _api, _x, base) => {
         if (isMock) return wait().then(() => ok(undefined));
-        return notConnected();
+        const res = (await base({
+          method: 'POST',
+          path: '/auth/password/reset',
+          body,
+          auth: false,
+        })) as Result<unknown>;
+        return 'error' in res ? res : ok(undefined);
       },
     }),
 

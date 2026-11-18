@@ -105,6 +105,7 @@ model Cabinet {
   deletingAt          DateTime?
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
+  passwordResetMails  PasswordResetMail[]
   cases               Case[]
   letters             Letter[]
 }
@@ -135,6 +136,34 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([cabinetId])
+}
+
+// A03: задание отправки письма восстановления (outbox). Секрета не хранит: токен создаётся
+// при отправке, здесь только его id. Строки остаются после сброса и смены пароля, по ним считается
+// лимит «3 письма в час на адрес»; старые строки удаляет фоновая очистка. Удаление кабинета удаляет их каскадом.
+enum ResetMailStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model PasswordResetMail {
+  id            String          @id @default(cuid())
+  cabinetId     String
+  cabinet       Cabinet         @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  status        ResetMailStatus @default(PENDING)
+  attempts      Int             @default(0)
+  nextAttemptAt DateTime        @default(now())
+  leaseUntil    DateTime?
+  leaseOwner    String?
+  tokenId       String? // токен последней попытки (без секрета)
+  lastError     String? // только код ошибки, без адреса и ссылки
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([cabinetId, createdAt])
+  @@index([status, nextAttemptAt])
 }
 
 model Case {

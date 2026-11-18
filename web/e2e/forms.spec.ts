@@ -103,12 +103,3 @@ test('пароль при входе не проверяется по прави
   await expect(page.getByText('Неверный e-mail или пароль')).toBeVisible();
   await expect(page.getByText('не меньше 10 знаков')).toHaveCount(0);
 });
-
-test('неподключённая функция честно говорит об этом', async ({ page }) => {
-  await page.goto('/forgot');
-  await page.getByLabel('E-mail').fill('anna@example.org');
-  await page.getByRole('button', { name: 'Отправить ссылку' }).click();
-  await expect(page.getByRole('alert')).toHaveText(
-    'Эта функция ещё не подключена к серверу',
-  );
-});

@@ -3,6 +3,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { ApiError } from '../common/api-error.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
+import { ResetMailOutbox } from '../mail/reset-mail.outbox.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import type {
@@ -38,6 +39,7 @@ export class AuthService {
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(LoginLimiter) private readonly limiter: LoginLimiter,
     @Inject(APP_CONFIG) private readonly config: Env,
+    @Inject(ResetMailOutbox) private readonly resetMail: ResetMailOutbox,
   ) {}
 
   async register(input: RegisterInput): Promise<{ sessionToken: string }> {
@@ -136,7 +138,7 @@ export class AuthService {
     this.limiter.reset(key);
     const newHash = await hashPassword(input.newPassword);
 
-    await this.db.$transaction(async (tx) => {
+    const mailIds = await this.db.$transaction(async (tx) => {
       // Блокировка строки: две смены, смена и восстановление, смена и удаление идут по очереди.
       if (!(await lockActiveCabinet(tx, auth.cabinetId))) {
         const exists = await tx.cabinet.count({ where: { id: auth.cabinetId } });
@@ -174,11 +176,13 @@ export class AuthService {
       await tx.session.deleteMany({
         where: { cabinetId: auth.cabinetId, id: { not: auth.sessionId } },
       });
-      // Ссылки восстановления, выданные до смены, больше не действуют (и для A03).
+      // Ссылки восстановления, выданные до смены, больше не действуют; ожидающие письма отменяются (A03).
       await tx.passwordResetToken.deleteMany({
         where: { cabinetId: auth.cabinetId },
       });
+      return this.resetMail.revoke(tx, auth.cabinetId);
     });
+    await this.resetMail.removeFiles(auth.cabinetId, mailIds);
   }
 
   async logout(auth: AuthContext): Promise<void> {

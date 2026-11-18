@@ -2775,8 +2775,165 @@
               }
             }
           ]
+        },
+        {
+          "name": "POST /auth/password/forgot: известный адрес (письмо в storage/mail-outbox)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password/forgot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password",
+                "forgot"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pwEmail}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 202', () => pm.response.to.have.status(202));",
+                  "pm.test('один текст для всех адресов', () => pm.expect(pm.response.json().message).to.eql('Если такой адрес есть, мы отправили письмо'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/password/forgot: неизвестный адрес, тот же ответ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password/forgot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password",
+                "forgot"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"niemand-postman@example.org\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 202', () => pm.response.to.have.status(202));",
+                  "pm.test('один текст для всех адресов', () => pm.expect(pm.response.json().message).to.eql('Если такой адрес есть, мы отправили письмо'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/password/forgot: неверный e-mail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password/forgot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password",
+                "forgot"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kein-email\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('VALIDATION_FAILED', () => pm.expect(pm.response.json().code).to.eql('VALIDATION_FAILED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/password/reset: неверная ссылка",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password",
+                "reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"ausgedacht\",\n  \"newPassword\": \"postman-neues-Passwort-5\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('RESET_TOKEN_INVALID', () => pm.expect(pm.response.json().code).to.eql('RESET_TOKEN_INVALID'));"
+                ]
+              }
+            }
+          ]
         }
-      ]
+      ],
+      "description": "Смена пароля (A02) и восстановление (A03). Сброс по настоящей ссылке: ссылку взять из файла письма (README, «Восстановление пароля: где письмо») и открыть на сайте."
     }
   ],
   "variable": [
