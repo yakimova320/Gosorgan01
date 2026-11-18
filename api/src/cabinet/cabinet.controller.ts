@@ -1,8 +1,22 @@
-import { Body, Controller, Get, Inject, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Patch,
+  Res,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiAcceptedResponse,
   ApiBody,
+  ApiConflictResponse,
+  ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
+  ApiTooManyRequestsResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -10,8 +24,10 @@ import {
 } from '@nestjs/swagger';
 import { ZodPipe } from '../common/zod.pipe.js';
 import type { AuthContext } from '../auth/auth.service.js';
-import { CurrentAuth } from '../auth/session.guard.js';
+import { AllowWhileDeleting, CurrentAuth } from '../auth/session.guard.js';
 import {
+  DeleteAccountSchema,
+  type DeleteAccountInput,
   UpdateCabinetSchema,
   type UpdateCabinetInput,
 } from './cabinet.schemas.js';
@@ -93,5 +109,65 @@ export class CabinetController {
     @Body(new ZodPipe(UpdateCabinetSchema)) body: UpdateCabinetInput,
   ): Promise<CabinetView> {
     return this.cabinet.update(auth.cabinetId, body);
+  }
+
+  @Delete()
+  @AllowWhileDeleting()
+  @ApiOperation({
+    summary: 'Удалить аккаунт полностью (A01)',
+    description:
+      'Нужен текущий пароль. Кабинет берётся только из сессии. Удаляются все строки кабинета ' +
+      '(сессии, токены, дела, письма, факты, сроки, события, черновики), журнал LlmCall и файлы писем. ' +
+      '204: удалено всё. 202 DELETION_PENDING: база уже удалена, файлы дочищаются в фоне, повторять не нужно. ' +
+      'Пока удаление идёт, остальные запросы этой сессии получают 409 ACCOUNT_DELETING. ' +
+      'Повторный DELETE продолжает то же задание.',
+  })
+  @ApiBody({ schema: { example: { password: 'mein-langes-Passwort' } } })
+  @ApiNoContentResponse({ description: 'Аккаунт и все данные удалены' })
+  @ApiAcceptedResponse({
+    description: 'База удалена, очистка файлов продолжается',
+    schema: {
+      example: {
+        code: 'DELETION_PENDING',
+        message: 'Удаление аккаунта продолжается. Повторять запрос не нужно',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      'INVALID_CREDENTIALS: неверный пароль, сессия остаётся. UNAUTHORIZED: нет сессии',
+    schema: {
+      example: {
+        code: 'INVALID_CREDENTIALS',
+        message: 'Неверный e-mail или пароль',
+      },
+    },
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'RATE_LIMITED: 4 неверных пароля за 15 минут',
+  })
+  @ApiConflictResponse({ description: 'ACCOUNT_DELETING (у других запросов)' })
+  @ApiInternalServerErrorResponse({
+    description:
+      'ERASURE_FAILED: удалить не получилось, данные возвращены или возвращаются',
+  })
+  async remove(
+    @CurrentAuth() auth: AuthContext,
+    @Body(new ZodPipe(DeleteAccountSchema)) body: DeleteAccountInput,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ code: 'DELETION_PENDING'; message: string } | undefined> {
+    const outcome = await this.cabinet.deleteAccount(
+      auth.cabinetId,
+      body.password,
+    );
+    if (outcome === 'DONE') {
+      res.status(204);
+      return undefined;
+    }
+    res.status(202);
+    return {
+      code: 'DELETION_PENDING',
+      message: 'Удаление аккаунта продолжается. Повторять запрос не нужно',
+    };
   }
 }

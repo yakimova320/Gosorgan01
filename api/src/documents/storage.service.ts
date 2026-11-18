@@ -1,7 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import {
+  access,
+  mkdir,
+  readdir,
+  rename,
+  rm,
+  rmdir,
+  writeFile,
+} from 'node:fs/promises';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
 
@@ -11,12 +19,19 @@ const API_DIR = resolve(import.meta.dirname, '..', '..');
 /*
  * Оригиналы писем: STORAGE_DIR/letters/<cabinetId>/<случайный ключ>.
  * Имя исходного файла не сохраняется. Папка не раздаётся статически: файлы отдаёт только код с проверкой владельца (B11).
- * Папка кабинета нужна для полного удаления аккаунта (A01).
+ * Папка кабинета нужна для полного удаления аккаунта (A01): при удалении она переносится
+ * в корзину STORAGE_DIR/trash/<id задания>/letters и удаляется только после удаления строк базы.
  */
+const SAFE_ID = /^[a-zA-Z0-9_-]+$/;
+
+/** Файловые операции корзины. Объект можно подменить в тестах сбоев. */
+export const fileOps = { access, mkdir, readdir, rename, rm, rmdir };
+
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger('Storage');
   readonly root: string;
+  readonly ops = { ...fileOps };
 
   constructor(@Inject(APP_CONFIG) config: Pick<Env, 'STORAGE_DIR'>) {
     this.root = isAbsolute(config.STORAGE_DIR)
@@ -56,6 +71,65 @@ export class StorageService {
       recursive: true,
       force: true,
     }).catch(() => this.logger.error('не удалось удалить папку кабинета'));
+  }
+
+  // ---------- Корзина удаления аккаунта (A01) ----------
+  // Все операции повторяемые: решают по фактическому месту файлов, а не по записанному статусу.
+
+  /** Папка писем кабинета → корзина задания. Новые файлы в обеих папках сливаются. */
+  async moveCabinetToTrash(cabinetId: string, jobId: string): Promise<void> {
+    await this.moveDir(this.cabinetDir(cabinetId), this.trashLetters(jobId));
+  }
+
+  /** Обратно из корзины. Нет корзины: возвращать нечего, это не ошибка. */
+  async restoreCabinetFromTrash(
+    cabinetId: string,
+    jobId: string,
+  ): Promise<void> {
+    await this.moveDir(this.trashLetters(jobId), this.cabinetDir(cabinetId));
+    await this.ops.rm(this.trashDir(jobId), { recursive: true, force: true });
+  }
+
+  /** Окончательная очистка: корзина и (на всякий случай) папка кабинета. Ошибка пробрасывается. */
+  async purgeErasure(cabinetId: string, jobId: string): Promise<void> {
+    await this.ops.rm(this.trashDir(jobId), { recursive: true, force: true });
+    await this.ops.rm(this.cabinetDir(cabinetId), {
+      recursive: true,
+      force: true,
+    });
+  }
+
+  async exists(path: string): Promise<boolean> {
+    return this.ops.access(path).then(
+      () => true,
+      () => false,
+    );
+  }
+
+  cabinetDir(cabinetId: string): string {
+    if (!SAFE_ID.test(cabinetId)) throw new Error('bad cabinetId');
+    return resolve(this.root, 'letters', cabinetId);
+  }
+
+  trashDir(jobId: string): string {
+    if (!SAFE_ID.test(jobId)) throw new Error('bad jobId');
+    return resolve(this.root, 'trash', jobId);
+  }
+
+  private trashLetters(jobId: string): string {
+    return join(this.trashDir(jobId), 'letters');
+  }
+
+  private async moveDir(src: string, dst: string): Promise<void> {
+    if (!(await this.exists(src))) return;
+    if (!(await this.exists(dst))) {
+      await this.ops.mkdir(dirname(dst), { recursive: true });
+      await this.ops.rename(src, dst);
+      return;
+    }
+    for (const name of await this.ops.readdir(src))
+      await this.ops.rename(join(src, name), join(dst, name));
+    await this.ops.rmdir(src);
   }
 
   pathOf(key: string): string {

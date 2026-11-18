@@ -145,8 +145,8 @@ export const api = createApi({
       },
     }),
 
-    // STUB: эндпоинтов пароля и удаления аккаунта на сервере ещё нет (A01–A03).
-    // В режиме api честно отвечаем NOT_CONNECTED; подключение: задачи A01, A02, A03.
+    // STUB: эндпоинтов пароля на сервере ещё нет (A02, A03).
+    // В режиме api честно отвечаем NOT_CONNECTED; подключение: задачи A02, A03.
     forgotPassword: b.mutation<void, string>({
       queryFn: async () => {
         if (isMock) return wait().then(() => ok(undefined));
@@ -171,10 +171,20 @@ export const api = createApi({
       },
     }),
 
-    deleteAccount: b.mutation<void, string>({
-      queryFn: async () => {
-        if (isMock) return wait().then(() => ok(undefined));
-        return notConnected();
+    /**
+     * A01: DELETE /cabinet. 204 — удалено всё; 202 DELETION_PENDING — база удалена, файлы дочищаются.
+     * В обоих случаях сайт сразу выходит (сброс сессии и кэша в store/index.ts).
+     */
+    deleteAccount: b.mutation<{ pending: boolean }, string>({
+      queryFn: async (password, _api, _x, base) => {
+        if (isMock) return wait().then(() => ok({ pending: false }));
+        const res = (await base({
+          method: 'DELETE',
+          path: '/cabinet',
+          body: { password },
+        })) as Result<{ code?: string } | undefined>;
+        if ('error' in res) return res;
+        return ok({ pending: res.data?.code === 'DELETION_PENDING' });
       },
     }),
 

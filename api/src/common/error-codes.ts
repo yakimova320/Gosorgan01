@@ -51,6 +51,10 @@ export const ERROR_CODES = {
     status: 409,
     message: 'Заполните имя, фамилию и адрес в профиле',
   },
+  ACCOUNT_DELETING: {
+    status: 409,
+    message: 'Удаление аккаунта продолжается. Повторять запрос не нужно',
+  },
   NO_CONFIRMED_CLAIMS: {
     status: 409,
     message: 'Сначала подтвердите факты письма',
@@ -107,6 +111,10 @@ export const ERROR_CODES = {
   INTERNAL_ERROR: {
     status: 500,
     message: 'Что-то пошло не так. Попробуйте ещё раз',
+  },
+  ERASURE_FAILED: {
+    status: 500,
+    message: 'Не получилось удалить аккаунт. Попробуйте ещё раз позже',
   },
   LLM_FAILED: {
     status: 502,

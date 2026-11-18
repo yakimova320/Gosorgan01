@@ -1,14 +1,15 @@
 import { existsSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { StorageService } from '../documents/storage.service.js';
+import { AccountErasureService } from '../erasure/account-erasure.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
 /*
  * Разовая очистка аккаунтов (не запускается вместе с приложением).
  * Удаляет только выбранные кабинеты: строки по cabinetId (каскад: сессии, токены восстановления,
  * дела, письма, факты, сроки, события, сообщения, черновики), LlmCall этих кабинетов и их писем, файлы писем.
- * Порядок для каждого кабинета: сначала файлы, потом база. Если файлы удалить не удалось,
- * кабинет остаётся в базе, и повторный запуск его найдёт.
+ * Механизм тот же, что у DELETE /cabinet (A01): файлы сначала в корзину, потом база, потом
+ * окончательная очистка. Сбой до удаления базы: файлы возвращаются, кабинет остаётся.
  */
 
 export interface WipeTarget {
@@ -100,34 +101,33 @@ export async function planWipe(
   };
 }
 
+/**
+ * Удаление тем же механизмом, что DELETE /cabinet (AccountErasureService):
+ * блокировка, перенос файлов в корзину, база одной транзакцией, окончательная очистка.
+ * failed: удаление откатилось, кабинет остался и найдётся при повторном запуске.
+ * pending: база удалена, очистка файлов не закончилась — повторный запуск её доделает.
+ */
 export async function executeWipe(
   db: PrismaService,
   storageDir: string,
   plan: WipePlan,
-): Promise<{ deleted: string[] }> {
-  const deleted: string[] = [];
+  storage: StorageService = new StorageService({ STORAGE_DIR: storageDir }),
+): Promise<{ deleted: string[]; pending: string[]; failed: string[] }> {
+  const erasure = new AccountErasureService(db, storage);
+  // сначала незаконченные задания прошлых запусков
+  await erasure.recoverAll();
+  const result = {
+    deleted: [] as string[],
+    pending: [] as string[],
+    failed: [] as string[],
+  };
   for (const cabinet of plan.cabinets) {
-    // 1. Файлы. Ошибка: остановка, кабинет остаётся в базе для повторного запуска.
-    await rm(letterDir(storageDir, cabinet.id), {
-      recursive: true,
-      force: true,
-    });
-    // 2. База одной транзакцией.
-    await db.$transaction(async (tx) => {
-      const letterIds = (
-        await tx.letter.findMany({
-          where: { cabinetId: cabinet.id },
-          select: { id: true },
-        })
-      ).map((l) => l.id);
-      await tx.llmCall.deleteMany({
-        where: llmCallsOf([cabinet.id], letterIds),
-      });
-      await tx.cabinet.delete({ where: { id: cabinet.id } });
-    });
-    deleted.push(cabinet.id);
+    const outcome = await erasure.erase(cabinet.id);
+    if (outcome === 'DONE') result.deleted.push(cabinet.id);
+    else if (outcome === 'PENDING') result.pending.push(cabinet.id);
+    else result.failed.push(cabinet.id);
   }
-  return { deleted };
+  return result;
 }
 
 function llmCallsOf(cabinetIds: string[], letterIds: string[]) {

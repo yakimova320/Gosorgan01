@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { ApiError } from '../common/api-error.js';
 import { DocumentsService } from '../documents/documents.service.js';
+import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { StorageService } from '../documents/storage.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { LlmService, MAX_ATTEMPTS } from '../llm/llm.service.js';
@@ -75,51 +76,61 @@ export class LettersService {
 
     const ext = kind === 'jpeg' ? 'jpg' : kind;
     const fileKey = this.storage.newKey(cabinetId, ext);
-    await this.storage.write(fileKey, data);
     const files: StoredFile[] = [
       { n: 1, fileKey, mime: doc.mime, bytes: data.length },
     ];
 
+    // Файл пишется под блокировкой строки кабинета (A01): удаление аккаунта ждёт эту транзакцию,
+    // а после его начала загрузка получает 409 ACCOUNT_DELETING и файла не пишет.
     try {
       await this.db.$transaction(async (tx) => {
-        await tx.letter.create({
-          data: {
-            id: letterId,
-            cabinetId,
-            sourceType: doc.sourceType,
-            rawText: doc.text,
-            pages: doc.pages,
-            files: files as unknown as object[],
-          },
-        });
-        for (const c of claims) {
-          const row = await tx.claim.create({
+        if (!(await lockActiveCabinet(tx, cabinetId)))
+          throw new ApiError('ACCOUNT_DELETING');
+        await this.storage.write(fileKey, data);
+        try {
+          await tx.letter.create({
             data: {
-              letterId,
-              kind: c.kind,
-              value: c.value,
-              text: c.text,
-              quote: c.quote,
-              page: c.page,
-              basis: 'DOCUMENT',
-              status: 'UNCONFIRMED',
-              updatedBy: 'SYSTEM',
+              id: letterId,
+              cabinetId,
+              sourceType: doc.sourceType,
+              rawText: doc.text,
+              pages: doc.pages,
+              files: files as unknown as object[],
             },
           });
-          if (c.kind === 'DEADLINE' && c.deadlineKind) {
-            await tx.deadline.create({
+          for (const c of claims) {
+            const row = await tx.claim.create({
               data: {
                 letterId,
-                claimId: row.id,
-                date: dayToDate(c.value),
-                kind: c.deadlineKind,
+                kind: c.kind,
+                value: c.value,
+                text: c.text,
+                quote: c.quote,
+                page: c.page,
+                basis: 'DOCUMENT',
+                status: 'UNCONFIRMED',
+                updatedBy: 'SYSTEM',
               },
             });
+            if (c.kind === 'DEADLINE' && c.deadlineKind) {
+              await tx.deadline.create({
+                data: {
+                  letterId,
+                  claimId: row.id,
+                  date: dayToDate(c.value),
+                  kind: c.deadlineKind,
+                },
+              });
+            }
           }
+        } catch (e) {
+          // до отката транзакции, пока строка кабинета ещё заблокирована
+          await this.storage.remove(fileKey);
+          throw e;
         }
       });
     } catch (e) {
-      await this.storage.remove(fileKey);
+      await this.storage.remove(fileKey); // сбой фиксации транзакции
       throw e;
     }
 

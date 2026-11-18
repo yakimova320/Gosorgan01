@@ -12,6 +12,6 @@ import { SessionGuard } from './session.guard.js';
     LoginLimiter,
     { provide: APP_GUARD, useClass: SessionGuard },
   ],
-  exports: [AuthService],
+  exports: [AuthService, LoginLimiter],
 })
 export class AuthModule {}

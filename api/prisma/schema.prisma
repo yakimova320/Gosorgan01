@@ -100,6 +100,9 @@ model Cabinet {
   consentAt           DateTime
   createdAt           DateTime             @default(now())
   lastSeenAt          DateTime             @default(now())
+  // A01: временная блокировка записей на время удаления аккаунта. Не мягкое удаление:
+  // после успешного удаления строки кабинета нет; при откате отметка снимается.
+  deletingAt          DateTime?
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   cases               Case[]
@@ -283,4 +286,26 @@ model LlmCall {
   @@index([cabinetId])
   @@index([letterId])
   @@index([caseId])
+}
+
+enum ErasureStatus {
+  PREPARING // блокировка поставлена, файлы ещё на месте (или перенос мог не записаться)
+  FILES_MOVED // файлы в корзине storage/trash/<id>
+  DB_DELETED // строки кабинета удалены, осталась окончательная очистка
+  RESTORING // база не удалилась: файлы возвращаются, блокировка ещё стоит
+}
+
+// A01: задание удаления аккаунта. Без внешнего ключа: переживает удаление кабинета.
+// Одно задание на кабинет. После успешной очистки строка удаляется целиком.
+// lastError: только этап и тип ошибки, без путей и персональных данных.
+model AccountErasure {
+  id          String        @id @default(cuid())
+  cabinetId   String        @unique
+  status      ErasureStatus @default(PREPARING)
+  attempts    Int           @default(0)
+  lastError   String?
+  leaseUntil  DateTime?
+  leaseOwner  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
