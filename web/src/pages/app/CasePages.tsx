@@ -434,12 +434,20 @@ export function HistoryPage() {
       <ErrorAlert error={error} />
       <ol className="list-reset stack" aria-label="События">
         {shown.map((i) => (
-          <li key={i.id} className="card stack-s" style={{ padding: 14 }} data-testid="history-item">
-            <span style={{ fontWeight: 600 }}>{i.title}</span>
-            <span className="muted">
-              {formatDateTime(i.at)} · <Link to={`/app/cases/${i.caseId}`}>{i.caseTitle}</Link>
-              {i.subtitle ? ` · ${i.subtitle}` : ''}
-            </span>
+          <li key={i.id}>
+            {/* Правка 18-11: ссылка — вся карточка события, а не только название дела */}
+            <Link
+              to={`/app/cases/${i.caseId}`}
+              className="card stack-s history-link"
+              style={{ padding: 14 }}
+              data-testid="history-item"
+            >
+              <span style={{ fontWeight: 600 }}>{i.title}</span>
+              <span className="muted">
+                {formatDateTime(i.at)} · <span className="history-case">{i.caseTitle}</span>
+                {i.subtitle ? ` · ${i.subtitle}` : ''}
+              </span>
+            </Link>
           </li>
         ))}
       </ol>

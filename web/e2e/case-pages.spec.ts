@@ -239,6 +239,14 @@ test('история: больше 30 событий без пропусков �
   await expect(page.getByText('Событий пока нет.')).toBeVisible();
   await page.getByRole('button', { name: 'Письма' }).click();
   await expect(page.getByTestId('history-item')).toHaveCount(30);
+
+  // правка 18-11: ссылка — вся карточка; нажатие у правого края, далеко от названия дела
+  const card = page.getByTestId('history-item').first();
+  await expect(card).toHaveAttribute('href', /\/app\/cases\//);
+  const box = (await card.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await card.click({ position: { x: box.width - 12, y: 8 } });
+  await expect(page).toHaveURL(/\/app\/cases\/[^/]+$/);
 });
 
 test('дело: завершить, открыть снова, удалить; чужое дело и письмо не показываются', async ({
