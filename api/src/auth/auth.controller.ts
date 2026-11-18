@@ -13,8 +13,10 @@ import {
 } from '@nestjs/swagger';
 import { ZodPipe } from '../common/zod.pipe.js';
 import {
+  ChangePasswordSchema,
   LoginSchema,
   RegisterSchema,
+  type ChangePasswordInput,
   type LoginInput,
   type RegisterInput,
 } from './auth.schemas.js';
@@ -80,6 +82,49 @@ export class AuthController {
   })
   login(@Body(new ZodPipe(LoginSchema)) body: LoginInput) {
     return this.auth.login(body);
+  }
+
+  @Post('password/change')
+  @HttpCode(204)
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      example: {
+        oldPassword: 'mein-langes-Passwort',
+        newPassword: 'ein-neues-Passwort',
+      },
+    },
+  })
+  @ApiNoContentResponse({
+    description:
+      'Пароль изменён. Текущая сессия остаётся, другие сессии и ссылки восстановления пароля аннулированы',
+  })
+  @ApiBadRequestResponse({
+    description: 'PASSWORD_TOO_LONG (больше 72 байт) или VALIDATION_FAILED',
+    ...err('PASSWORD_TOO_LONG', 'Пароль слишком длинный'),
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      'INVALID_CREDENTIALS: неверный текущий пароль (details.fields.oldPassword), сессия не завершается. ' +
+      'UNAUTHORIZED: сессии нет или её завершила другая смена пароля',
+    ...err('INVALID_CREDENTIALS', 'Неверный пароль'),
+  })
+  @ApiConflictResponse({
+    description: 'Идёт удаление аккаунта',
+    ...err(
+      'ACCOUNT_DELETING',
+      'Удаление аккаунта продолжается. Повторять запрос не нужно',
+    ),
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'После 4 неверных текущих паролей за 15 минут',
+    ...err('RATE_LIMITED', 'Слишком много попыток. Подождите немного'),
+  })
+  async changePassword(
+    @CurrentAuth() auth: AuthContext,
+    @Body(new ZodPipe(ChangePasswordSchema)) body: ChangePasswordInput,
+  ): Promise<void> {
+    await this.auth.changePassword(auth, body);
   }
 
   @Post('logout')

@@ -3,8 +3,10 @@
  * Проверка 72 байт даёт код PASSWORD_TOO_LONG, отсутствие согласия: CONSENT_REQUIRED (ApiErrorFilter).
  */
 export {
+  ChangePasswordSchema,
   LoginSchema,
   RegisterSchema,
+  type ChangePasswordInput,
   type LoginInput,
   type RegisterInput,
 } from '@jasno/shared';

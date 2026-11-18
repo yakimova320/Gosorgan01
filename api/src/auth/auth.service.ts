@@ -4,7 +4,12 @@ import { ApiError } from '../common/api-error.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { LoginInput, RegisterInput } from './auth.schemas.js';
+import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
+import type {
+  ChangePasswordInput,
+  LoginInput,
+  RegisterInput,
+} from './auth.schemas.js';
 import { LoginLimiter } from './login-limiter.js';
 import {
   assertPasswordFits,
@@ -85,11 +90,95 @@ export class AuthService {
       throw new ApiError('INVALID_CREDENTIALS');
     }
     this.limiter.reset(input.email);
-    await this.db.cabinet.update({
-      where: { id: cabinet.id },
-      data: { lastSeenAt: new Date() },
+    // Сессия создаётся под блокировкой строки кабинета и только если пароль не сменили,
+    // пока шла проверка, и аккаунт не удаляется (A02).
+    const now = new Date();
+    return this.db.$transaction(async (tx) => {
+      const { count } = await tx.cabinet.updateMany({
+        where: {
+          id: cabinet.id,
+          deletingAt: null,
+          passwordHash: cabinet.passwordHash,
+        },
+        data: { lastSeenAt: now },
+      });
+      if (count !== 1) {
+        const current = await tx.cabinet.findUnique({
+          where: { id: cabinet.id },
+          select: { deletingAt: true },
+        });
+        if (current?.deletingAt) throw new ApiError('ACCOUNT_DELETING');
+        throw new ApiError('INVALID_CREDENTIALS');
+      }
+      return { sessionToken: await this.createSession(cabinet.id, tx, now) };
     });
-    return { sessionToken: await this.createSession(cabinet.id) };
+  }
+
+  /**
+   * A02: смена пароля. Текущая сессия остаётся, остальные сессии и ссылки восстановления
+   * аннулируются в той же транзакции. Пароли и тела запросов не логируются.
+   */
+  async changePassword(
+    auth: AuthContext,
+    input: ChangePasswordInput,
+  ): Promise<void> {
+    const key = `change-password:${auth.cabinetId}`;
+    if (this.limiter.isBlocked(key)) throw new ApiError('RATE_LIMITED');
+    const cabinet = await this.db.cabinet.findUnique({
+      where: { id: auth.cabinetId },
+      select: { passwordHash: true },
+    });
+    if (!cabinet) throw new ApiError('UNAUTHORIZED');
+    if (!(await verifyPassword(input.oldPassword, cabinet.passwordHash))) {
+      this.limiter.recordFailure(key);
+      throw wrongOldPassword();
+    }
+    this.limiter.reset(key);
+    const newHash = await hashPassword(input.newPassword);
+
+    await this.db.$transaction(async (tx) => {
+      // Блокировка строки: две смены, смена и восстановление, смена и удаление идут по очереди.
+      if (!(await lockActiveCabinet(tx, auth.cabinetId))) {
+        const exists = await tx.cabinet.count({ where: { id: auth.cabinetId } });
+        throw new ApiError(exists ? 'ACCOUNT_DELETING' : 'UNAUTHORIZED');
+      }
+      // Под блокировкой перечитываем: состояние могло измениться после проверки пароля.
+      const locked = await tx.cabinet.findUniqueOrThrow({
+        where: { id: auth.cabinetId },
+        select: { passwordHash: true, passwordChangedAt: true },
+      });
+      const now = new Date();
+      const session = await tx.session.findUnique({
+        where: { id: auth.sessionId },
+        select: { cabinetId: true, expiresAt: true, passwordAt: true },
+      });
+      if (
+        !session ||
+        session.cabinetId !== auth.cabinetId ||
+        session.expiresAt <= now ||
+        (locked.passwordChangedAt && session.passwordAt < locked.passwordChangedAt)
+      )
+        throw new ApiError('UNAUTHORIZED');
+      // Пароль уже сменили другим запросом: старый пароль больше не верный.
+      if (locked.passwordHash !== cabinet.passwordHash) throw wrongOldPassword();
+
+      await tx.cabinet.update({
+        where: { id: auth.cabinetId },
+        data: { passwordHash: newHash, passwordChangedAt: now },
+      });
+      // Тот же момент, что passwordChangedAt: текущая сессия остаётся действительной.
+      await tx.session.update({
+        where: { id: auth.sessionId },
+        data: { passwordAt: now },
+      });
+      await tx.session.deleteMany({
+        where: { cabinetId: auth.cabinetId, id: { not: auth.sessionId } },
+      });
+      // Ссылки восстановления, выданные до смены, больше не действуют (и для A03).
+      await tx.passwordResetToken.deleteMany({
+        where: { cabinetId: auth.cabinetId },
+      });
+    });
   }
 
   async logout(auth: AuthContext): Promise<void> {
@@ -98,7 +187,7 @@ export class AuthService {
 
   /**
    * Проверяет токен из заголовка Authorization. null: нет сессии, истекла
-   * или создана до смены пароля.
+   * или подтверждена паролем раньше последней смены пароля.
    */
   async authenticate(token: string): Promise<AuthContext | null> {
     const session = await this.db.session.findUnique({
@@ -115,7 +204,7 @@ export class AuthService {
       return null;
     }
     const changedAt = session.cabinet.passwordChangedAt;
-    if (changedAt && session.createdAt < changedAt) return null;
+    if (changedAt && session.passwordAt < changedAt) return null;
     if (session.cabinet.deletingAt)
       return {
         cabinetId: session.cabinetId,
@@ -138,15 +227,30 @@ export class AuthService {
     return { cabinetId: session.cabinetId, sessionId: session.id };
   }
 
-  private async createSession(cabinetId: string): Promise<string> {
+  private async createSession(
+    cabinetId: string,
+    db: Prisma.TransactionClient = this.db,
+    now = new Date(),
+  ): Promise<string> {
     const token = newToken();
-    await this.db.session.create({
+    await db.session.create({
       data: {
         cabinetId,
         tokenHash: hashToken(token),
-        expiresAt: new Date(Date.now() + this.config.SESSION_TTL_DAYS * DAY_MS),
+        createdAt: now,
+        passwordAt: now,
+        expiresAt: new Date(now.getTime() + this.config.SESSION_TTL_DAYS * DAY_MS),
       },
     });
     return token;
   }
+}
+
+/** Неверный текущий пароль при смене: ошибка поля, сессия не завершается. */
+function wrongOldPassword(): ApiError {
+  return new ApiError(
+    'INVALID_CREDENTIALS',
+    { fields: { oldPassword: 'Неверный пароль' } },
+    'Неверный пароль',
+  );
 }

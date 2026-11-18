@@ -145,8 +145,8 @@ export const api = createApi({
       },
     }),
 
-    // STUB: эндпоинтов пароля на сервере ещё нет (A02, A03).
-    // В режиме api честно отвечаем NOT_CONNECTED; подключение: задачи A02, A03.
+    // STUB: эндпоинтов восстановления пароля на сервере ещё нет (A03).
+    // В режиме api честно отвечаем NOT_CONNECTED; подключение: задача A03.
     forgotPassword: b.mutation<void, string>({
       queryFn: async () => {
         if (isMock) return wait().then(() => ok(undefined));
@@ -161,13 +161,22 @@ export const api = createApi({
       },
     }),
 
+    /**
+     * A02: POST /auth/password/change, 204. Текущая сессия остаётся, другие завершаются.
+     * Данные кабинета не меняются, поэтому кэш не сбрасывается.
+     */
     changePassword: b.mutation<
       void,
       { oldPassword: string; newPassword: string }
     >({
-      queryFn: async () => {
+      queryFn: async (body, _api, _x, base) => {
         if (isMock) return wait().then(() => ok(undefined));
-        return notConnected();
+        const res = (await base({
+          method: 'POST',
+          path: '/auth/password/change',
+          body,
+        })) as Result<unknown>;
+        return 'error' in res ? res : ok(undefined);
       },
     }),
 
