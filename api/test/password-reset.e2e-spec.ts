@@ -52,6 +52,8 @@ describe('Восстановление пароля (e2e, A03)', () => {
         APP_PUBLIC_URL: APP_URL,
         // за доверенным прокси: у каждого теста свой IP клиента, лимит по IP тестов не мешает
         TRUST_PROXY: 'loopback',
+        // A03 проверяет лимит по IP: он должен остаться прежним после переноса настройки (B18)
+        RATE_LIMIT_IP: 'true',
         ...env,
       },
       logger: false,
@@ -67,6 +69,7 @@ describe('Восстановление пароля (e2e, A03)', () => {
     const email = `reset-${++n}@example.org`;
     const res = await http()
       .post('/auth/register')
+      .set('X-Forwarded-For', clientIp)
       .send({ email, password: PASSWORD, consent: true, ...PERSON })
       .expect(201);
     const { id } = await db.cabinet.findFirstOrThrow({ where: { email } });

@@ -5,7 +5,7 @@ import { DocumentsService } from '../documents/documents.service.js';
 import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { StorageService } from '../documents/storage.service.js';
 import { Prisma } from '../generated/prisma/client.js';
-import { LlmService, MAX_ATTEMPTS } from '../llm/llm.service.js';
+import { LlmService } from '../llm/llm.service.js';
 import { ExtractV2Schema } from '../llm/schemas/extract.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { buildClaims, checkUserValue, claimText } from './claims.builder.js';
@@ -57,16 +57,18 @@ export class LettersService {
     const kind = this.documents.precheck(data);
     const letterId = randomUUID();
     const context = { cabinetId, letterId };
-    const doc = await this.documents.extractText(data, kind, context);
+    // B18: одна операция на загрузку. Резерв лимита — перед первым обращением к модели,
+    // то есть после проверки файла; фото = transcribe + extract в общем пределе 3 обращений.
+    const operation = this.llm.operation(cabinetId, 'UPLOAD');
+    const doc = await this.documents.extractText(data, kind, context, operation);
 
-    // Общий бюджет: фото уже потратило 1–2 обращения на transcribe.
     const { data: extracted } = await this.llm.callWithTrace({
       prompt: 'extract',
       version: 2,
       variables: { letterText: doc.text },
       schema: ExtractV2Schema,
-      maxAttempts: MAX_ATTEMPTS - doc.llmAttempts,
       context,
+      operation,
     });
     const { claims, dropped } = buildClaims(
       extracted,

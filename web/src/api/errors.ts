@@ -76,6 +76,16 @@ export function errorText(error: unknown): string {
   return messageFor('INTERNAL_ERROR');
 }
 
+/**
+ * B18: исчерпан лимит операций с моделью за 24 часа. Повтор сразу бесполезен: в тексте сервера
+ * указано, через сколько освободится место.
+ */
+export function isDailyLimit(error: unknown): boolean {
+  if (!isApiError(error) || error.code !== 'RATE_LIMITED') return false;
+  const details = (error as { details?: { reason?: unknown } }).details;
+  return details?.reason === 'LLM_DAILY_OPS';
+}
+
 export function errorCode(error: unknown): string | null {
   return isApiError(error) ? error.code : null;
 }

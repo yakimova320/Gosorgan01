@@ -7,6 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { IpLimit } from '../common/ip-limits.js';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -54,6 +55,8 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @UseGuards(ThrottlerGuard)
+  @IpLimit('register')
   @ApiBody({
     schema: {
       example: {
@@ -82,6 +85,8 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @IpLimit('login')
   @HttpCode(200)
   @ApiBody({
     schema: {
@@ -157,6 +162,7 @@ export class AuthController {
   @Post('password/forgot')
   @HttpCode(202)
   @UseGuards(ThrottlerGuard)
+  @IpLimit('forgot')
   @ApiBody({ schema: { example: { email: 'anna@example.org' } } })
   @ApiAcceptedResponse({
     description:

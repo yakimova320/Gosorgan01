@@ -83,6 +83,10 @@ export class ApiErrorFilter implements ExceptionFilter {
           : String(error);
       this.logger.error(reason);
     }
+    // B18: сколько ждать (лимит операций с моделью); throttler ставит Retry-After сам
+    const retryAfter = (body.details as { retryAfterSec?: unknown } | undefined)
+      ?.retryAfterSec;
+    if (typeof retryAfter === 'number') res.setHeader('Retry-After', String(retryAfter));
     res.status(status).json(body);
   }
 }

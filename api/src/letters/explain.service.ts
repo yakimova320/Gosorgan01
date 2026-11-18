@@ -77,6 +77,8 @@ export class ExplainService {
           letterId,
           ...(letter.caseId ? { caseId: letter.caseId } : {}),
         },
+        // B18: объяснение из кэша (выше) лимит не тратит; резерв — перед обращением к модели
+        operation: this.llm.operation(cabinetId, 'EXPLAIN'),
       });
     } catch (e) {
       if (e instanceof ApiError && e.code === 'LLM_FAILED' && checkFailures > 0)

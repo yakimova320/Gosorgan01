@@ -1,5 +1,7 @@
 import { Module, type DynamicModule } from '@nestjs/common';
-import { AppConfigModule } from './config/config.module.js';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_CONFIG, AppConfigModule } from './config/config.module.js';
+import type { Env } from './config/env.schema.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -17,6 +19,15 @@ export class AppModule {
       module: AppModule,
       imports: [
         AppConfigModule.forRoot(overrides),
+        // B18: лимиты по IP. Значение задаёт каждый маршрут (@IpLimit), здесь только запасное.
+        ThrottlerModule.forRootAsync({
+          inject: [APP_CONFIG],
+          useFactory: (config: Env) => ({
+            throttlers: [{ name: 'default', ttl: 60 * 60 * 1000, limit: 100 }],
+            // RATE_LIMIT_IP=false только в тестах; в production проверка конфигурации запрещает
+            skipIf: () => !config.RATE_LIMIT_IP,
+          }),
+        }),
         PrismaModule,
         AuthModule,
         CabinetModule,

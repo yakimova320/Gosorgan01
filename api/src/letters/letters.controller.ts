@@ -9,6 +9,7 @@ import {
   Post,
   Query,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -31,6 +32,8 @@ import {
 import type { AuthContext } from '../auth/auth.service.js';
 import { CurrentAuth } from '../auth/session.guard.js';
 import { LetterUploadInterceptor } from '../documents/upload.interceptor.js';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { IpLimit } from '../common/ip-limits.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import {
   AssignLetterSchema,
@@ -102,6 +105,8 @@ export class LettersController {
   ) {}
 
   @Post()
+  @UseGuards(ThrottlerGuard)
+  @IpLimit('uploadLetter')
   @HttpCode(201)
   @UseInterceptors(LetterUploadInterceptor)
   @ApiOperation({

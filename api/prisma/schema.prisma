@@ -106,6 +106,7 @@ model Cabinet {
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   passwordResetMails  PasswordResetMail[]
+  llmOperations       LlmOperation[]
   cases               Case[]
   letters             Letter[]
 }
@@ -313,11 +314,46 @@ model LlmCall {
   durationMs    Int
   tokensIn      Int?
   tokensOut     Int?
+  operationId   String? // B18: операция пользователя (LlmOperation); фото = transcribe + extract с одним id
   createdAt     DateTime @default(now())
 
   @@index([cabinetId])
   @@index([letterId])
   @@index([caseId])
+}
+
+// B18: операция с моделью (загрузка письма или объяснение). Резервируется под блокировкой кабинета
+// до первого обращения к модели; по этим строкам считается лимит LLM_DAILY_OPS_PER_CABINET за 24 часа.
+// Удаляется вместе с кабинетом (A01).
+enum LlmOperationKind {
+  UPLOAD
+  EXPLAIN
+  OTHER
+}
+
+model LlmOperation {
+  id        String           @id @default(cuid())
+  cabinetId String
+  cabinet   Cabinet          @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  kind      LlmOperationKind
+  createdAt DateTime         @default(now())
+
+  @@index([cabinetId, createdAt])
+}
+
+// B18: общий учёт расхода модели по часам, без пользовательских данных. Не удаляется вместе с письмом
+// или аккаунтом, поэтому удаление журнала LlmCall не возвращает потраченное в дневной бюджет.
+model LlmUsageHour {
+  hour              DateTime // начало часа (UTC)
+  provider          String
+  calls             Int      @default(0) // обращений к модели (попыток)
+  failedCalls       Int      @default(0) // обращение не дало ответа (ошибка связи, квота, ключ)
+  tokensIn          Int      @default(0)
+  tokensOut         Int      @default(0)
+  callsWithoutUsage Int      @default(0) // ответ пришёл без данных о токенах
+  estimatedTokens   Int      @default(0) // оценка для таких ответов: не ноль, а по длине входа и выхода
+
+  @@id([hour, provider])
 }
 
 enum ErasureStatus {

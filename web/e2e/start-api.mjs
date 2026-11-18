@@ -49,6 +49,9 @@ const child = spawn(process.execPath, [resolve(API_DIR, 'dist', 'main.js')], {
     ...model,
     CORS_ORIGIN: process.env.JASNO_E2E_WEB_URL,
     STORAGE_DIR: resolve(API_DIR, 'storage-e2e'),
+    // B18: браузерные тесты регистрируют много пользователей с одного IP; лимиты проверяют e2e API
+    RATE_LIMIT_IP: 'false',
+    LLM_DAILY_OPS_PER_CABINET: '1000',
   },
 });
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => child.kill(sig));
