@@ -237,8 +237,12 @@ export function LetterPage({ id }: { id: string }) {
   useEffect(() => {
     if (code !== 'CLAIMS_CHANGED' || retried.current === expl.error) return;
     retried.current = expl.error;
+    // Если запрос письма уже идёт, refetch не отправляет новый, а ждёт его. Этот ответ мог быть
+    // собран до изменения фактов, поэтому после него письмо читается ещё раз.
+    const inFlight = letter.isFetching;
     void (async () => {
       await letter.refetch();
+      if (inFlight) await letter.refetch();
       await expl.refetch();
     })();
   }, [code, expl, letter]);
