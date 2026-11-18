@@ -25,9 +25,10 @@ test('query-параметры, неизвестный адрес и кнопк�
   page,
 }) => {
   await page.goto('/reset');
-  await expect(page.getByText('Ссылка неполная')).toBeVisible();
+  await expect(page.getByTestId('reset-no-token')).toBeVisible();
   await page.goto('/reset?token=abc');
   await expect(page.getByLabel('Новый пароль')).toBeVisible();
+  await expect(page).toHaveURL(/\/reset$/); // A03: токен убран из адреса
   await page.goto('/nichts-hier');
   await expect(page.getByText('Такой страницы нет')).toBeVisible();
   await page.goto('/faq');

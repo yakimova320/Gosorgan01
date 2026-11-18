@@ -76,7 +76,10 @@ export const ForgotPasswordSchema = z.object({ email: EmailSchema });
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 
 export const ResetPasswordSchema = z.object({
-  token: z.string().min(1, { message: 'Ссылка неполная' }),
+  token: z
+    .string()
+    .min(1, { message: 'Ссылка неполная' })
+    .max(200, { message: 'Ссылка неполная' }),
   newPassword: NewPasswordSchema,
 });
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;

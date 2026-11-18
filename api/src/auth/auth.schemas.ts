@@ -4,9 +4,13 @@
  */
 export {
   ChangePasswordSchema,
+  ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
+  ResetPasswordSchema,
   type ChangePasswordInput,
+  type ForgotPasswordInput,
+  type ResetPasswordInput,
   type LoginInput,
   type RegisterInput,
 } from '@jasno/shared';

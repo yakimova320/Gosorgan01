@@ -1,16 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PASSWORD_MIN_CHARS } from '@jasno/shared';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import type { z } from 'zod';
 import { CheckboxField, EmailField, FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
 import { ForgotFormSchema, LoginFormSchema, RegisterFormSchema, ResetFormSchema } from '../../forms/schemas';
+import { errorCode } from '../../api/errors';
 import { applyServerError } from '../../forms/serverErrors';
 import { revalidateIfTouched } from '../../forms/revalidate';
 import { useAppDispatch, useSession } from '../../store';
 import { useForgotPasswordMutation, useLoginMutation, useRegisterMutation, useResetPasswordMutation } from '../../store/api';
-import { signedIn } from '../../store/session';
+import { signedIn, signedOut } from '../../store/session';
 
 /*
  * Формы входа и пароля: react-hook-form + схемы из packages/shared (TechBriefing v5, раздел 5).
@@ -30,6 +31,7 @@ function AuthCard({ title, children }: { title: string; children: ReactNode }) {
 
 export function LoginPage() {
   const { expired } = useSession();
+  const passwordReset = (useLocation().state as { passwordReset?: boolean } | null)?.passwordReset === true;
   const dispatch = useAppDispatch();
   const [login] = useLoginMutation();
   const navigate = useNavigate();
@@ -54,7 +56,12 @@ export function LoginPage() {
 
   return (
     <AuthCard title="Вход">
-      {expired && (
+      {passwordReset && (
+        <div className="alert alert--info" role="status" data-testid="password-reset-done">
+          Пароль изменён. Войдите с новым паролем.
+        </div>
+      )}
+      {expired && !passwordReset && (
         <p className="small text-2" role="status">
           Сессия истекла. Войдите снова.
         </p>
@@ -176,13 +183,18 @@ export function ForgotPage() {
   });
   const { errors, isSubmitting } = form.formState;
 
+  const sending = useRef(false);
   const submit = form.handleSubmit(async ({ email }) => {
+    if (sending.current) return; // повторное нажатие во время запроса
+    sending.current = true;
     setFormError(null);
     try {
       await forgotPassword(email).unwrap();
       setSent(true);
     } catch (err) {
       setFormError(applyServerError(err, form.setError, ['email']));
+    } finally {
+      sending.current = false;
     }
   });
 
@@ -211,7 +223,14 @@ export function ResetPage() {
   const [resetPassword] = useResetPasswordMutation();
   const [search] = useSearchParams();
   const navigate = useNavigate();
-  const token = search.get('token') ?? '';
+  const dispatch = useAppDispatch();
+  const { token: session } = useSession();
+  // Токен из ссылки живёт только в памяти страницы: из адресной строки и истории он сразу убирается.
+  const [token] = useState(() => search.get('token') ?? '');
+  useEffect(() => {
+    if (search.has('token')) navigate('/reset', { replace: true });
+  }, [search, navigate]);
+  const [invalid, setInvalid] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<z.input<typeof ResetFormSchema>, unknown, z.output<typeof ResetFormSchema>>({
     resolver: zodResolver(ResetFormSchema),
@@ -220,23 +239,49 @@ export function ResetPage() {
   });
   const { errors, isSubmitting } = form.formState;
 
+  const saving = useRef(false);
   const submit = form.handleSubmit(async ({ newPassword }) => {
+    if (saving.current) return; // повторное нажатие во время запроса
+    saving.current = true;
     setFormError(null);
     try {
       await resetPassword({ token, newPassword }).unwrap();
-      navigate('/login?reset=1', { replace: true });
+      // Сервер завершил все сессии: если в этом браузере был вход, он тоже сбрасывается вместе с кэшем.
+      if (session) dispatch(signedOut());
+      await navigate('/login', { replace: true, state: { passwordReset: true } });
     } catch (err) {
-      setFormError(applyServerError(err, form.setError, ['newPassword']));
+      if (errorCode(err) === 'RESET_TOKEN_INVALID') setInvalid(true);
+      else setFormError(applyServerError(err, form.setError, ['newPassword']));
+    } finally {
+      saving.current = false;
     }
   });
+
+  const again = (
+    <Link to="/forgot" className="link">
+      Запросить новое письмо
+    </Link>
+  );
 
   if (!token) {
     return (
       <AuthCard title="Новый пароль">
-        <div className="alert alert--error">Ссылка неполная. Откройте ссылку из письма ещё раз или запросите новое письмо.</div>
-        <Link to="/forgot" className="link">
-          Запросить новое письмо
-        </Link>
+        <div className="alert alert--error" role="alert" data-testid="reset-no-token">
+          Ссылки нет: страницу открыли без ссылки из письма или обновили. Откройте ссылку из письма ещё раз или
+          запросите новое письмо.
+        </div>
+        {again}
+      </AuthCard>
+    );
+  }
+
+  if (invalid) {
+    return (
+      <AuthCard title="Новый пароль">
+        <div className="alert alert--error" role="alert" data-testid="reset-invalid">
+          Ссылка недействительна или устарела: она работает один раз и ограниченное время. Запросите новое письмо.
+        </div>
+        {again}
       </AuthCard>
     );
   }
@@ -262,9 +307,7 @@ export function ResetPage() {
         <FormError message={formError} />
         <SubmitButton submitting={isSubmitting}>Сохранить пароль</SubmitButton>
       </form>
-      <Link to="/forgot" className="link">
-        Запросить новое письмо
-      </Link>
+      {again}
     </AuthCard>
   );
 }
