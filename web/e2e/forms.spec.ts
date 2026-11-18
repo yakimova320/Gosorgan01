@@ -103,3 +103,29 @@ test('пароль при входе не проверяется по прави
   await expect(page.getByText('Неверный e-mail или пароль')).toBeVisible();
   await expect(page.getByText('не меньше 10 знаков')).toHaveCount(0);
 });
+
+test('правка 18-11: кнопка «Показать пароль» меняет только вид поля, значение остаётся; в режиме api плашки mock нет', async ({
+  page,
+}) => {
+  await page.goto('/register');
+  await expect(page.getByTestId('mock-banner')).toHaveCount(0);
+  const pw = page.getByLabel('Пароль', { exact: true });
+  await pw.fill(PASSWORD);
+  await expect(pw).toHaveAttribute('type', 'password');
+  const toggle = page.getByRole('button', { name: 'Показать пароль' }).first();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(toggle).toHaveAttribute('aria-controls', 'r-password');
+  const box = (await toggle.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await toggle.click();
+  await expect(pw).toHaveAttribute('type', 'text');
+  await expect(pw).toHaveValue(PASSWORD);
+  const hide = page.getByRole('button', { name: 'Скрыть пароль' });
+  await expect(hide).toHaveAttribute('aria-pressed', 'true');
+  // второе поле пароля не затронуто
+  await expect(page.getByLabel('Повторите пароль')).toHaveAttribute('type', 'password');
+  await hide.click();
+  await expect(pw).toHaveAttribute('type', 'password');
+  await expect(pw).toHaveValue(PASSWORD);
+});

@@ -63,6 +63,8 @@ test('офлайн-сборка открывается как файл', async (
   await expect(
     page.getByRole('heading', { name: 'Частые вопросы' }),
   ).toBeVisible();
+  // офлайн-сборка работает на примерных данных: это видно сразу (правка 18-11)
+  await expect(page.getByTestId('mock-banner')).toContainText('ничего не сохраняется');
   await page.getByRole('link', { name: 'Важно знать' }).first().click();
   await expect(page).toHaveURL(/#\/wissen$/);
   await page.goto(`${url}#/app`);

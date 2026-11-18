@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Icon } from './Icon';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 
 /*
@@ -111,18 +112,35 @@ export function PasswordField({
   hint,
   autoComplete,
 }: FieldProps & { autoComplete: 'current-password' | 'new-password' }) {
+  // Правка 18-11: кнопка «показать пароль». Меняет только type поля, значение не трогает.
+  const [shown, setShown] = useState(false);
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        className="input"
-        type="password"
-        autoComplete={autoComplete}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(id, error, hint)}
-        {...registration}
-      />
+      <div className="password-input">
+        <input
+          id={id}
+          className="input"
+          type={shown ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(id, error, hint)}
+          {...registration}
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          aria-label={shown ? 'Скрыть пароль' : 'Показать пароль'}
+          aria-pressed={shown}
+          aria-controls={id}
+          onClick={() => setShown((v) => !v)}
+        >
+          <Icon name={shown ? 'eyeOff' : 'eye'} size={20} />
+        </button>
+      </div>
       <FieldMessages id={id} error={error} hint={hint} />
     </div>
   );

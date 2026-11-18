@@ -11,7 +11,7 @@ import {
   type RouteObject,
 } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
-import { AppShell, ModeBadge, PublicLayout } from '../components/layout';
+import { AppShell, MockBanner, ModeBadge, PublicLayout } from '../components/layout';
 import {
   AnswerDetailsPage,
   AnswerDraftPage,
@@ -144,6 +144,7 @@ function Root() {
   return (
     <FlowProvider>
       <ModeBadge />
+      <MockBanner />
       <Outlet />
     </FlowProvider>
   );

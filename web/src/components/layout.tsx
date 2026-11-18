@@ -11,6 +11,20 @@ export function ModeBadge() {
   return <div className="mode-badge">{DATA_MODE === 'mock' ? 'примерные данные' : 'сервер'}</div>;
 }
 
+/**
+ * Правка 18-11: в режиме mock сайт работает на примерных данных и ничего не сохраняет
+ * (регистрация, письма, дела). Маленького значка в углу не хватало: на это легко принять mock за ошибки.
+ */
+export function MockBanner() {
+  if (DATA_MODE !== 'mock') return null;
+  return (
+    <div className="mock-banner" role="note" data-testid="mock-banner">
+      Примерные данные: ничего не сохраняется и не отправляется на сервер. Для настоящей работы запустите сайт
+      с <code>VITE_DATA_MODE=api</code> (README).
+    </div>
+  );
+}
+
 export function PublicLayout({ children }: { children: ReactNode }) {
   const { token } = useSession();
   return (
