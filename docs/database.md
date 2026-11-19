@@ -6,6 +6,7 @@
 
 ## База
 
+
 Только PostgreSQL: на своём компьютере, в тестах, в CI и на сервере (TechBriefing v5, раздел 3). Для разработки база работает в Docker, файл `docker-compose.yml` в корне проекта.
 
 Адрес базы в `api/.env`: `DATABASE_URL=postgresql://jasno:jasno@localhost:5432/jasno`. Пароль `jasno` только для локальной базы в Docker, на сервере другой.
