@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AI_CONSENT_LABEL } from '../../lib/consent';
 import { PASSWORD_MIN_CHARS } from '@jasno/shared';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
@@ -95,14 +96,14 @@ export function RegisterPage() {
   const form = useForm<z.input<typeof RegisterFormSchema>, unknown, z.output<typeof RegisterFormSchema>>({
     resolver: zodResolver(RegisterFormSchema),
     mode: 'onTouched',
-    defaultValues: { email: '', password: '', passwordRepeat: '', firstName: '', lastName: '', address: '' },
+    defaultValues: { email: '', password: '', passwordRepeat: '', firstName: '', lastName: '', address: '', aiConsent: false },
   });
   const { errors, isSubmitting } = form.formState;
 
-  const submit = form.handleSubmit(async ({ email, password, consent, firstName, lastName, address }) => {
+  const submit = form.handleSubmit(async ({ email, password, consent, aiConsent, firstName, lastName, address }) => {
     setFormError(null);
     try {
-      const { sessionToken } = await register({ email, password, consent, firstName, lastName, address }).unwrap();
+      const { sessionToken } = await register({ email, password, consent, aiConsent, firstName, lastName, address }).unwrap();
       dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
@@ -155,7 +156,15 @@ export function RegisterPage() {
           error={errors.passwordRepeat}
         />
         <CheckboxField id="r-consent" registration={form.register('consent')} error={errors.consent}>
-          Я согласен(на) с обработкой моих данных по правилам Datenschutz. В тестовой версии загружайте только примеры писем.
+          Я согласен(на) с обработкой моих данных по правилам{' '}
+          <Link to="/datenschutz" className="link" target="_blank">
+            Datenschutz
+          </Link>
+          . В тестовой версии загружайте только примеры писем.
+        </CheckboxField>
+        {/* K11 (#134): отдельное согласие на анализ ИИ, не отмечено заранее; можно дать позже */}
+        <CheckboxField id="r-ai-consent" registration={form.register('aiConsent')}>
+          {AI_CONSENT_LABEL} Необязательно сейчас: без согласия спросим перед первой загрузкой письма.
         </CheckboxField>
         <FormError message={formError} />
         <SubmitButton submitting={isSubmitting} busyText="Создаём кабинет…">

@@ -62,9 +62,20 @@ export const RegisterSchema = z.object({
   consent: z.literal(true, {
     error: 'Нужно согласие на обработку данных',
   }),
+  /**
+   * K11 (#134): отдельное согласие на анализ письма ИИ. Не обязательно для регистрации:
+   * без него нельзя загрузить письмо, спросим перед первой загрузкой.
+   */
+  aiConsent: z.boolean().optional(),
 });
 // Код CONSENT_REQUIRED для поля consent: см. SPECIAL_CODES.
 export type RegisterInput = z.infer<typeof RegisterSchema>;
+
+/**
+ * K11 (#134): версия текста согласия на анализ ИИ. Меняется при изменении текста:
+ * согласие на старую версию считается недействительным.
+ */
+export const AI_CONSENT_VERSION = 1;
 
 export const LoginSchema = z.object({
   email: EmailSchema,

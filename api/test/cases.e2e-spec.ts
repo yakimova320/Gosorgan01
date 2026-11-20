@@ -34,6 +34,7 @@ describe('Дела (e2e, B07)', () => {
         email,
         password: 'mein-langes-Passwort',
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(201);

@@ -5,12 +5,14 @@ import type { CaseSuggestion, LetterClaim, LetterDetail } from '../../api/types'
 import { MAX_PAGES, useFlow } from '../../app/flow';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
+import { AiConsentCard } from '../../components/consent';
 import { LetterOriginals } from '../../components/LetterOriginals';
 import { ErrorAlert, Loading, PageHeader } from '../../components/ui';
 import { formatDate } from '../../lib/dates';
 import { CLAIM_KIND } from '../../lib/labels';
 import {
   useAssignLetterMutation,
+  useCabinetQuery,
   useCasesQuery,
   useConfirmClaimsMutation,
   useCorrectClaimMutation,
@@ -76,6 +78,7 @@ function Steps({ n }: { n: 1 | 2 | 3 }) {
 /** Шаг 1: фото или файл. */
 export function ScanStartPage() {
   const { pages, addFiles } = useFlow();
+  const cabinet = useCabinetQuery();
   const navigate = useNavigate();
   const [problem, setProblem] = useState<string | null>(null);
   const { inputs, openCamera, openPicker } = useFilePickers((files) => {
@@ -99,6 +102,11 @@ export function ScanStartPage() {
         </p>
       </div>
       <div className="alert alert--warn">Тестовая версия: загружайте только примеры писем, не настоящие документы.</div>
+      {/* K11: без согласия на анализ ИИ вместо кнопок загрузки — согласие */}
+      {cabinet.data && !cabinet.data.aiConsent.given ? (
+        <AiConsentCard />
+      ) : (
+        <>
       {inputs}
       <button type="button" className="btn btn--primary" onClick={openCamera}>
         <Icon name="camera" size={20} color="#FFFFFF" width={2.2} /> Сделать фото
@@ -110,6 +118,8 @@ export function ScanStartPage() {
         <Link to="/app/scan/pages" className="link">
           Вернуться к выбранным страницам ({pages.length})
         </Link>
+      )}
+        </>
       )}
       {problem && (
         <div className="alert alert--error" role="alert">

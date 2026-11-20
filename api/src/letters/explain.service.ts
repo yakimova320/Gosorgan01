@@ -3,6 +3,7 @@ import { ApiError } from '../common/api-error.js';
 import { LlmService } from '../llm/llm.service.js';
 import { ExplainSchema } from '../llm/schemas/explain.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { assertAiConsent } from '../cabinet/ai-consent.js';
 import {
   checkExplanation,
   factsForPrompt,
@@ -46,6 +47,8 @@ export class ExplainService {
       select: { id: true, caseId: true, rawText: true, explanation: true },
     });
     if (!letter) throw new ApiError('NOT_FOUND');
+    // K11: объяснение отправляет текст письма модели — нужно действующее согласие (кэш тоже не отдаём)
+    await assertAiConsent(this.db, cabinetId);
 
     const facts = await this.facts(letterId);
     if (facts.length === 0) throw new ApiError('NO_CLAIMS');

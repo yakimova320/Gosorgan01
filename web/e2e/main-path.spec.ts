@@ -69,8 +69,12 @@ test('основной путь: от регистрации до скопиро
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
 
-  // 2. Письмо (синтетическое 01)
+  // 2. Письмо (синтетическое 01). K11: при регистрации согласие на анализ ИИ не дано — спросят здесь
   await page.getByRole('link', { name: 'Сфотографировать письмо' }).click();
+  await expect(page.getByTestId('ai-consent')).toBeVisible();
+  await page.getByRole('checkbox', { name: /внешней модели ИИ/ }).check();
+  await page.getByRole('button', { name: 'Дать согласие' }).click();
+  await expect(page.getByTestId('ai-consent')).toHaveCount(0);
   await page.getByTestId('file-input').setInputFiles(fixture);
   await page.getByRole('button', { name: 'Готово, читать письмо' }).click();
   await step(page, () => expect(page).toHaveURL(/\/check$/, { timeout: wait }));

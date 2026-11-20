@@ -221,6 +221,7 @@ export const MOCK_CABINET: Cabinet = {
   profile: { firstName: 'Alex', lastName: 'Beispiel', address: 'Beispielallee 12, 00000 Beispielhausen', numbers: [] },
   counts: { openTasks: 2, activeCases: 3, inboxLetters: 0 },
   nextDeadline: { date: '2026-11-30', caseId: 'case-jc', title: 'Прислать выписки со счёта' },
+  aiConsent: { given: true, at: '2026-11-20T10:00:00.000Z', version: 1 },
 };
 
 /** Результат разбора нового письма в демо-режиме: письмо 01 с неподтверждёнными фактами. */

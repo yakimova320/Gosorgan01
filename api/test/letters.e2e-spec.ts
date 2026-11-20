@@ -65,6 +65,7 @@ describe('Приём письма POST /letters (e2e)', () => {
         email: 'letters@example.org',
         password: 'mein-langes-Passwort',
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(201);
@@ -308,6 +309,7 @@ describe('Приём письма POST /letters (e2e)', () => {
         email: 'fremd-file@example.org',
         password: 'mein-langes-Passwort',
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(201);
@@ -536,5 +538,74 @@ describe('Приём письма POST /letters (e2e)', () => {
     expect(calls.some((c) => !c.ok)).toBe(true);
     await app.get(StorageService).removeCabinet(cabinetId);
     expect(storedFiles(join(storageDir, 'letters', cabinetId))).toHaveLength(0);
+  });
+
+  it('K11: без согласия на анализ ИИ загрузка и объяснение 403, без файла и без модели; согласие дать и отозвать', async () => {
+    const auth = { Authorization: `Bearer ${token}` };
+    const ok = await upload(
+      fixture('01_jobcenter_request.pdf'),
+      'brief.pdf',
+    ).expect(201);
+    const before = await http().get('/cabinet').set(auth).expect(200);
+    expect(before.body.aiConsent).toEqual({
+      given: true,
+      at: expect.any(String),
+      version: 1,
+    });
+
+    const off = await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ aiConsent: false })
+      .expect(200);
+    expect(off.body.aiConsent).toEqual({ given: false, at: null, version: 1 });
+    await expectRejected(
+      upload(fixture('01_jobcenter_request.pdf'), 'brief.pdf'),
+      403,
+      'AI_CONSENT_REQUIRED',
+    );
+    const expl = await http()
+      .post(`/letters/${ok.body.letter.id}/explain`)
+      .set(auth)
+      .expect(403);
+    expect(expl.body.code).toBe('AI_CONSENT_REQUIRED');
+    // уже загруженное письмо остаётся доступным
+    await http().get(`/letters/${ok.body.letter.id}`).set(auth).expect(200);
+
+    // согласие на старую версию текста не действует
+    await db.cabinet.update({
+      where: { id: cabinetId },
+      data: { aiConsentAt: new Date(), aiConsentVersion: 0 },
+    });
+    await expectRejected(
+      upload(fixture('01_jobcenter_request.pdf'), 'brief.pdf'),
+      403,
+      'AI_CONSENT_REQUIRED',
+    );
+
+    const on = await http()
+      .patch('/cabinet')
+      .set(auth)
+      .send({ aiConsent: true })
+      .expect(200);
+    expect(on.body.aiConsent.given).toBe(true);
+    await upload(fixture('01_jobcenter_request.pdf'), 'brief.pdf').expect(201);
+  });
+
+  it('K11: регистрация без aiConsent — кабинет без согласия', async () => {
+    const res = await http()
+      .post('/auth/register')
+      .send({
+        email: 'no-ai@example.org',
+        password: 'mein-langes-Passwort',
+        consent: true,
+        ...PERSON,
+      })
+      .expect(201);
+    const cab = await http()
+      .get('/cabinet')
+      .set('Authorization', `Bearer ${res.body.sessionToken}`)
+      .expect(200);
+    expect(cab.body.aiConsent.given).toBe(false);
   });
 });

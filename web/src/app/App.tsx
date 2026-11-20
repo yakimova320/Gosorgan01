@@ -41,6 +41,7 @@ import {
   NotFoundPage,
   WissenPage,
 } from '../pages/public/InfoPages';
+import { PrivacyPage } from '../pages/public/PrivacyPage';
 import { StartPage } from '../pages/public/StartPage';
 import { FlowProvider } from './flow';
 import { createStore, useSession } from '../store';
@@ -68,6 +69,7 @@ export const ROUTES: Route[] = [
   { path: '/faq', area: 'public', render: () => <FaqPage /> },
   { path: '/wissen', area: 'public', render: () => <WissenPage /> },
   { path: '/beratung', area: 'public', render: () => <BeratungPage /> },
+  { path: '/datenschutz', area: 'public', render: () => <PrivacyPage /> },
 
   { path: '/app', area: 'cabinet', render: () => <CabinetPage /> },
   { path: '/app/cases', area: 'cabinet', render: () => <CasesPage /> },

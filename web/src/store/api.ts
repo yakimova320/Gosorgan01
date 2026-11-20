@@ -103,6 +103,7 @@ export const api = createApi({
         email: string;
         password: string;
         consent: boolean;
+        aiConsent?: boolean;
         firstName: string;
         lastName: string;
         address: string;
@@ -237,6 +238,25 @@ export const api = createApi({
           method: 'PATCH',
           path: '/cabinet',
           body: { profile },
+        }) as Promise<Result<Cabinet>>;
+      },
+      invalidatesTags: ['Cabinet'],
+    }),
+
+    /** K11 (#134): дать (true) или отозвать (false) согласие на анализ письма ИИ. */
+    setAiConsent: b.mutation<Cabinet, boolean>({
+      queryFn: async (given, _api, _x, base) => {
+        if (isMock) {
+          await wait();
+          return ok({
+            ...MOCK_CABINET,
+            aiConsent: { ...MOCK_CABINET.aiConsent, given, at: given ? new Date().toISOString() : null },
+          });
+        }
+        return base({
+          method: 'PATCH',
+          path: '/cabinet',
+          body: { aiConsent: given },
         }) as Promise<Result<Cabinet>>;
       },
       invalidatesTags: ['Cabinet'],
@@ -725,4 +745,5 @@ export const {
   useDeleteLetterMutation,
   useAssignLetterMutation,
   useUpdateProfileMutation,
+  useSetAiConsentMutation,
 } = api;

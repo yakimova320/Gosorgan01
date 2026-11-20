@@ -24,6 +24,8 @@ export interface Cabinet {
   profile: Profile | null;
   counts: { openTasks: number; activeCases: number; inboxLetters: number };
   nextDeadline: { date: string; caseId: string; title: string } | null;
+  /** K11 (#134): согласие на анализ письма ИИ (на текущую версию текста) */
+  aiConsent: { given: boolean; at: string | null; version: number };
 }
 
 export type ClaimKind = 'AUTHORITY' | 'CASE_NUMBER' | 'LETTER_DATE' | 'REQUIREMENT' | 'DEADLINE' | 'AMOUNT' | 'OTHER';

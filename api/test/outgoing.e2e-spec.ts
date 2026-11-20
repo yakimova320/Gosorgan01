@@ -39,7 +39,7 @@ describe('Свои письма по шаблонам (e2e, B16)', () => {
   async function register(email: string) {
     const res = await http()
       .post('/auth/register')
-      .send({ email, password: 'mein-langes-Passwort', consent: true, ...PERSON })
+      .send({ email, password: 'mein-langes-Passwort', consent: true, aiConsent: true, ...PERSON })
       .expect(201);
     return res.body.sessionToken as string;
   }

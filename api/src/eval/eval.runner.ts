@@ -192,6 +192,7 @@ export async function runEval(options: {
           email: `eval-${++n}-${Date.now()}@example.org`,
           password: 'eval-Passwort-123',
           consent: true,
+          aiConsent: true,
           firstName: 'Anna',
           lastName: 'Muster',
           address: 'Musterstr. 1, 10115 Berlin',

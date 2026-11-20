@@ -46,7 +46,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <footer className="footer">
         <Link to="/faq">Частые вопросы</Link>
         <Link to="/wissen">Важно знать</Link>
-        <span>Конфиденциальность (готовится)</span>
+        <Link to="/datenschutz">Datenschutz</Link>
         <span>Impressum (готовится)</span>
         <span style={{ flexBasis: '100%', lineHeight: 1.5 }}>
           Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.

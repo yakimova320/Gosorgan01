@@ -43,7 +43,7 @@ describe('Удаление аккаунта (e2e, A01)', () => {
     const email = `erase-${++n}@example.org`;
     const res = await http()
       .post('/auth/register')
-      .send({ email, password: PASSWORD, consent: true, ...PERSON })
+      .send({ email, password: PASSWORD, consent: true, aiConsent: true, ...PERSON })
       .expect(201);
     const token = res.body.sessionToken as string;
     const { id } = await db.cabinet.findFirstOrThrow({ where: { email } });

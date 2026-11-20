@@ -70,7 +70,7 @@ describe('Восстановление пароля (e2e, A03)', () => {
     const res = await http()
       .post('/auth/register')
       .set('X-Forwarded-For', clientIp)
-      .send({ email, password: PASSWORD, consent: true, ...PERSON })
+      .send({ email, password: PASSWORD, consent: true, aiConsent: true, ...PERSON })
       .expect(201);
     const { id } = await db.cabinet.findFirstOrThrow({ where: { email } });
     return { token: res.body.sessionToken as string, email, cabinetId: id };

@@ -9,6 +9,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { LlmService } from '../llm/llm.service.js';
 import { ExtractV2Schema } from '../llm/schemas/extract.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { assertAiConsent } from '../cabinet/ai-consent.js';
 import { buildClaims, checkUserValue, claimText } from './claims.builder.js';
 import type {
   ClaimView,
@@ -59,6 +60,8 @@ export class LettersService {
     cabinetId: string,
     uploaded: Buffer[],
   ): Promise<UploadLetterResponse> {
+    // K11: без согласия на анализ ИИ письмо не принимается и не сохраняется
+    await assertAiConsent(this.db, cabinetId);
     const inputs = this.documents.precheckAll(uploaded);
     const letterId = randomUUID();
     const context = { cabinetId, letterId };
