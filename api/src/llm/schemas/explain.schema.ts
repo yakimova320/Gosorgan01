@@ -28,6 +28,8 @@ export const ExplainV2Schema = ExplainSchema.extend({
         ru: z.string().trim().min(1).max(200),
       }),
     )
-    .max(20),
+    .max(20)
+    // модель пропустила поле: объяснение без перевода (сайт покажет немецкий текст)
+    .default([]),
 });
 export type ExplainV2Result = z.infer<typeof ExplainV2Schema>;
