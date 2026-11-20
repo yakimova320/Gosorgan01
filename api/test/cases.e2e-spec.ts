@@ -397,6 +397,39 @@ describe('Дела (e2e, B07)', () => {
       ),
     ).toBe(true);
 
+    // #124: каждое событие ровно в одной группе; «Дело создано» не среди писем
+    const kinds = ['LETTER_RECEIVED', 'CASE_CREATED_FROM_LETTER', 'DEADLINE_DONE', 'DRAFT_PREPARED', 'CLAIM_CONFIRMED'] as const;
+    await db.event.createMany({
+      data: kinds.map((type, i) => ({
+        caseId: kase.id,
+        type,
+        at: new Date(Date.UTC(2026, 10, 2, 10, i)),
+        details: {},
+      })),
+    });
+    const byGroup: Record<string, string[]> = {};
+    for (const g of ['letter', 'case', 'question', 'draft']) {
+      byGroup[g] = [];
+      let c: string | null = null;
+      do {
+        const res: request.Response = await http()
+          .get(`/history?type=${g}${c ? `&cursor=${c}` : ''}`)
+          .set(auth())
+          .expect(200);
+        byGroup[g].push(...res.body.items.map((i: { id: string; type: string }) => `${i.type}|${i.id}`));
+        c = res.body.nextCursor;
+      } while (c);
+    }
+    const types = (g: string) => new Set(byGroup[g].map((x) => x.split('|')[0]));
+    expect([...types('case')].sort()).toEqual(['CASE_CREATED_FROM_LETTER', 'DEADLINE_DONE']);
+    expect(types('letter').has('CASE_CREATED_FROM_LETTER')).toBe(false);
+    for (const t of types('letter'))
+      expect(['LETTER_RECEIVED', 'CLAIM_CONFIRMED', 'CLAIM_REJECTED', 'REVISION']).toContain(t);
+    expect(types('letter').has('CLAIM_CONFIRMED')).toBe(true);
+    const grouped = Object.values(byGroup).flat().map((x) => x.split('|')[1]);
+    expect(new Set(grouped).size).toBe(grouped.length);
+    expect(grouped).toHaveLength(await db.event.count({ where: { case: { cabinetId } } }));
+
     await http().get('/history?type=other').set(auth()).expect(400);
     await http().get('/history?cursor=kaputt').set(auth()).expect(400);
     const foreign = await http().get('/history').set(auth(other)).expect(200);

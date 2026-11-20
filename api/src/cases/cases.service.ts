@@ -20,13 +20,9 @@ import { caseStage } from './stage.js';
 export const HISTORY_PAGE = 30;
 
 const HISTORY_TYPES: Record<NonNullable<HistoryQuery['type']>, string[]> = {
-  letter: [
-    'LETTER_RECEIVED',
-    'CASE_CREATED_FROM_LETTER',
-    'CLAIM_CONFIRMED',
-    'CLAIM_REJECTED',
-    'REVISION',
-  ],
+  letter: ['LETTER_RECEIVED', 'CLAIM_CONFIRMED', 'CLAIM_REJECTED', 'REVISION'],
+  // #124: события самого дела отдельно от писем; каждое событие ровно в одной группе
+  case: ['CASE_CREATED_FROM_LETTER', 'DEADLINE_DONE'],
   question: ['QUESTION_ASKED'],
   draft: ['DRAFT_PREPARED', 'DRAFT_SENT', 'USER_REPORTED_SENT'],
 };

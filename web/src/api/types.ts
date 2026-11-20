@@ -239,7 +239,7 @@ export interface HistoryPageResult {
 }
 
 /** Группы истории на сайте и типы событий API (GET /history?type=). */
-export type HistoryGroup = 'letter' | 'question' | 'draft';
+export type HistoryGroup = 'letter' | 'case' | 'question' | 'draft';
 
 export interface ExplanationStatement {
   text: string;

@@ -94,13 +94,9 @@ export function mockDeleteCase(id: string): void | ApiError {
 }
 
 const GROUPS: Record<HistoryGroup, string[]> = {
-  letter: [
-    'LETTER_RECEIVED',
-    'CASE_CREATED_FROM_LETTER',
-    'CLAIM_CONFIRMED',
-    'CLAIM_REJECTED',
-    'REVISION',
-  ],
+  letter: ['LETTER_RECEIVED', 'CLAIM_CONFIRMED', 'CLAIM_REJECTED', 'REVISION'],
+  // #124: события самого дела отдельно от писем; каждое событие ровно в одной группе
+  case: ['CASE_CREATED_FROM_LETTER', 'DEADLINE_DONE'],
   question: ['QUESTION_ASKED'],
   draft: ['DRAFT_PREPARED', 'DRAFT_SENT', 'USER_REPORTED_SENT'],
 };

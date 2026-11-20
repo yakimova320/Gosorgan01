@@ -90,7 +90,7 @@ export type UpdateCaseInput = z.infer<typeof UpdateCaseSchema>;
 
 export const HistoryQuerySchema = z
   .object({
-    type: z.enum(['letter', 'question', 'draft']).optional(),
+    type: z.enum(['letter', 'case', 'question', 'draft']).optional(),
     cursor: z.string().max(200).optional(),
   })
   .strict();
