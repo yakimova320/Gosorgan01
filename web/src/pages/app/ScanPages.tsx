@@ -262,12 +262,12 @@ function ClaimStatusChip({ claim }: { claim: LetterClaim }) {
   return <span className="status status--check">Нужно проверить</span>;
 }
 
-/** Значение для исправления: дата ТТ.ММ.ГГГГ → ГГГГ-ММ-ДД, сумма с запятой → с точкой. */
+/** Даты с точками или запятыми → ГГГГ-ММ-ДД, сумма с запятой → с точкой. */
 export function parseUserValue(kind: LetterClaim['kind'], raw: string): { value: string } | { error: string } {
   const v = raw.trim();
   if (!v) return { error: 'Введите значение' };
   if (kind === 'DEADLINE' || kind === 'LETTER_DATE') {
-    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v);
+    const m = /^(\d{1,2})[.,](\d{1,2})[.,](\d{4})$/.exec(v);
     if (!m) return { error: 'Дата в формате ТТ.ММ.ГГГГ' };
     const [d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])];
     const date = new Date(Date.UTC(y, mo - 1, d));
