@@ -36,8 +36,11 @@ import type {
   HistoryGroup,
   HistoryPageResult,
   LetterDetail,
+  OutgoingResult,
   UploadResponse,
 } from '../api/types';
+import type { OutgoingInput, OutgoingTemplate } from '@jasno/shared';
+import { OUTGOING_TEMPLATES } from '@jasno/shared';
 import { apiBaseQuery, type RequestArgs } from './baseQuery';
 import { takeUploadFiles } from './uploads';
 
@@ -636,6 +639,40 @@ export const api = createApi({
       providesTags: (_r, _e, id) => [{ type: 'Draft', id }],
     }),
 
+    /** B16: шаблоны своих писем. Каталог не меняется во время работы сайта. */
+    templates: b.query<OutgoingTemplate[], void>({
+      queryFn: (_a, _api, _x, base) =>
+        isMock
+          ? ok(OUTGOING_TEMPLATES)
+          : (base({ path: '/templates' }) as Promise<Result<OutgoingTemplate[]>>),
+    }),
+
+    /** B16: своё письмо по шаблону — дело OUTGOING и проверенный черновик. Один запрос на нажатие. */
+    createOutgoing: b.mutation<OutgoingResult, OutgoingInput>({
+      queryFn: (body, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({ method: 'POST', path: '/outgoing', body }) as Promise<Result<OutgoingResult>>),
+      invalidatesTags: [{ type: 'Case', id: 'LIST' }, 'Cabinet', 'History'],
+    }),
+
+    /** B16: «Собрать заново» своего письма тем же шаблоном. */
+    rebuildOutgoing: b.mutation<ApiDraft, string>({
+      queryFn: (caseId, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              method: 'POST',
+              path: `/cases/${encodeURIComponent(caseId)}/draft`,
+              body: { kind: 'TEMPLATE' },
+            }) as Promise<Result<ApiDraft>>),
+      invalidatesTags: (_r, _e, caseId) => [
+        { type: 'Case', id: caseId },
+        { type: 'Case', id: 'LIST' },
+        'History',
+      ],
+    }),
+
     /** B15: PDF письма для печати. Ответ — временный адрес blob:, его освобождает экран. */
     draftPdf: b.mutation<string, string>({
       queryFn: (id, _api, _x, base) =>
@@ -671,6 +708,9 @@ export const {
   useDeleteCaseMutation,
   useDraftQuery,
   useDraftPdfMutation,
+  useTemplatesQuery,
+  useCreateOutgoingMutation,
+  useRebuildOutgoingMutation,
   useDraftQuestionsQuery,
   useCreateDraftMutation,
   useEditDraftMutation,

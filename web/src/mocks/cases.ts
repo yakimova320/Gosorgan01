@@ -239,6 +239,7 @@ export function mockCreateDraft(
     kind: args.kind,
     reason: args.kind === 'EXTENSION' ? args.reason : null,
     deadlineClaimId: null,
+    outgoingTemplateId: null,
     edited: false,
     sentAt: null,
     sentVia: null,

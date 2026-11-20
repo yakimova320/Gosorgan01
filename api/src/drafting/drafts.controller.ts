@@ -20,6 +20,11 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import {
+  OutgoingSchema,
+  type OutgoingInput,
+  type OutgoingTemplate,
+} from '@jasno/shared';
 import type { AuthContext } from '../auth/auth.service.js';
 import { CurrentAuth } from '../auth/session.guard.js';
 import { ZodPipe } from '../common/zod.pipe.js';
@@ -31,6 +36,7 @@ import {
   type DraftQuestions,
   type DraftView,
   type EditDraftInput,
+  type OutgoingResult,
   type ReportSentInput,
   type ReportSentResult,
 } from './drafts.dto.js';
@@ -55,7 +61,7 @@ export class DraftsController {
       'kind: CLARIFICATION (questionId — готовый вопрос: WHICH_DOCUMENTS, DEADLINE, REASON, FORMAT, AMOUNT), ' +
       'DOCUMENTS (сопроводительное письмо, нужно подтверждённое требование), EXTENSION (просьба продлить срок: ' +
       'deadlineClaimId — подтверждённый не прошедший срок, reason — DOCUMENTS_PENDING, ADVICE, NONE), STATUS_REQUEST ' +
-      '(запрос о ходе рассмотрения). Доступность проверяет сервер (GET /letters/:id/draft-questions → kinds). ' +
+      '(запрос о ходе рассмотрения), TEMPLATE (B16: собрать заново своё письмо дела OUTGOING, без других полей). Доступность проверяет сервер (GET /letters/:id/draft-questions → kinds). ' +
       'Проверка текста (DE и RU): шаблон и источники, не юридическая проверка. kind WIDERSPRUCH: 422 LEGAL_REFERRAL.',
   })
   @ApiBody({
@@ -190,6 +196,50 @@ export class DraftsController {
       length: data.length,
       disposition: 'inline; filename="brief.pdf"',
     });
+  }
+
+  @Get('templates')
+  @ApiOperation({
+    summary: 'Шаблоны своих писем (B16): шесть шаблонов и их поля',
+    description:
+      'Поля: key, type (text — по-немецки латиницей, reference — номер дела или клиента, date — ГГГГ-ММ-ДД, ' +
+      'iban, select — один из options), labelRu, hintRu, required. Немецкие формулировки собирает сервер.',
+  })
+  @ApiOkResponse({ description: 'Каталог шаблонов' })
+  templates(): OutgoingTemplate[] {
+    return this.drafts.templates();
+  }
+
+  @Post('outgoing')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Своё письмо по шаблону (B16): дело OUTGOING и проверенный черновик',
+    description:
+      'Поля формы человек проверил и подтвердил на экране проверки: они сохраняются как подтверждённые факты дела ' +
+      '(basis USER) и становятся единственным источником черновика. Без модели. Ошибки полей: 400 VALIDATION_FAILED ' +
+      'с путями fields.<key> и recipient.<name|address>; даты относительно сегодняшнего дня проверяет сервер. ' +
+      'Дальше как у ответа: GET/PATCH /drafts/:id, PDF, «Я отправил(а)»; «Собрать заново» — POST /cases/:id/draft { kind: TEMPLATE }.',
+  })
+  @ApiBody({
+    schema: {
+      example: {
+        templateId: 'NEUES_KONTO',
+        recipient: {
+          name: 'Jobcenter Berlin Mitte',
+          address: 'Musterstraße 1\n10115 Berlin',
+        },
+        fields: { reference: '123A456789', iban: 'DE89370400440532013000' },
+      },
+    },
+  })
+  @ApiUnprocessableEntityResponse(
+    err('DRAFT_VERIFICATION_FAILED', 'Черновик не прошёл проверку'),
+  )
+  createOutgoing(
+    @CurrentAuth() auth: AuthContext,
+    @Body(new ZodPipe(OutgoingSchema)) body: OutgoingInput,
+  ): Promise<OutgoingResult> {
+    return this.drafts.createOutgoing(auth.cabinetId, body);
   }
 
   @Get('letters/:id/draft-questions')

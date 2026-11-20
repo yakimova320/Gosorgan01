@@ -1,5 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ProfileSchema } from '@jasno/shared';
+import {
+  formatIban,
+  OUTGOING_TEMPLATES,
+  outgoingTemplate,
+  ProfileSchema,
+  type OutgoingInput,
+  type OutgoingTemplate,
+  type OutgoingTemplateId,
+} from '@jasno/shared';
 import { createHash } from 'node:crypto';
 import {
   ClaimsService,
@@ -7,6 +15,8 @@ import {
 } from '../claims/claims.service.js';
 import { ApiError } from '../common/api-error.js';
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
+import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { buildLetterPdf } from './letter-pdf.js';
 import type {
@@ -14,6 +24,7 @@ import type {
   DraftQuestions,
   DraftView,
   EditDraftInput,
+  OutgoingResult,
   ReportSentInput,
   ReportSentResult,
 } from './drafts.dto.js';
@@ -35,6 +46,7 @@ import {
   extendableDeadlines,
   type ExtensionReason,
 } from './templates/replies.js';
+import { buildOutgoing } from './templates/outgoing.js';
 import {
   verifyDraft,
   type VerificationReport,
@@ -58,7 +70,10 @@ export class VerificationService {
 }
 
 interface SnapshotJson {
-  letterId: string;
+  /** нет у своего письма (B16) */
+  letterId?: string;
+  /** B16: шаблон своего письма и факт каждого поля */
+  outgoing?: { templateId: OutgoingTemplateId; keys: Record<string, string> };
   questionId?: QuestionId;
   /** B12, EXTENSION */
   reason?: ExtensionReason;
@@ -88,6 +103,7 @@ export class DraftsService {
     if (!kase) throw new ApiError('NOT_FOUND');
     if (input.kind === 'WIDERSPRUCH')
       throw new ApiError('LEGAL_REFERRAL', { places: CONSULTATIONS });
+    if (input.kind === 'TEMPLATE') return this.rebuildOutgoing(cabinetId, caseId);
 
     const confirmed = await this.claims.getConfirmed(
       cabinetId,
@@ -247,12 +263,16 @@ export class DraftsService {
     if (draft.status === 'SENT') throw new ApiError('DRAFT_ALREADY_SENT');
     if (draft.stale) throw new ApiError('DRAFT_STALE');
     const snap = (draft.claimSnapshot ?? {}) as Partial<SnapshotJson>;
-    if (!snap.letterId) throw new ApiError('DRAFT_STALE');
-    const confirmed = await this.claims.getConfirmed(
-      cabinetId,
-      draft.caseId,
-      snap.letterId,
-    );
+    let confirmed: ConfirmedClaim[];
+    if (snap.outgoing)
+      confirmed = await this.claims.getConfirmedOutgoing(cabinetId, draft.caseId);
+    else if (snap.letterId)
+      confirmed = await this.claims.getConfirmed(
+        cabinetId,
+        draft.caseId,
+        snap.letterId,
+      );
+    else throw new ApiError('DRAFT_STALE');
     const profile = await this.profile(cabinetId);
     // «Datum:» в тексте — дата сборки: она и есть разрешённая дата создания
     const created = toIsoDate(berlinToday(draft.createdAt));
@@ -372,6 +392,213 @@ export class DraftsService {
     if (!draft) throw new ApiError('NOT_FOUND');
     if (draft.stale) throw new ApiError('DRAFT_STALE');
     return buildLetterPdf({ germanText: draft.germanText });
+  }
+
+  /** B16: каталог шаблонов своих писем (GET /templates). */
+  templates(): OutgoingTemplate[] {
+    return OUTGOING_TEMPLATES;
+  }
+
+  /**
+   * B16: своё письмо (POST /outgoing). Поля формы человек проверил на экране проверки и подтвердил
+   * нажатием «Всё верно»: они сохраняются как подтверждённые факты дела (basis USER) и становятся
+   * единственным источником черновика, как факты письма у ответов. Одна транзакция: дело OUTGOING,
+   * факты, черновик, событие. Не прошла проверка — не сохраняется ничего.
+   */
+  async createOutgoing(
+    cabinetId: string,
+    input: OutgoingInput,
+  ): Promise<OutgoingResult> {
+    const template = outgoingTemplate(input.templateId)!;
+    const today = toIsoDate(berlinToday());
+    const fields = Object.fromEntries(
+      Object.entries(input.fields)
+        .map(([k, v]) => [k, v.trim()] as const)
+        .filter(([, v]) => v !== ''),
+    );
+    const dateErrors = outgoingDateErrors(input.templateId, fields, today);
+    if (Object.keys(dateErrors).length)
+      throw new ApiError('VALIDATION_FAILED', { fields: dateErrors });
+    const profile = await this.profile(cabinetId);
+
+    return this.db.$transaction(async (tx) => {
+      // A01: во время удаления аккаунта новых строк у кабинета не появляется
+      if (!(await lockActiveCabinet(tx, cabinetId)))
+        throw new ApiError('ACCOUNT_DELETING');
+      const kase = await tx.case.create({
+        data: {
+          cabinetId,
+          origin: 'OUTGOING',
+          title: `${template.titleRu}: ${input.recipient.name}`,
+          authority: input.recipient.name,
+          caseNumber: fields.reference ?? null,
+        },
+        select: { id: true },
+      });
+      const rows: { key: string; kind: ConfirmedClaim['kind']; value: string; text: string }[] = [
+        {
+          key: 'recipient.name',
+          kind: 'AUTHORITY',
+          value: input.recipient.name,
+          text: `Адресат: ${input.recipient.name}`,
+        },
+        {
+          key: 'recipient.address',
+          kind: 'OTHER',
+          value: input.recipient.address.replace(/\r\n?/g, '\n'),
+          text: `Адрес адресата: ${input.recipient.address.replace(/\s*\r?\n\s*/g, ', ')}`,
+        },
+        ...template.fields
+          .filter((f) => fields[f.key] !== undefined)
+          .map((f) => {
+            const raw = fields[f.key];
+            const value = f.type === 'iban' ? formatIban(raw) : raw;
+            const shown =
+              f.type === 'date'
+                ? raw.split('-').reverse().join('.')
+                : f.type === 'select'
+                  ? (f.options?.find((o) => o.id === raw)?.ru ?? raw)
+                  : value;
+            return {
+              key: f.key,
+              kind: (f.type === 'reference' ? 'CASE_NUMBER' : 'OTHER') as ConfirmedClaim['kind'],
+              value,
+              text: `${f.labelRu}: ${shown}`,
+            };
+          }),
+      ];
+      const claims: Record<string, ConfirmedClaim> = {};
+      for (const r of rows) {
+        const claim = await tx.claim.create({
+          data: {
+            caseId: kase.id,
+            kind: r.kind,
+            value: r.value,
+            text: r.text,
+            basis: 'USER',
+            status: 'CONFIRMED',
+            updatedBy: 'USER',
+          },
+          select: { id: true, letterId: true, kind: true, value: true, quote: true, text: true },
+        });
+        const { text, ...rest } = claim;
+        claims[r.key] = { ...rest, label: text };
+      }
+      const draft = await this.saveOutgoingDraft(tx, {
+        caseId: kase.id,
+        templateId: input.templateId,
+        claims,
+        profile,
+        today,
+      });
+      return { caseId: kase.id, draft };
+    });
+  }
+
+  /** B16: «Собрать заново» своего письма — тот же шаблон, подтверждённые поля дела, свежий профиль. */
+  private async rebuildOutgoing(
+    cabinetId: string,
+    caseId: string,
+  ): Promise<DraftView> {
+    const confirmed = await this.claims.getConfirmedOutgoing(cabinetId, caseId);
+    const last = await this.db.draft.findFirst({
+      where: { caseId, kind: 'TEMPLATE' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: { claimSnapshot: true },
+    });
+    const snap = (last?.claimSnapshot ?? {}) as Partial<SnapshotJson>;
+    if (!snap.outgoing) throw new ApiError('NO_CONFIRMED_CLAIMS');
+    const byId = new Map(confirmed.map((c) => [c.id, c]));
+    const claims: Record<string, ConfirmedClaim> = {};
+    for (const [key, id] of Object.entries(snap.outgoing.keys)) {
+      const c = byId.get(id);
+      if (!c) throw new ApiError('NO_CONFIRMED_CLAIMS');
+      claims[key] = c;
+    }
+    const profile = await this.profile(cabinetId);
+    const today = toIsoDate(berlinToday());
+    const version = sourcesVersion(Object.values(claims), profile);
+    return this.db.$transaction(async (tx) => {
+      // Профиль или факты изменились, пока собирался черновик: не сохранять.
+      const nowProfile = await tx.cabinet.findUniqueOrThrow({
+        where: { id: cabinetId },
+        select: { profile: true },
+      });
+      const nowClaims = await tx.claim.findMany({
+        where: { id: { in: Object.values(claims).map((c) => c.id) }, caseId, status: 'CONFIRMED' },
+        select: { id: true, letterId: true, kind: true, value: true, quote: true },
+      });
+      const parsed = ProfileSchema.safeParse(nowProfile.profile);
+      if (
+        !parsed.success ||
+        sourcesVersion(nowClaims as ConfirmedClaim[], parsed.data) !== version
+      )
+        throw new ApiError('DRAFT_SOURCES_CHANGED');
+      return this.saveOutgoingDraft(tx, {
+        caseId,
+        templateId: snap.outgoing!.templateId,
+        claims,
+        profile,
+        today,
+      });
+    });
+  }
+
+  private async saveOutgoingDraft(
+    tx: Prisma.TransactionClient,
+    a: {
+      caseId: string;
+      templateId: OutgoingTemplateId;
+      claims: Record<string, ConfirmedClaim>;
+      profile: SenderProfile;
+      today: string;
+    },
+  ): Promise<DraftView> {
+    const built = buildOutgoing({
+      templateId: a.templateId,
+      claims: a.claims,
+      profile: a.profile,
+      today: a.today,
+    });
+    const confirmed = Object.values(a.claims);
+    const report = await this.verification.verify({
+      ...built,
+      confirmed,
+      profile: a.profile,
+      today: a.today,
+    });
+    if (!report.passed) throw new ApiError('DRAFT_VERIFICATION_FAILED', report);
+    const snapshot: SnapshotJson = {
+      outgoing: {
+        templateId: a.templateId,
+        keys: Object.fromEntries(Object.entries(a.claims).map(([k, c]) => [k, c.id])),
+      },
+      claims: Object.fromEntries(confirmed.map((c) => [c.id, c.value])),
+    };
+    const created = await tx.draft.create({
+      data: {
+        caseId: a.caseId,
+        kind: 'TEMPLATE',
+        templateId: `outgoing.${a.templateId}`,
+        germanText: built.germanText,
+        russianText: built.russianText,
+        claimIds: built.claimIds,
+        claimSnapshot: snapshot as unknown as object,
+        verification: report as unknown as object,
+      },
+    });
+    await tx.event.create({
+      data: {
+        caseId: a.caseId,
+        type: 'DRAFT_PREPARED',
+        details: { draftId: created.id, outgoing: a.templateId },
+      },
+    });
+    await tx.case.update({
+      where: { id: a.caseId },
+      data: { updatedAt: new Date() },
+    });
+    return toView(created);
   }
 
   /** Какие вопросы доступны для письма (для экрана черновика, F04). */
@@ -505,6 +732,7 @@ function toView(d: {
     kind: d.kind,
     reason: snap.reason ?? null,
     deadlineClaimId: snap.deadlineClaimId ?? null,
+    outgoingTemplateId: snap.outgoing?.templateId ?? null,
     germanText: d.germanText,
     russianText: d.russianText,
     claimIds: (d.claimIds as string[]) ?? [],
@@ -516,4 +744,38 @@ function toView(d: {
     verification,
     createdAt: d.createdAt.toISOString(),
   };
+}
+
+/**
+ * B16: даты своего письма относительно «сегодня» (Europe/Berlin). Проверяет только сервер:
+ * срок, который просим продлить, и дата расторжения не в прошлом; поданное и обращение — не в будущем.
+ */
+export function outgoingDateErrors(
+  templateId: OutgoingTemplateId,
+  f: Record<string, string>,
+  today: string,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  const past = (k: string, message: string) => {
+    if (f[k] && f[k] < today) out[`fields.${k}`] = message;
+  };
+  const future = (k: string, message: string) => {
+    if (f[k] && f[k] > today) out[`fields.${k}`] = message;
+  };
+  switch (templateId) {
+    case 'KUENDIGUNG':
+      past('endDate', 'Дата расторжения не может быть в прошлом');
+      break;
+    case 'FRISTVERLAENGERUNG':
+      past('deadline', 'Срок уже прошёл: продлить можно только будущий срок');
+      future('letterDate', 'Дата письма не может быть в будущем');
+      break;
+    case 'SACHSTANDSANFRAGE':
+      future('submitted', 'Дата подачи не может быть в будущем');
+      break;
+    case 'BESCHWERDE':
+      future('since', 'Дата не может быть в будущем');
+      break;
+  }
+  return out;
 }
