@@ -2224,6 +2224,42 @@
           ]
         },
         {
+          "name": "GET /drafts/:id/pdf (B15)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drafts/{{draftId}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drafts",
+                "{{draftId}}",
+                "pdf"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('application/pdf', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/pdf'));",
+                  "pm.test('начинается с %PDF-', () => pm.expect(pm.response.text().slice(0, 5)).to.eql('%PDF-'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "PATCH /cabinet: номера профиля (F05)",
           "request": {
             "method": "PATCH",

@@ -8,6 +8,7 @@ import {
 import { ApiError } from '../common/api-error.js';
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildLetterPdf } from './letter-pdf.js';
 import type {
   CreateDraftInput,
   DraftQuestions,
@@ -357,6 +358,20 @@ export class DraftsService {
       draftId: input.draftId ?? null,
       closedDeadlineId: input.closeDeadlineId ?? null,
     };
+  }
+
+  /**
+   * B15: PDF письма для печати — немецкий текст проверенного черновика. Устаревший черновик
+   * не печатается (409 DRAFT_STALE): в PDF не должны попасть изменившиеся факты или профиль.
+   */
+  async pdf(cabinetId: string, draftId: string): Promise<Buffer> {
+    const draft = await this.db.draft.findFirst({
+      where: { id: draftId, case: { cabinetId } },
+      select: { germanText: true, stale: true },
+    });
+    if (!draft) throw new ApiError('NOT_FOUND');
+    if (draft.stale) throw new ApiError('DRAFT_STALE');
+    return buildLetterPdf({ germanText: draft.germanText });
   }
 
   /** Какие вопросы доступны для письма (для экрана черновика, F04). */

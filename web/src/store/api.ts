@@ -635,6 +635,17 @@ export const api = createApi({
       keepUnusedDataFor: 0,
       providesTags: (_r, _e, id) => [{ type: 'Draft', id }],
     }),
+
+    /** B15: PDF письма для печати. Ответ — временный адрес blob:, его освобождает экран. */
+    draftPdf: b.mutation<string, string>({
+      queryFn: (id, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              path: `/drafts/${encodeURIComponent(id)}/pdf`,
+              binary: true,
+            }) as Promise<Result<string>>),
+    }),
   }),
 });
 
@@ -659,6 +670,7 @@ export const {
   useUpdateCaseMutation,
   useDeleteCaseMutation,
   useDraftQuery,
+  useDraftPdfMutation,
   useDraftQuestionsQuery,
   useCreateDraftMutation,
   useEditDraftMutation,

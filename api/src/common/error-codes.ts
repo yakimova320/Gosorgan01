@@ -121,6 +121,10 @@ export const ERROR_CODES = {
     status: 422,
     message: 'Этот вопрос недоступен для письма: нет подтверждённого факта',
   },
+  PDF_UNSUPPORTED_CHARS: {
+    status: 422,
+    message: 'В тексте есть знаки, которые нельзя напечатать в PDF',
+  },
   LEGAL_REFERRAL: {
     status: 422,
     message: 'С этим лучше обратиться в консультацию',

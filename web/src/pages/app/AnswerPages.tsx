@@ -10,6 +10,7 @@ import { DRAFT_KIND } from '../../lib/labels';
 import {
   useCaseDetailQuery,
   useCreateDraftMutation,
+  useDraftPdfMutation,
   useDraftQuery,
   useDraftQuestionsQuery,
   useEditDraftMutation,
@@ -446,6 +447,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
       <button type="button" className="btn btn--primary" disabled={stale || checking} onClick={() => void copyGerman()}>
         <Icon name="copy" size={18} color="#FFFFFF" /> {checking ? 'Проверяем…' : 'Скопировать немецкий текст'}
       </button>
+      <PrintPdf draftId={draft.id} disabled={stale} />
       {copy.kind === 'copied' && (
         <div className="alert alert--info" role="status">
           Скопировано. Вставьте текст в письмо или онлайн-кабинет, проверьте и отправьте сами. Ja!sno ничего не отправляет.
@@ -470,6 +472,41 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * B15: PDF немецкого текста для печати (A4, место для подписи). Файл загружается с токеном;
+ * временный адрес освобождается после скачивания. Устаревший черновик не печатается.
+ */
+function PrintPdf({ draftId, disabled }: { draftId: string; disabled: boolean }) {
+  const [loadPdf, loading] = useDraftPdfMutation();
+  const [error, setError] = useState<unknown>(null);
+
+  async function download() {
+    setError(null);
+    try {
+      const url = await loadPdf(draftId).unwrap();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'brief.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  return (
+    <div className="stack-s">
+      <button type="button" className="btn btn--secondary" disabled={disabled || loading.isLoading} onClick={() => void download()}>
+        <Icon name="doc" size={18} /> {loading.isLoading ? 'Готовим PDF…' : 'PDF для печати'}
+      </button>
+      <span className="muted">Немецкий текст на листе A4 с местом для подписи. Распечатайте, подпишите и отправьте сами.</span>
+      <ErrorAlert error={error} />
+    </div>
   );
 }
 
