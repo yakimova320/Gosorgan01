@@ -12,6 +12,7 @@ import {
 } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { AppShell, MockBanner, ModeBadge, PublicLayout } from '../components/layout';
+import { StorageNotice } from '../components/StorageNotice';
 import {
   AnswerDetailsPage,
   AnswerDraftPage,
@@ -153,6 +154,7 @@ function Root() {
     <FlowProvider>
       <ModeBadge />
       <MockBanner />
+      <StorageNotice />
       <Outlet />
     </FlowProvider>
   );
