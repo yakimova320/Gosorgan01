@@ -226,22 +226,154 @@ describe('Приём письма POST /letters (e2e)', () => {
     );
   });
 
-  it('скан PDF 09: 422 SCAN_PDF_NOT_SUPPORTED, модель не вызывалась', async () => {
-    const res = await expectRejected(
-      upload(fixture('09_scan.pdf'), 'scan.pdf'),
-      422,
-      'SCAN_PDF_NOT_SUPPORTED',
+  /** Несколько файлов в одном запросе, по порядку страниц. */
+  const uploadMany = (files: [Buffer, string][], t = token) => {
+    let req = http().post('/letters').set('Authorization', `Bearer ${t}`);
+    for (const [data, name] of files) req = req.attach('files', data, name);
+    return req;
+  };
+  const getFile = (letterId: string, page?: number, t = token) =>
+    http()
+      .get(`/letters/${letterId}/file${page ? `?page=${page}` : ''}`)
+      .set('Authorization', `Bearer ${t}`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+
+  it('B11: 3 фото = одно письмо с 3 страницами по порядку; один transcribe.v2 + extract', async () => {
+    const photos: [Buffer, string][] = [
+      [fixture('08_photo.jpg'), 'a.jpg'],
+      [fixture('09_scan.png'), 'b.png'],
+      [fixture('10_medium_scan.png'), 'c.png'],
+    ];
+    const res = await uploadMany(photos).expect(201);
+    const { letter } = res.body;
+    expect(letter.sourceType).toBe('IMAGE');
+    expect(letter.pages.map((p: { n: number }) => p.n)).toEqual([1, 2, 3]);
+    expect(letter.files).toEqual([
+      { n: 1, mime: 'image/jpeg', bytes: photos[0][0].length },
+      { n: 2, mime: 'image/png', bytes: photos[1][0].length },
+      { n: 3, mime: 'image/png', bytes: photos[2][0].length },
+    ]);
+    // порядок страниц в тексте: 08 → 09 → 10
+    const text = letter.text as string;
+    expect(text.indexOf('--- Seite 1 ---')).toBeLessThan(
+      text.indexOf('SA-2026-8810'),
     );
-    expect(res.body.details).toEqual({ pages: [1], totalPages: 1 });
+    expect(text.indexOf('--- Seite 2 ---')).toBeLessThan(
+      text.indexOf('SA-2026-8810'),
+    );
+    expect(text.indexOf('SA-2026-8810')).toBeLessThan(
+      text.indexOf('--- Seite 3 ---'),
+    );
+    const calls = await db.llmCall.findMany({
+      where: { letterId: letter.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(calls.map((c) => [c.promptName, c.promptVersion])).toEqual([
+      ['transcribe', 2],
+      ['extract', 2],
+    ]);
+    expect(calls[0].input.match(/image, \d+ KB/g)).toHaveLength(3);
+    // факты со страницы 2 ссылаются на страницу 2
+    const caseNumber = res.body.claims.find(
+      (c: { kind: string; value: string }) =>
+        c.kind === 'CASE_NUMBER' && c.value === 'SA-2026-8810',
+    );
+    if (caseNumber) expect(caseNumber.page).toBe(2);
+
+    // оригиналы: каждая страница отдельно, байт в байт, только владельцу
+    for (const [i, [data]] of photos.entries()) {
+      const file = await getFile(letter.id, i + 1).expect(200);
+      expect(file.headers['content-type']).toBe(
+        i === 0 ? 'image/jpeg' : 'image/png',
+      );
+      expect(file.headers['cache-control']).toBe('private, no-store');
+      expect(file.headers['x-content-type-options']).toBe('nosniff');
+      expect(Buffer.compare(file.body as Buffer, data)).toBe(0);
+    }
+    expect((await getFile(letter.id).expect(200)).body).toEqual(photos[0][0]);
+    expect((await getFile(letter.id, 4).expect(404)).body).toBeDefined();
+    await http()
+      .get(`/letters/${letter.id}/file?page=abc`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+    await http().get(`/letters/${letter.id}/file?page=1`).expect(401);
+    const other = await http()
+      .post('/auth/register')
+      .send({
+        email: 'fremd-file@example.org',
+        password: 'mein-langes-Passwort',
+        consent: true,
+        ...PERSON,
+      })
+      .expect(201);
+    const foreign = await http()
+      .get(`/letters/${letter.id}/file?page=1`)
+      .set('Authorization', `Bearer ${other.body.sessionToken}`)
+      .expect(404);
+    expect(foreign.headers['content-type']).toMatch(/json/);
   });
 
-  it('смешанный PDF: отказ с номером страницы-скана', async () => {
+  it('B11: нечитаемая страница 2 из 2: 422 UNREADABLE с номером, письмо не сохраняется частично', async () => {
+    const res = await expectRejected(
+      uploadMany([
+        [fixture('08_photo.jpg'), 'a.jpg'],
+        [fixture('11_bad_photo.jpg'), 'b.jpg'],
+      ]),
+      422,
+      'UNREADABLE',
+      true,
+    );
+    expect(res.body.details).toEqual({ pages: [2], reason: 'BLURRY' });
+    expect(res.body.message).toMatch(/^Страница 2 не читается\. Фото размыто/);
+  });
+
+  it('B11: скан PDF 09 распознаётся постранично: PDF_SCAN, факты, оригинал PDF', async () => {
+    const pdf = fixture('09_scan.pdf');
+    const res = await upload(pdf, 'scan.pdf').expect(201);
+    expect(res.body.letter.sourceType).toBe('PDF_SCAN');
+    expect(res.body.letter.text).toContain('SA-2026-8810');
+    expect(res.body.letter.files).toEqual([
+      { n: 1, mime: 'application/pdf', bytes: pdf.length },
+    ]);
+    expect(
+      res.body.claims.some(
+        (c: { kind: string; value: string }) =>
+          c.kind === 'CASE_NUMBER' && c.value === 'SA-2026-8810',
+      ),
+    ).toBe(true);
+    const calls = await db.llmCall.findMany({
+      where: { letterId: res.body.letter.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(calls.map((c) => c.promptName)).toEqual(['transcribe', 'extract']);
+    const file = await getFile(res.body.letter.id, 1).expect(200);
+    expect(file.headers['content-type']).toBe('application/pdf');
+    expect(Buffer.compare(file.body as Buffer, pdf)).toBe(0);
+  });
+
+  it('B11: смешанный PDF: распознаётся только страница-скан; в demo она незнакома — отказ называет страницу 2', async () => {
+    const spy = vi.spyOn(DemoAdapter.prototype, 'complete');
     const res = await expectRejected(
       upload(await mixedPdf(fixture('09_scan.png')), 'mixed.pdf'),
       422,
-      'SCAN_PDF_NOT_SUPPORTED',
+      'UNREADABLE',
+      true,
     );
-    expect(res.body.details).toEqual({ pages: [2], totalPages: 2 });
+    expect(res.body.details).toEqual({ pages: [2], reason: 'DEMO_UNKNOWN' });
+    expect(res.body.message).toMatch(/^Страница 2 не читается\. /);
+    // одно изображение (страница 2) одним обращением transcribe.v2; extract не вызывается
+    expect(spy).toHaveBeenCalledTimes(1);
+    const req = spy.mock.calls[0][0];
+    expect([req.promptName, req.promptVersion, req.images.length]).toEqual([
+      'transcribe',
+      1,
+      1,
+    ]);
   });
 
   it('PDF на 21 страницу: 413 LETTER_TOO_LARGE', async () => {
@@ -290,16 +422,45 @@ describe('Приём письма POST /letters (e2e)', () => {
     expect(res.body.details).toEqual({ maxMb: 1 });
   });
 
-  it('два файла: 400 TOO_MANY_FILES; нет поля files: 400 NO_FILE; не multipart: NO_FILE', async () => {
+  it('два PDF или PDF с фото: 400 MIXED_FILES; 11 фото: TOO_MANY_FILES; нет поля files: NO_FILE; не multipart: NO_FILE', async () => {
     await expectRejected(
-      http()
-        .post('/letters')
-        .set('Authorization', `Bearer ${token}`)
-        .attach('files', fixture('01_jobcenter_request.pdf'), 'a.pdf')
-        .attach('files', fixture('04_buergeramt.pdf'), 'b.pdf'),
+      uploadMany([
+        [fixture('01_jobcenter_request.pdf'), 'a.pdf'],
+        [fixture('04_buergeramt.pdf'), 'b.pdf'],
+      ]),
+      400,
+      'MIXED_FILES',
+    );
+    await expectRejected(
+      uploadMany([
+        [fixture('08_photo.jpg'), 'a.jpg'],
+        [fixture('01_jobcenter_request.pdf'), 'b.pdf'],
+      ]),
+      400,
+      'MIXED_FILES',
+    );
+    const many = Array.from(
+      { length: 11 },
+      (_, i) => [fixture('11_bad_photo.jpg'), `p${i}.jpg`] as [Buffer, string],
+    );
+    const tooMany = await expectRejected(
+      uploadMany(many),
       400,
       'TOO_MANY_FILES',
     );
+    expect(tooMany.body.details).toEqual({ max: 10 });
+    // повреждённый второй файл: номер файла в ответе, модель не вызывается
+    const jpg = fixture('08_photo.jpg');
+    const damaged = await expectRejected(
+      uploadMany([
+        [jpg, 'a.jpg'],
+        [jpg.subarray(0, jpg.length / 2), 'b.jpg'],
+      ]),
+      422,
+      'FILE_DAMAGED',
+    );
+    expect(damaged.body.details).toMatchObject({ file: 2 });
+    expect(damaged.body.message).toMatch(/^Файл 2: /);
     await expectRejected(
       upload(fixture('01_jobcenter_request.pdf'), 'a.pdf', 'file'),
       400,

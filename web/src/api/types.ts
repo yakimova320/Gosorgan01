@@ -61,7 +61,7 @@ export interface Explanation {
 export interface Letter {
   id: string;
   caseId: string | null;
-  sourceType: 'PDF_TEXT' | 'IMAGE';
+  sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
   rawText: string;
   pages: { n: number; readable: boolean; chars: number }[];
   createdAt: string;
@@ -191,7 +191,7 @@ export interface LetterDetail {
   letter: {
     id: string;
     caseId: string | null;
-    sourceType: 'PDF_TEXT' | 'IMAGE';
+    sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
     text: string;
     pages: { n: number; readable: boolean; chars: number }[];
     files: { n: number; mime: string; bytes: number }[];
@@ -221,7 +221,7 @@ export interface ApiTimelineItem {
 
 export interface ApiCaseDetail extends CaseSummary {
   status?: 'OPEN' | 'CLOSED';
-  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE'; authority: string | null; unconfirmed: number }[];
+  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN'; authority: string | null; unconfirmed: number }[];
   claims: LetterClaim[];
   deadlines: LetterDeadline[];
   drafts: { id: string; kind: string; status: string; stale: boolean; createdAt: string }[];
@@ -261,12 +261,27 @@ export interface ApiExplanation {
 
 export type QuestionId = 'WHICH_DOCUMENTS' | 'DEADLINE' | 'REASON' | 'FORMAT' | 'AMOUNT';
 
+export type ExtensionReason = 'DOCUMENTS_PENDING' | 'ADVICE' | 'NONE';
+export type SentVia = 'post' | 'online' | 'email' | 'in_person' | 'other';
+
 export interface DraftQuestions {
   letterId: string;
   caseId: string;
   questions: { id: QuestionId; ru: string }[];
   amounts: { claimId: string; value: string }[];
+  /** B12: виды ответа, доступные по подтверждённым фактам письма */
+  kinds: DraftKind[];
+  deadlines: { claimId: string; date: string }[];
+  extensionReasons: { id: ExtensionReason; ru: string }[];
 }
+
+/** Запрос на сборку черновика: вид ответа и его параметры. */
+export type CreateDraftArgs = { caseId: string; letterId: string } & (
+  | { kind: 'CLARIFICATION'; questionId: QuestionId; amountClaimId?: string }
+  | { kind: 'DOCUMENTS' }
+  | { kind: 'STATUS_REQUEST' }
+  | { kind: 'EXTENSION'; reason: ExtensionReason; deadlineClaimId?: string }
+);
 
 /** Черновик. verification.checklist — снимок оснований на момент сборки. */
 export interface ApiDraft {
@@ -274,12 +289,18 @@ export interface ApiDraft {
   caseId: string;
   letterId: string | null;
   questionId: QuestionId | null;
-  kind: string;
+  kind: DraftKind;
+  reason: ExtensionReason | null;
+  deadlineClaimId: string | null;
   germanText: string;
   russianText: string;
   claimIds: string[];
   stale: boolean;
+  /** B12: текст изменён человеком и проверен заново */
+  edited: boolean;
   status: string;
+  sentAt: string | null;
+  sentVia: string | null;
   verification: {
     passed: boolean;
     checks: { name: string; passed: boolean; details: string | null }[];

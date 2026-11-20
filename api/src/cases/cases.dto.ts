@@ -30,7 +30,7 @@ export interface CaseDetail extends CaseSummary {
   letters: {
     id: string;
     createdAt: string;
-    sourceType: 'PDF_TEXT' | 'IMAGE';
+    sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
     authority: string | null;
     unconfirmed: number;
   }[];

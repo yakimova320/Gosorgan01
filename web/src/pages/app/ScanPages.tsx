@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useBeforeUnload, useBlocker, useLocation, useNavigate } from 'react-router';
 import { errorCode, errorText, isApiError, isDailyLimit } from '../../api/errors';
 import type { CaseSuggestion, LetterClaim, LetterDetail } from '../../api/types';
-import { useFlow } from '../../app/flow';
+import { MAX_PAGES, useFlow } from '../../app/flow';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
+import { LetterOriginals } from '../../components/LetterOriginals';
 import { ErrorAlert, Loading, PageHeader } from '../../components/ui';
 import { formatDate } from '../../lib/dates';
 import { CLAIM_KIND } from '../../lib/labels';
@@ -20,13 +21,43 @@ import {
 import { putUploadFiles } from '../../store/uploads';
 
 /*
- * Загрузка письма и проверка фактов (F02). Пока одно фото или один PDF на письмо (B11 — несколько фото).
+ * Загрузка письма и проверка фактов (F02, B11). Один PDF или до 10 фото страниц одного письма.
  * После загрузки письмо открывается по ID из URL (/app/letters/:id/check) и переживает обновление страницы.
- * Назначение в дело — задача B07.
+ * Файлы и превью живут вне Redux (FlowProvider).
  */
 
 const MAX_FILE_MB = 10;
+const MAX_LETTER_MB = 20;
 const ACCEPT = 'image/jpeg,image/png,application/pdf';
+const MB = 1024 * 1024;
+
+/** Проверка размера до отправки: файл до 10 МБ, все файлы письма до 20 МБ (сервер проверяет сам). */
+function sizeProblem(files: File[], already: File[]): string | null {
+  const big = files.find((f) => f.size > MAX_FILE_MB * MB);
+  if (big) return `Файл «${big.name}» больше ${MAX_FILE_MB} МБ.`;
+  const pdf = files.some((f) => f.type === 'application/pdf');
+  const total = [...(pdf ? [] : already), ...files].reduce((sum, f) => sum + f.size, 0);
+  if (total > MAX_LETTER_MB * MB) return `Все файлы письма вместе больше ${MAX_LETTER_MB} МБ.`;
+  return null;
+}
+
+/** Скрытые поля выбора: камера (по одному снимку) и файлы (несколько фото или один PDF). */
+function useFilePickers(onFiles: (files: File[]) => void) {
+  const camera = useRef<HTMLInputElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const take = (input: HTMLInputElement) => {
+    const files = Array.from(input.files ?? []);
+    input.value = ''; // тот же файл можно выбрать снова
+    if (files.length) onFiles(files);
+  };
+  const inputs = (
+    <>
+      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => take(e.target)} />
+      <input ref={picker} type="file" accept={ACCEPT} multiple hidden data-testid="file-input" onChange={(e) => take(e.target)} />
+    </>
+  );
+  return { inputs, openCamera: () => camera.current?.click(), openPicker: () => picker.current?.click() };
+}
 
 function Steps({ n }: { n: 1 | 2 | 3 }) {
   const labels = ['Файл', 'Чтение', 'Факты'];
@@ -44,20 +75,16 @@ function Steps({ n }: { n: 1 | 2 | 3 }) {
 
 /** Шаг 1: фото или файл. */
 export function ScanStartPage() {
-  const { pickFile } = useFlow();
+  const { pages, addFiles } = useFlow();
   const navigate = useNavigate();
-  const camera = useRef<HTMLInputElement>(null);
-  const picker = useRef<HTMLInputElement>(null);
   const [problem, setProblem] = useState<string | null>(null);
-
-  function take(files: FileList | null) {
-    const file = files?.[0];
-    if (!file) return;
-    if (file.size > MAX_FILE_MB * 1024 * 1024) return setProblem(`Файл «${file.name}» больше ${MAX_FILE_MB} МБ.`);
+  const { inputs, openCamera, openPicker } = useFilePickers((files) => {
+    const tooBig = sizeProblem(files, []);
+    if (tooBig) return setProblem(tooBig);
     setProblem(null);
-    pickFile(file);
-    navigate('/app/scan/pages');
-  }
+    const note = addFiles(files);
+    navigate('/app/scan/pages', { state: note ? { note } : undefined });
+  });
 
   return (
     <>
@@ -66,42 +93,134 @@ export function ScanStartPage() {
       <div className="card card--peach stack" style={{ alignItems: 'center', textAlign: 'center' }}>
         <Illustration name="scan" height={200} blob="#FBE3D6" />
         <h2>Сфотографируйте письмо</h2>
-        <p className="text-2 small">Положите лист на ровную поверхность при дневном свете. В кадре должны быть все края листа.</p>
+        <p className="text-2 small">
+          Положите лист на ровную поверхность при дневном свете. В кадре должны быть все края листа. Письмо на нескольких
+          страницах: сфотографируйте каждую.
+        </p>
       </div>
       <div className="alert alert--warn">Тестовая версия: загружайте только примеры писем, не настоящие документы.</div>
-      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => take(e.target.files)} />
-      <input ref={picker} type="file" accept={ACCEPT} hidden data-testid="file-input" onChange={(e) => take(e.target.files)} />
-      <button type="button" className="btn btn--primary" onClick={() => camera.current?.click()}>
+      {inputs}
+      <button type="button" className="btn btn--primary" onClick={openCamera}>
         <Icon name="camera" size={20} color="#FFFFFF" width={2.2} /> Сделать фото
       </button>
-      <button type="button" className="btn btn--secondary" onClick={() => picker.current?.click()}>
+      <button type="button" className="btn btn--secondary" onClick={openPicker}>
         <Icon name="upload" size={20} /> Выбрать фото или PDF
       </button>
+      {pages.length > 0 && (
+        <Link to="/app/scan/pages" className="link">
+          Вернуться к выбранным страницам ({pages.length})
+        </Link>
+      )}
       {problem && (
         <div className="alert alert--error" role="alert">
           {problem}
         </div>
       )}
-      <p className="muted">JPG, PNG или PDF с текстом, до {MAX_FILE_MB} МБ. Пока одно фото или один PDF на письмо.</p>
+      <p className="muted">
+        JPG, PNG или PDF (с текстом или скан), файл до {MAX_FILE_MB} МБ. Одно письмо: до 10 фото страниц или один PDF до 20
+        страниц.
+      </p>
     </>
   );
 }
 
-/** Шаг 2: проверить файл перед отправкой. */
+/** Шаг 1б: проверка снимков — порядок страниц, убрать, добавить (B11, макет стр. 10). */
 export function ScanPagesPage() {
-  const { picked, clearFile } = useFlow();
+  const { pages, addFiles, removePage, movePage, clearFiles } = useFlow();
   const navigate = useNavigate();
-  if (!picked) return <Navigate to="/app/scan" replace />;
-  const isPdf = picked.file.type === 'application/pdf';
+  const location = useLocation();
+  const [problem, setProblem] = useState<string | null>((location.state as { note?: string } | null)?.note ?? null);
+  const { inputs, openCamera, openPicker } = useFilePickers((files) => {
+    const tooBig = sizeProblem(files, pages.map((p) => p.file));
+    if (tooBig) return setProblem(tooBig);
+    setProblem(addFiles(files));
+  });
+  if (pages.length === 0) return <Navigate to="/app/scan" replace />;
+  const pdf = pages.length === 1 && pages[0].file.type === 'application/pdf';
+  const full = pages.length >= MAX_PAGES;
 
   return (
     <>
-      <PageHeader title="Проверьте файл" back="/app/scan" />
+      <PageHeader title={pdf ? 'Проверьте файл' : 'Проверьте снимки'} back="/app/scan" />
       <Steps n={1} />
-      <div className="thumbs">
-        <div className="thumb">{isPdf ? <Icon name="doc" size={40} color="var(--c-teal)" /> : <img src={picked.url} alt="Снимок письма" />}</div>
-      </div>
-      <p className="text-2 small">{isPdf ? 'PDF: Ja!sno прочитает текст из файла.' : 'Текст на снимке должен читаться целиком.'}</p>
+      {inputs}
+      {pdf ? (
+        <>
+          <div className="thumbs">
+            <div className="thumb">
+              <Icon name="doc" size={40} color="var(--c-teal)" />
+            </div>
+          </div>
+          <p className="text-2 small">
+            PDF «{pages[0].file.name}». Ja!sno прочитает текст из файла, страницы-сканы распознает как фото.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-2 small">
+            {pages.length === 1 ? '1 страница.' : `${pages.length} страниц${pages.length < 5 ? 'ы' : ''}.`} Порядок как в письме:
+            страница 1 сверху. Текст на каждом снимке должен читаться целиком.
+          </p>
+          <ol className="list-reset scan-pages" aria-label="Страницы письма">
+            {pages.map((p, i) => (
+              <li key={p.id} className="card scan-page" data-testid="scan-page">
+                <div className="thumb">
+                  <img src={p.url} alt={`Страница ${i + 1}`} />
+                  <span className="thumb-n" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                </div>
+                <div className="stack-s scan-page-actions">
+                  <span className="small">Страница {i + 1}</span>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--small"
+                    disabled={i === 0}
+                    aria-label={`Страница ${i + 1}: выше`}
+                    onClick={() => movePage(p.id, -1)}
+                  >
+                    ↑ Выше
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--small"
+                    disabled={i === pages.length - 1}
+                    aria-label={`Страница ${i + 1}: ниже`}
+                    onClick={() => movePage(p.id, 1)}
+                  >
+                    ↓ Ниже
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--small"
+                    aria-label={`Убрать страницу ${i + 1}`}
+                    onClick={() => removePage(p.id)}
+                  >
+                    <Icon name="trash" size={16} /> Убрать
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+          {full ? (
+            <p className="muted">Это максимум: {MAX_PAGES} фото на письмо.</p>
+          ) : (
+            <div className="row wrap">
+              <button type="button" className="btn btn--secondary btn--small" onClick={openCamera}>
+                <Icon name="camera" size={18} /> Снять ещё страницу
+              </button>
+              <button type="button" className="btn btn--secondary btn--small" onClick={openPicker}>
+                <Icon name="plus" size={18} /> Добавить фото
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      {problem && (
+        <div className="alert alert--warn" role="alert">
+          {problem}
+        </div>
+      )}
       <button type="button" className="btn btn--primary" onClick={() => navigate('/app/scan/reading')}>
         Готово, читать письмо
       </button>
@@ -109,11 +228,11 @@ export function ScanPagesPage() {
         type="button"
         className="btn btn--secondary"
         onClick={() => {
-          clearFile();
+          clearFiles();
           navigate('/app/scan', { replace: true });
         }}
       >
-        Выбрать другой файл
+        {pdf ? 'Выбрать другой файл' : 'Начать заново'}
       </button>
     </>
   );
@@ -123,6 +242,7 @@ export function ScanPagesPage() {
 const FILE_PROBLEMS = new Set([
   'UNREADABLE',
   'SCAN_PDF_NOT_SUPPORTED',
+  'MIXED_FILES',
   'FILE_TOO_LARGE',
   'LETTER_TOO_LARGE',
   'UNSUPPORTED_TYPE',
@@ -147,19 +267,19 @@ export function uploadProblem(error: unknown): UploadProblem {
 /** Шаг 2: Ja!sno читает. Запрос отправляется один раз, повтор только по кнопке и только если письмо точно не сохранено. */
 export function ScanReadingPage() {
   const [uploadLetter] = useUploadLetterMutation();
-  const { picked, clearFile } = useFlow();
+  const { pages, clearFiles } = useFlow();
   const navigate = useNavigate();
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const started = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!picked) return;
-    const key = `${picked.url}#${attempt}`;
+    if (pages.length === 0) return;
+    const key = `${pages.map((p) => p.id).join(',')}#${attempt}`;
     if (started.current === key) return; // защита от двойной отправки
     started.current = key;
     setError(null);
-    uploadLetter(putUploadFiles([picked.file]))
+    uploadLetter(putUploadFiles(pages.map((p) => p.file)))
       .unwrap()
       .then(async (r) => {
         // Сначала переход (сразу, flushSync), потом очистка файла: иначе страница чтения сама уйдёт на начало.
@@ -168,17 +288,20 @@ export function ScanReadingPage() {
           flushSync: true,
           state: { dropped: r.extraction.dropped, suggestions: r.suggestions },
         });
-        clearFile();
+        clearFiles();
       })
       .catch(setError);
-  }, [attempt, picked, uploadLetter, clearFile, navigate]);
+  }, [attempt, pages, uploadLetter, clearFiles, navigate]);
 
-  if (!picked && !error) return <Navigate to="/app/scan" replace />;
+  if (pages.length === 0 && !error) return <Navigate to="/app/scan" replace />;
   const problem = error ? uploadProblem(error) : null;
   const again = () => {
-    clearFile();
+    clearFiles();
     navigate('/app/scan', { replace: true });
   };
+  // B11: не читается одна из нескольких страниц — вернуться к снимкам и переснять только её
+  const badPages = errorCode(error) === 'UNREADABLE' && isApiError(error) ? ((error.details as { pages?: number[] } | undefined)?.pages ?? []) : [];
+  const several = pages.length > 1;
 
   return (
     <>
@@ -195,9 +318,19 @@ export function ScanReadingPage() {
         {problem === 'file' && (
           <>
             <ErrorAlert error={error} />
-            <button type="button" className="btn btn--primary btn--small" onClick={again}>
-              Выбрать другой файл
-            </button>
+            {several && badPages.length > 0 && (
+              <p className="small text-2">Письмо не сохранено. Уберите эту страницу и снимите её заново, остальные останутся.</p>
+            )}
+            <div className="row wrap" style={{ justifyContent: 'center' }}>
+              {several && (
+                <button type="button" className="btn btn--primary btn--small" onClick={() => navigate('/app/scan/pages', { replace: true })}>
+                  Вернуться к снимкам
+                </button>
+              )}
+              <button type="button" className={several ? 'btn btn--secondary btn--small' : 'btn btn--primary btn--small'} onClick={again}>
+                {several ? 'Начать заново' : 'Выбрать другой файл'}
+              </button>
+            </div>
           </>
         )}
         {problem === 'busy' && (
@@ -439,6 +572,7 @@ export function LetterCheckPage({ id }: { id: string }) {
     <>
       <PageHeader title="Проверьте факты" subtitle="Сравните с письмом. Ja!sno показывает только то, что нашло дословно в тексте." back="/app" />
       <Steps n={3} />
+      <LetterOriginals letterId={letter.id} files={letter.files} />
 
       {blocker.state === 'blocked' && (
         <div className="alert alert--warn stack-s" role="alertdialog" aria-label="Несохранённые решения">

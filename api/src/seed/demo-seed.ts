@@ -111,7 +111,7 @@ export async function seedDemo(
   });
 
   for (const file of prepared.files) {
-    const up = await letters.upload(cabinet.id, file.data);
+    const up = await letters.upload(cabinet.id, [file.data]);
     const ids = up.claims.filter((c) => c.status === 'UNCONFIRMED').map((c) => c.id);
     if (ids.length)
       await letters.confirm(cabinet.id, up.letter.id, { confirm: ids, reject: [] });

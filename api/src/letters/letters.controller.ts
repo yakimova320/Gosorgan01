@@ -3,11 +3,13 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   Inject,
   Param,
   Post,
   Query,
+  StreamableFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -41,6 +43,8 @@ import {
   ConfirmClaimsSchema,
   CorrectClaimSchema,
   DeleteLetterQuerySchema,
+  LetterFileQuerySchema,
+  type LetterFileQuery,
   ListLettersQuerySchema,
   type ConfirmClaimsInput,
   type CorrectClaimInput,
@@ -110,29 +114,35 @@ export class LettersController {
   @HttpCode(201)
   @UseInterceptors(LetterUploadInterceptor)
   @ApiOperation({
-    summary: 'Загрузить письмо: один PDF с текстом или одно фото (JPG, PNG)',
+    summary:
+      'Загрузить письмо: один PDF (с текстом или скан) или до 10 фото страниц (JPG, PNG)',
     description:
-      'Тип определяется по содержимому. Лимиты проверяются при приёме и до вызова модели. ' +
-      'Письмо попадает во входящие. Факты (claims) добавляет B06.',
+      'Тип определяется по содержимому. Лимиты проверяются при приёме и до вызова модели: ' +
+      'файл до 10 МБ, все файлы до 20 МБ, до 10 фото, PDF до 20 страниц. Порядок полей files = порядок страниц. ' +
+      'Фото и страницы скана распознаются одним обращением к модели (B11). Письмо попадает во входящие.'
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
       required: ['files'],
-      properties: { files: { type: 'string', format: 'binary' } },
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          maxItems: 10,
+        },
+      },
     },
   })
   @ApiCreatedResponse({ schema: { example: EXAMPLE } })
   @ApiResponse({
     status: 400,
     description:
-      'NO_FILE (нет файла или пустое поле), TOO_MANY_FILES (пока один файл)',
-    ...err(
-      'TOO_MANY_FILES',
-      'Пока можно загрузить одно фото или один PDF на письмо',
-      { max: 1 },
-    ),
+      'NO_FILE (нет файла или пустое поле), TOO_MANY_FILES (больше 10 фото), MIXED_FILES (PDF вместе с другими файлами)',
+    ...err('TOO_MANY_FILES', 'Можно загрузить не больше 10 фото на письмо', {
+      max: 10,
+    }),
   })
   @ApiUnauthorizedResponse(err('UNAUTHORIZED', 'Войдите, чтобы продолжить'))
   @ApiPayloadTooLargeResponse({
@@ -152,14 +162,11 @@ export class LettersController {
   })
   @ApiUnprocessableEntityResponse({
     description:
-      'UNREADABLE (фото не читается, details.pages и код причины), SCAN_PDF_NOT_SUPPORTED (страницы без текста в details.pages), FILE_DAMAGED, PDF_ENCRYPTED',
+      'UNREADABLE (фото или страница скана не читается: details.pages и код причины; письмо не сохраняется частично), FILE_DAMAGED, PDF_ENCRYPTED. При нескольких файлах в details.file номер файла',
     ...err(
-      'SCAN_PDF_NOT_SUPPORTED',
-      'В этом PDF нет текста, это скан. Сфотографируйте письмо и загрузите фото',
-      {
-        pages: [1],
-        totalPages: 1,
-      },
+      'UNREADABLE',
+      'Страница 2 не читается. Фото размыто. Сделайте новое фото: телефон неподвижно, письмо целиком в кадре',
+      { pages: [2], reason: 'BLURRY' },
     ),
   })
   @ApiResponse({
@@ -174,7 +181,41 @@ export class LettersController {
     @CurrentAuth() auth: AuthContext,
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<UploadLetterResponse> {
-    return this.letters.upload(auth.cabinetId, files[0].buffer);
+    return this.letters.upload(
+      auth.cabinetId,
+      files.map((f) => f.buffer),
+    );
+  }
+
+  @Get(':id/file')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @ApiOperation({
+    summary: 'Оригинал письма (B11): фото страницы n или PDF целиком (n = 1)',
+    description:
+      'Только владельцу письма. Чужое письмо, неверный номер или удалённый файл: 404. Без имени файла и пути хранения.',
+  })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiOkResponse({
+    description: 'image/jpeg, image/png или application/pdf',
+  })
+  @ApiNotFoundResponse(NOT_FOUND)
+  async file(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') id: string,
+    @Query(new ZodPipe(LetterFileQuerySchema)) query: LetterFileQuery,
+  ): Promise<StreamableFile> {
+    const { data, mime } = await this.letters.originalFile(
+      auth.cabinetId,
+      id,
+      query.page,
+    );
+    const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : 'jpg';
+    return new StreamableFile(data, {
+      type: mime,
+      length: data.length,
+      disposition: `inline; filename="letter-${query.page}.${ext}"`,
+    });
   }
 
   @Get()

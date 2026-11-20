@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { renderPdfPages } from '../../documents/pdf-text.js';
 import {
   AdapterError,
   type AdapterRequest,
@@ -24,7 +25,9 @@ export class DemoAdapter implements LlmAdapter {
     extract: (v) => demoExtract(v.letterText ?? ''),
     explain: (v) => demoExplain(v.facts ?? '[]'),
     transcribe: (_v, request) =>
-      demoTranscribe(request.images.map((i) => i.data)),
+      request.promptVersion === 2
+        ? demoTranscribePages(request.images.map((i) => i.data))
+        : demoTranscribe(request.images.map((i) => i.data)),
   };
 
   async complete(request: AdapterRequest): Promise<AdapterResponse> {
@@ -34,6 +37,7 @@ export class DemoAdapter implements LlmAdapter {
         'BAD_REQUEST',
         `demo: нет правил для промпта ${request.promptName}`,
       );
+    if (request.promptName === 'transcribe') await loadScanPages();
     return { text: JSON.stringify(handler(request.variables, request)) };
   }
 }
@@ -187,11 +191,58 @@ export function demoTranscribe(images: Buffer[]): {
   readable: boolean;
   reason: string | null;
 } {
+  return demoPage(images[0]);
+}
+
+function demoPage(image: Buffer | undefined): {
+  text: string;
+  readable: boolean;
+  reason: string | null;
+} {
   fixturePhotos ??= loadFixturePhotos();
-  const known = images[0] ? fixturePhotos.get(sha256(images[0])) : undefined;
+  const known = image ? fixturePhotos.get(sha256(image)) : undefined;
   if (!known) return { text: '', readable: false, reason: 'DEMO_UNKNOWN' };
   if (!known.readable) return { text: '', readable: false, reason: 'BLURRY' };
   return { text: known.text, readable: true, reason: null };
+}
+
+/** transcribe.v2 в режиме demo (B11): каждая страница — как отдельное фото из fixtures. */
+export function demoTranscribePages(images: Buffer[]) {
+  return { pages: images.map((image) => demoPage(image)) };
+}
+
+let scanPagesLoaded: Promise<void> | null = null;
+
+/**
+ * B11: страницы PDF-сканов из fixtures (source OCR) после рендера тоже узнаются по хэшу.
+ * Рендер детерминированный (тот же renderPdfPages, что при загрузке). Один раз на процесс.
+ */
+export function loadScanPages(): Promise<void> {
+  scanPagesLoaded ??= (async () => {
+    fixturePhotos ??= loadFixturePhotos();
+    if (!existsSync(FIXTURES_DIR)) return;
+    for (const name of readdirSync(FIXTURES_DIR).filter((f) =>
+      f.endsWith('.json'),
+    )) {
+      try {
+        const meta = JSON.parse(
+          readFileSync(resolve(FIXTURES_DIR, name), 'utf8'),
+        ) as { file?: string; text?: string; readable?: boolean; source?: string };
+        if (meta.source !== 'OCR' || !meta.file?.endsWith('.pdf')) continue;
+        const pdf = readFileSync(resolve(FIXTURES_DIR, meta.file));
+        // письма в fixtures одностраничные: текст эталона = страница 1
+        const [page] = await renderPdfPages(pdf, [1]);
+        if (page)
+          fixturePhotos.set(sha256(page.data), {
+            text: meta.text ?? '',
+            readable: meta.readable !== false,
+          });
+      } catch {
+        // повреждённый эталон пропускаем
+      }
+    }
+  })();
+  return scanPagesLoaded;
 }
 
 /** explain в режиме demo: короткое объяснение из фактов, каждое утверждение со ссылкой на факты. */

@@ -12,7 +12,10 @@ import {
   useLazyHistoryPageQuery,
   useLetterQuery,
   useUpdateCaseMutation,
+  useSetDeadlineDoneMutation,
+  useDeadlineIcsMutation,
 } from '../../store/api';
+import { LetterOriginals } from '../../components/LetterOriginals';
 
 /*
  * Экраны дела, письма с объяснением и истории (F03) на API B07 и B08.
@@ -62,6 +65,57 @@ function DeadlineRow({ d }: { d: { date: string; kind: string; active: boolean; 
         </span>
       </span>
       {label}
+    </div>
+  );
+}
+
+/**
+ * B12: действия с подтверждённым сроком — отметить выполненным (или открыть снова) и скачать .ics.
+ * Файл календаря загружается с токеном; временный адрес освобождается сразу после скачивания.
+ */
+function DeadlineActions({ caseId, d }: { caseId: string; d: { id: string; date: string; done: boolean } }) {
+  const [setDone, saving] = useSetDeadlineDoneMutation();
+  const [loadIcs, loading] = useDeadlineIcsMutation();
+  const [error, setError] = useState<unknown>(null);
+
+  async function toggle() {
+    setError(null);
+    try {
+      await setDone({ id: d.id, caseId, done: !d.done }).unwrap();
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  async function calendar() {
+    setError(null);
+    try {
+      const url = await loadIcs(d.id).unwrap();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jasno-srok-${d.date}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  return (
+    <div className="stack-s">
+      <div className="row wrap">
+        <button type="button" className="btn btn--ghost btn--small" disabled={saving.isLoading} onClick={() => void toggle()}>
+          <Icon name="check" size={16} /> {d.done ? 'Открыть срок снова' : 'Выполнено'}
+        </button>
+        {!d.done && (
+          <button type="button" className="btn btn--ghost btn--small" disabled={loading.isLoading} onClick={() => void calendar()}>
+            <Icon name="calendar" size={16} /> В календарь
+          </button>
+        )}
+      </div>
+      <ErrorAlert error={error} />
     </div>
   );
 }
@@ -129,7 +183,10 @@ export function CasePage({ id }: { id: string }) {
             <div className="card stack-s" aria-label="Сроки">
               <span className="eyebrow">Сроки</span>
               {cs.deadlines.map((d) => (
-                <DeadlineRow key={d.id} d={d} />
+                <div key={d.id} className="stack-s deadline-item">
+                  <DeadlineRow d={d} />
+                  {d.active && <DeadlineActions caseId={id} d={d} />}
+                </div>
               ))}
             </div>
           )}
@@ -267,6 +324,7 @@ export function LetterPage({ id }: { id: string }) {
   return (
     <>
       <PageHeader title="Письмо" subtitle="Объяснение по фактам письма. Перепроверьте сроки по оригиналу." back={back} />
+      <LetterOriginals letterId={id} files={letter.data.letter.files} />
       <div className="desktop-2col stack">
         <section className="stack">
           {expl.isFetching && <Loading text="Ja!sno объясняет письмо…" />}

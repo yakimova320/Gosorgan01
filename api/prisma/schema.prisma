@@ -26,6 +26,7 @@ enum CaseOrigin {
 enum SourceType {
   PDF_TEXT
   IMAGE
+  PDF_SCAN // B11: PDF, где хотя бы одна страница без текстового слоя распознана как изображение
 }
 
 enum ClaimKind {
@@ -200,7 +201,7 @@ model Letter {
   sourceType  SourceType
   rawText     String // распознанный текст, исходный, без маскирования
   pages       Json // [{ n, readable, chars }]
-  files       Json // ТЗ v4: оригиналы [{ n, fileKey, mime, bytes }], fileKey случайный, без имени файла
+  files       Json // ТЗ v4: оригиналы [{ n, fileKey, mime, bytes }] в порядке страниц (B11: до 10 фото или один PDF), fileKey случайный, без имени файла
   explanation Json? // кэш объяснения; сбрасывается при любом изменении фактов письма
   createdAt   DateTime   @default(now())
   claims      Claim[]

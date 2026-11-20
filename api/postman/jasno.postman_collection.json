@@ -1192,7 +1192,7 @@
           ]
         },
         {
-          "name": "POST /letters: скан PDF (09)",
+          "name": "POST /letters: скан PDF (09) распознаётся (B11)",
           "request": {
             "method": "POST",
             "header": [
@@ -1227,8 +1227,244 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('источник PDF_SCAN', () => pm.expect(b.letter.sourceType).to.eql('PDF_SCAN'));",
+                  "pm.test('номер дела со скана', () => pm.expect(b.letter.text).to.include('SA-2026-8810'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: 3 фото = одно письмо (B11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/09_scan.png"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/10_medium_scan.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('multiLetterId', b.letter.id);",
+                  "pm.test('3 страницы и 3 оригинала', () => { pm.expect(b.letter.pages.length).to.eql(3); pm.expect(b.letter.files.map((f) => f.n)).to.eql([1, 2, 3]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id/file?page=2 (B11)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{multiLetterId}}/file?page=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{multiLetterId}}",
+                "file"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('фото страницы 2', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png'));",
+                  "pm.test('не кэшируется', () => pm.expect(pm.response.headers.get('Cache-Control')).to.eql('private, no-store'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id/file?page=4: нет такой страницы",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{multiLetterId}}/file?page=4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{multiLetterId}}",
+                "file"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "4"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: фото и плохое фото — страница 2 не читается (B11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/11_bad_photo.jpg"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
                   "pm.test('статус 422', () => pm.response.to.have.status(422));",
-                  "pm.test('code SCAN_PDF_NOT_SUPPORTED', () => pm.expect(pm.response.json().code).to.eql('SCAN_PDF_NOT_SUPPORTED'));"
+                  "const b = pm.response.json();",
+                  "pm.test('UNREADABLE, страница 2', () => { pm.expect(b.code).to.eql('UNREADABLE'); pm.expect(b.details.pages).to.eql([2]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: PDF вместе с фото (B11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('code MIXED_FILES', () => pm.expect(pm.response.json().code).to.eql('MIXED_FILES'));"
                 ]
               }
             }
@@ -3451,6 +3687,591 @@
                   "  pm.response.to.have.status(401);",
                   "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"json\");",
                   "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 Ответ, отправка и сроки (B12)",
+      "description": "Самостоятельная папка: свой кабинет, письмо 01 со всеми подтверждёнными фактами в новом деле. Дата отправки 2026-11-20 (не в будущем). EXTENSION допускает 422, если срок письма 30.11.2026 уже прошёл.",
+      "item": [
+        {
+          "name": "POST /auth/register (кабинет для B12)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"b12-{{$timestamp}}@example.org\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('b12Token', pm.response.json().sessionToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: письмо 01 для B12",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('b12LetterId', b.letter.id);",
+                  "pm.collectionVariables.set('b12Confirm', JSON.stringify(b.claims.map((c) => c.id)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/claims/confirm: все факты",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{b12LetterId}}/claims/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{b12LetterId}}",
+                "claims",
+                "confirm"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": {{b12Confirm}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/assign: новое дело",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{b12LetterId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{b12LetterId}}",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newCase\": {}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('b12CaseId', pm.response.json().caseId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id/draft-questions: виды ответа",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{b12LetterId}}/draft-questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{b12LetterId}}",
+                "draft-questions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('есть STATUS_REQUEST и DOCUMENTS', () => pm.expect(b.kinds).to.include.members(['DOCUMENTS', 'STATUS_REQUEST']));",
+                  "pm.test('причины продления', () => pm.expect(b.extensionReasons.map((r) => r.id)).to.eql(['DOCUMENTS_PENDING', 'ADVICE', 'NONE']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft: DOCUMENTS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{b12CaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{b12CaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"DOCUMENTS\",\n  \"letterId\": \"{{b12LetterId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('sendDraftId', b.id);",
+                  "pm.collectionVariables.set('sendGermanJson', JSON.stringify(b.germanText.replace('Vielen Dank im Voraus.', 'Ich bin telefonisch gut erreichbar.\\n\\nVielen Dank im Voraus.')));",
+                  "pm.collectionVariables.set('sendRussianJson', JSON.stringify(b.russianText));",
+                  "pm.test('сопроводительное письмо', () => pm.expect(b.germanText).to.include('Anbei übersende ich Ihnen die angeforderten Unterlagen.'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft: EXTENSION без срока в письме или с ним",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{b12CaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{b12CaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"EXTENSION\",\n  \"letterId\": \"{{b12LetterId}}\",\n  \"reason\": \"DOCUMENTS_PENDING\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 или 422 (срок прошёл)', () => pm.expect([201, 422]).to.include(pm.response.code));",
+                  "if (pm.response.code === 422) pm.test('QUESTION_NOT_AVAILABLE', () => pm.expect(pm.response.json().code).to.eql('QUESTION_NOT_AVAILABLE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /drafts/:id: правка с повторной проверкой",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drafts/{{sendDraftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drafts",
+                "{{sendDraftId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"germanText\": {{sendGermanJson}},\n  \"russianText\": {{sendRussianJson}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('edited и проверка пройдена', () => { pm.expect(b.edited).to.eql(true); pm.expect(b.verification.passed).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /drafts/:id: чужая дата не проходит",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drafts/{{sendDraftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drafts",
+                "{{sendDraftId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"germanText\": \"Bitte antworten Sie bis zum 24.12.2030. Vielen Dank im Voraus.\",\n  \"russianText\": {{sendRussianJson}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 422', () => pm.response.to.have.status(422));",
+                  "pm.test('DRAFT_VERIFICATION_FAILED', () => pm.expect(pm.response.json().code).to.eql('DRAFT_VERIFICATION_FAILED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases/:id: срок для закрытия",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{b12CaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{b12CaseId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().deadlines.find((x) => x.active && !x.done);",
+                  "pm.collectionVariables.set('sendDeadlineId', d ? d.id : 'none');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /deadlines/:id/ics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deadlines/{{sendDeadlineId}}/ics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deadlines",
+                "{{sendDeadlineId}}",
+                "ics"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 и text/calendar', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.include('text/calendar'); });",
+                  "pm.test('событие на день срока', () => pm.expect(pm.response.text()).to.include('DTSTART;VALUE=DATE:'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/sent: «Я отправил(а)» и закрыть срок",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{b12CaseId}}/sent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{b12CaseId}}",
+                "sent"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftId\": \"{{sendDraftId}}\",\n  \"via\": \"post\",\n  \"date\": \"2026-11-20\",\n  \"closeDeadlineId\": \"{{sendDeadlineId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.test('срок закрыт', () => pm.expect(pm.response.json().closedDeadlineId).to.eql(pm.collectionVariables.get('sendDeadlineId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/sent: повтор того же черновика",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{b12CaseId}}/sent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{b12CaseId}}",
+                "sent"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftId\": \"{{sendDraftId}}\",\n  \"via\": \"post\",\n  \"date\": \"2026-11-20\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 409', () => pm.response.to.have.status(409));",
+                  "pm.test('DRAFT_ALREADY_SENT', () => pm.expect(pm.response.json().code).to.eql('DRAFT_ALREADY_SENT'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /deadlines/:id: снова открыть",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{b12Token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/deadlines/{{sendDeadlineId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "deadlines",
+                "{{sendDeadlineId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"done\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('done false', () => pm.expect(pm.response.json().done).to.eql(false));"
                 ]
               }
             }

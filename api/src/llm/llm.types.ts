@@ -6,6 +6,8 @@ export interface LlmImage {
 
 export interface AdapterRequest {
   promptName: string;
+  /** Версия промпта: demo отвечает по схеме этой версии (transcribe v1 и v2). */
+  promptVersion?: number;
   system: string;
   user: string;
   /** Уже замаскированные переменные: адаптер demo ищет в них данные письма. */
