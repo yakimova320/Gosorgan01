@@ -78,6 +78,13 @@ test('06: дело с двумя действующими сроками, пис
   await expect(page.getByTestId('explanation')).toContainText(
     'Finanzamt Beispielhausen',
   );
+  // K08 (#133): что просит ведомство — по-русски и немецкий текст из письма
+  const requests = page.getByTestId('request');
+  await expect(requests).toHaveCount(2);
+  await expect(requests.nth(0)).toContainText('Прислать: справки о доходах.');
+  await expect(requests.nth(0)).toContainText('Bitte reichen Sie die Einkommensnachweise ein.');
+  await expect(requests.nth(1)).toContainText('Подтвердить: ваш адрес.');
+  await expect(requests.nth(1)).toContainText('Bitte bestätigen Sie Ihre Anschrift.');
   const deadlines = page.getByLabel('Сроки письма').getByTestId('deadline');
   await expect(deadlines).toHaveCount(2);
   await expect(deadlines.nth(0)).toContainText('01.12.2026');

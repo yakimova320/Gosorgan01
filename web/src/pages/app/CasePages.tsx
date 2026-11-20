@@ -386,6 +386,24 @@ export function LetterPage({ id }: { id: string }) {
                 {expl.data.about.unconfirmed && <span className="small text-2">Часть фактов ещё не подтверждена.</span>}
                 <Sources ids={expl.data.about.claimIds} claims={byId} />
               </div>
+              {(expl.data.requests ?? []).length > 0 && (
+                <div className="card stack-s" data-testid="requests">
+                  <span className="eyebrow">Ведомство просит</span>
+                  <ul className="list-reset stack-s">
+                    {expl.data.requests.map((q) => (
+                      <li key={q.claimId} className="stack-s" data-testid="request">
+                        {q.ru && <span lang="ru">{q.ru}</span>}
+                        <span lang="de" className={q.ru ? 'small text-2' : undefined}>
+                          {q.ru && <span aria-hidden="true">DE · </span>}
+                          {q.de}
+                        </span>
+                        {q.unconfirmed && <span className="status status--check">Проверьте: факт ещё не подтверждён</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  <span className="small text-2">Немецкий текст — как в письме. Его можно показать в ведомстве или найти документ по этому названию.</span>
+                </div>
+              )}
               {expl.data.actions.length > 0 && (
                 <div className="card stack-s">
                   <span className="eyebrow">Что сделать</span>

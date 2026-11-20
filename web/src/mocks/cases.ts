@@ -173,6 +173,9 @@ export function mockExplanation(letterId: string): ApiExplanation | ApiError {
       ...a,
       unconfirmed: unconfirmed(a.claimIds),
     })),
+    requests: l.claims
+      .filter((c) => c.kind === 'REQUIREMENT')
+      .map((c) => ({ claimId: c.id, ru: c.text, de: c.quote ?? c.value, unconfirmed: c.status !== 'CONFIRMED' })),
     deadlines,
     unconfirmed: l.explanation.unconfirmed,
     cached: true,

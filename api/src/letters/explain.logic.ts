@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
-import type { ExplainResult } from '../llm/schemas/explain.schema.js';
+import type {
+  ExplainResult,
+  ExplainV2Result,
+} from '../llm/schemas/explain.schema.js';
 import { datesIn } from './claim-check.js';
 
 /*
@@ -23,6 +26,16 @@ export interface ExplanationView {
   lang: 'ru';
   about: { text: string; claimIds: string[]; unconfirmed: boolean };
   actions: { text: string; claimIds: string[]; unconfirmed: boolean }[];
+  /**
+   * K08 (#133): что просит ведомство, по одному на каждое требование письма.
+   * de — значение факта (немецкий, как в письме), ru — перевод модели или null (v1, модель не дала).
+   */
+  requests: {
+    claimId: string;
+    ru: string | null;
+    de: string;
+    unconfirmed: boolean;
+  }[];
   /** все сроки письма с датой; confirmed: false — срок ещё не подтверждён */
   deadlines: {
     date: string;
@@ -137,13 +150,27 @@ const FORBIDDEN: { ru: RegExp; basis: RegExp; what: string }[] = [
  * Вызывается внутри LlmService: повторы входят в общие 3 попытки.
  */
 export function checkExplanation(
-  r: ExplainResult,
+  r: ExplainResult | ExplainV2Result,
   facts: ExplainFact[],
 ): string | null {
   const byId = new Map(facts.map((f) => [f.id, f]));
+  const requests = 'requests' in r ? r.requests : [];
+  const seen = new Set<string>();
+  for (const [i, q] of requests.entries()) {
+    if (byId.get(q.claimId)?.kind !== 'REQUIREMENT')
+      return `requests.${i}: claimId ${q.claimId} не факт REQUIREMENT`;
+    if (seen.has(q.claimId))
+      return `requests.${i}: claimId ${q.claimId} повторяется`;
+    seen.add(q.claimId);
+  }
   const statements = [
     { name: 'about', ...r.about },
     ...r.actions.map((a, i) => ({ name: `actions.${i}`, ...a })),
+    ...requests.map((q, i) => ({
+      name: `requests.${i}`,
+      text: q.ru,
+      claimIds: [q.claimId],
+    })),
   ];
   for (const s of statements) {
     const unknown = s.claimIds.filter((id) => !byId.has(id));
@@ -180,7 +207,7 @@ export function checkExplanation(
 
 /** Ответ API: флаги «не подтверждено» и все сроки письма ставит код. */
 export function finalizeExplanation(
-  r: ExplainResult,
+  r: ExplainResult | ExplainV2Result,
   facts: ExplainFact[],
 ): ExplanationView {
   const byId = new Map(facts.map((f) => [f.id, f]));
@@ -191,6 +218,17 @@ export function finalizeExplanation(
     ...a,
     unconfirmed: unconfirmed(a.claimIds),
   }));
+  const ru = new Map(
+    ('requests' in r ? r.requests : []).map((q) => [q.claimId, q.ru]),
+  );
+  const requests = facts
+    .filter((f) => f.kind === 'REQUIREMENT')
+    .map((f) => ({
+      claimId: f.id,
+      ru: ru.get(f.id) ?? null,
+      de: f.value,
+      unconfirmed: f.status !== 'CONFIRMED',
+    }));
   const deadlines = facts
     .filter((f) => f.kind === 'DEADLINE' && /^\d{4}-\d{2}-\d{2}$/.test(f.value))
     .map((f) => ({
@@ -207,6 +245,7 @@ export function finalizeExplanation(
     lang: 'ru',
     about,
     actions,
+    requests,
     deadlines,
     unconfirmed:
       about.unconfirmed ||

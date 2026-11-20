@@ -263,10 +263,46 @@ export function demoExplain(factsJson: string): unknown {
   const actions = [
     ...facts
       .filter((f) => f.kind === 'REQUIREMENT')
-      .map((f) => ({ text: `Ведомство просит: ${f.value}`, claimIds: [f.id] })),
+      .map((f) => ({
+        text: `Ведомство просит: ${demoRequestRu(f.value) ?? f.value}`,
+        claimIds: [f.id],
+      })),
     ...facts
       .filter((f) => f.kind === 'DEADLINE')
       .map((f) => ({ text: `Срок: до ${de(f.value)}.`, claimIds: [f.id] })),
   ].slice(0, 5);
-  return { about, actions };
+  const requests = facts
+    .filter((f) => f.kind === 'REQUIREMENT')
+    .map((f) => ({ claimId: f.id, ru: demoRequestRu(f.value) }))
+    .filter((q): q is { claimId: string; ru: string } => q.ru !== null);
+  return { about, actions, requests };
+}
+
+/** Словарь demo для синтетических писем (fixtures/letters): документ → по-русски. */
+const DEMO_DOCUMENTS: [RegExp, string][] = [
+  [/kontoauszüge/i, 'выписки с банковского счёта'],
+  [/einkommensnachweis/i, 'справки о доходах'],
+  [/mietvertrag/i, 'договор аренды'],
+  [/mietbescheinigung/i, 'справку от арендодателя'],
+  [/reisepass/i, 'копию загранпаспорта'],
+  [/geburtsurkunde/i, 'свидетельство о рождении ребёнка'],
+  [/schulbescheinigung/i, 'справку из школы'],
+  [/anschrift/i, 'ваш адрес'],
+];
+
+/**
+ * explain.v2 в режиме demo: перевод требования по словарю. Неизвестное требование — null
+ * (сайт покажет только немецкий текст).
+ */
+export function demoRequestRu(value: string): string | null {
+  const docs = DEMO_DOCUMENTS.filter(([re]) => re.test(value)).map(([, ru]) => ru);
+  if (docs.length === 0) return null;
+  const verb = /bestätig/i.test(value)
+    ? 'Подтвердить'
+    : /vorlegen|legen .* vor/i.test(value)
+      ? 'Предъявить'
+      : 'Прислать';
+  const month = /september/i.test(value) ? ' за сентябрь' : '';
+  const again = /erneut/i.test(value) ? ' ещё раз' : '';
+  return `${verb}${again}: ${docs.join(' и ')}${month}.`;
 }

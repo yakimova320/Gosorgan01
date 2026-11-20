@@ -254,6 +254,8 @@ export interface ApiExplanation {
   lang: 'ru';
   about: ExplanationStatement;
   actions: ExplanationStatement[];
+  /** K08 (#133): что просит ведомство. de — из факта (как в письме), ru — перевод или null */
+  requests: { claimId: string; ru: string | null; de: string; unconfirmed: boolean }[];
   deadlines: { date: string; claimId: string; kind: DeadlineKind; confirmed: boolean }[];
   unconfirmed: boolean;
   cached: boolean;
