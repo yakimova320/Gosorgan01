@@ -289,7 +289,10 @@ export interface ApiDraft {
   caseId: string;
   letterId: string | null;
   questionId: QuestionId | null;
-  kind: DraftKind;
+  /** TEMPLATE: своё письмо по шаблону (B16) */
+  kind: DraftKind | 'TEMPLATE';
+  /** B16: шаблон своего письма, иначе null */
+  outgoingTemplateId: string | null;
   reason: ExtensionReason | null;
   deadlineClaimId: string | null;
   germanText: string;
@@ -308,4 +311,10 @@ export interface ApiDraft {
     note?: string;
   };
   createdAt: string;
+}
+
+/** B16: своё письмо создано — дело OUTGOING и первый черновик. */
+export interface OutgoingResult {
+  caseId: string;
+  draft: ApiDraft;
 }

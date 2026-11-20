@@ -190,9 +190,25 @@ export function CasePage({ id }: { id: string }) {
               ))}
             </div>
           )}
+          {cs.origin === 'OUTGOING' && (
+            <div className="card card--teal stack-s" data-testid="own-letter">
+              <span className="eyebrow">Своё письмо</span>
+              <span>Это дело началось с вашего письма в ведомство. Ответ ведомства добавьте, когда он придёт.</span>
+              {cs.drafts[0] && (
+                <Link
+                  to={`/app/cases/${cs.id}/answer/draft?draft=${cs.drafts[0].id}&kind=TEMPLATE`}
+                  className="btn btn--primary btn--small"
+                >
+                  <Icon name="doc" size={16} color="#FFFFFF" /> Открыть письмо
+                </Link>
+              )}
+            </div>
+          )}
           <div className="stack">
             <h2 style={{ fontSize: 19 }}>Письма</h2>
-            {cs.letters.length === 0 && <p className="muted">В деле пока нет писем.</p>}
+            {cs.letters.length === 0 && (
+              <p className="muted">{cs.origin === 'OUTGOING' ? 'Писем от ведомства пока нет.' : 'В деле пока нет писем.'}</p>
+            )}
             {cs.letters.map((l) => (
               <div key={l.id} className="card stack-s" data-testid="case-letter">
                 <div className="row-between">
@@ -213,9 +229,11 @@ export function CasePage({ id }: { id: string }) {
             ))}
           </div>
           <div className="row wrap">
-            <Link to={`/app/cases/${cs.id}/answer`} className="btn btn--primary">
-              <Icon name="send" size={18} color="#FFFFFF" /> Подготовить ответ
-            </Link>
+            {cs.letters.length > 0 && (
+              <Link to={`/app/cases/${cs.id}/answer`} className="btn btn--primary">
+                <Icon name="send" size={18} color="#FFFFFF" /> Подготовить ответ
+              </Link>
+            )}
             <Link to="/app/scan" className="btn btn--secondary">
               <Icon name="plus" size={18} /> Добавить письмо
             </Link>

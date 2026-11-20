@@ -21,7 +21,8 @@ import {
 } from '../pages/app/AnswerPages';
 import { CabinetPage, CasesPage } from '../pages/app/CabinetPages';
 import { CasePage, HistoryPage, LetterPage } from '../pages/app/CasePages';
-import { AskPage, ProfilePage, WritePage } from '../pages/app/MorePages';
+import { AskPage, ProfilePage } from '../pages/app/MorePages';
+import { WritePage, WriteTemplatePage } from '../pages/app/WritePages';
 import {
   LetterCheckPage,
   ScanPagesPage,
@@ -115,6 +116,11 @@ export const ROUTES: Route[] = [
   { path: '/app/history', area: 'cabinet', render: () => <HistoryPage /> },
   { path: '/app/ask', area: 'cabinet', render: () => <AskPage /> },
   { path: '/app/write', area: 'cabinet', render: () => <WritePage /> },
+  {
+    path: '/app/write/:id',
+    area: 'cabinet',
+    render: (p) => <WriteTemplatePage key={p.id} templateId={p.id} />,
+  },
   { path: '/app/profile', area: 'cabinet', render: () => <ProfilePage /> },
   { path: '/app/done', area: 'cabinet', render: () => <DonePage /> },
 ];

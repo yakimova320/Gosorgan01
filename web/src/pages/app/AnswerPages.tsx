@@ -14,7 +14,9 @@ import {
   useDraftQuery,
   useDraftQuestionsQuery,
   useEditDraftMutation,
+  useRebuildOutgoingMutation,
   useReportSentMutation,
+  useTemplatesQuery,
 } from '../../store/api';
 
 /*
@@ -52,6 +54,8 @@ function rebuildArgs(draft: ApiDraft, amountClaimId: string | null): CreateDraft
       return draft.questionId
         ? { ...base, kind: 'CLARIFICATION', questionId: draft.questionId, ...(draft.questionId === 'AMOUNT' && amountClaimId ? { amountClaimId } : {}) }
         : null;
+    case 'TEMPLATE':
+      return null; // своё письмо собирается заново своим запросом (B16)
     case 'EXTENSION':
       return { ...base, kind: 'EXTENSION', reason: draft.reason ?? 'NONE', ...(draft.deadlineClaimId ? { deadlineClaimId: draft.deadlineClaimId } : {}) };
     default:
@@ -141,10 +145,10 @@ export function AnswerGoalPage({ caseId }: { caseId: string }) {
 }
 
 /** Ошибки сборки черновика: текст и, где нужно, ссылка. Повтор — только по кнопке. */
-function DraftError({ error, caseId, letterId }: { error: unknown; caseId: string; letterId: string }) {
+export function DraftError({ error, caseId, letterId }: { error: unknown; caseId: string; letterId?: string | null }) {
   const code = errorCode(error);
   const link =
-    code === 'NO_CONFIRMED_CLAIMS'
+    code === 'NO_CONFIRMED_CLAIMS' && letterId
       ? { to: `/app/letters/${letterId}/check`, text: 'Проверить факты' }
       : code === 'PROFILE_INCOMPLETE'
         ? { to: '/app/profile', text: 'Открыть профиль' }
@@ -321,6 +325,8 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
   const { draftId, amountClaimId } = useAnswerParams();
   const d = useDraftQuery(draftId ?? '', { skip: !draftId, refetchOnMountOrArgChange: true });
   const [createDraft, rebuilding] = useCreateDraftMutation();
+  const [rebuildOutgoing, rebuildingOutgoing] = useRebuildOutgoingMutation();
+  const templates = useTemplatesQuery();
   const navigate = useNavigate();
   const [tab, setTab] = useState<'de' | 'ru'>('de');
   const [copy, setCopy] = useState<CopyState>({ kind: 'idle' });
@@ -363,10 +369,10 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
 
   async function rebuild() {
     const a = rebuildArgs(draft, amountClaimId);
-    if (!a) return;
+    if (!a && draft.kind !== 'TEMPLATE') return;
     setRebuildError(null);
     try {
-      const fresh = await createDraft(a).unwrap();
+      const fresh = a ? await createDraft(a).unwrap() : await rebuildOutgoing(caseId).unwrap();
       setCopy({ kind: 'idle' });
       setEditing(false);
       navigate(draftUrl(caseId, fresh, amountClaimId), { replace: true });
@@ -380,7 +386,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
 
   return (
     <>
-      <PageHeader title={`Черновик: ${DRAFT_KIND[draft.kind]?.title.toLowerCase() ?? 'ответ'}`} subtitle="Проверьте текст, скопируйте и отправьте сами." back={`/app/cases/${caseId}`} />
+      <PageHeader title={`Черновик: ${(draft.kind === 'TEMPLATE' ? templates.data?.find((t) => t.id === draft.outgoingTemplateId)?.titleRu : DRAFT_KIND[draft.kind]?.title)?.toLowerCase() ?? 'письмо'}`} subtitle="Проверьте текст, скопируйте и отправьте сами." back={`/app/cases/${caseId}`} />
       {sent && (
         <div className="alert alert--info" role="status" data-testid="draft-sent">
           Вы отметили: отправлено{draft.sentAt ? ` ${formatDate(draft.sentAt)}` : ''}. Править этот черновик больше нельзя.
@@ -394,7 +400,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
       {stale && (
         <div className="alert alert--warn stack-s" role="alert" data-testid="draft-stale">
           <span>{copy.kind === 'blocked' ? copy.text : 'Данные изменились после сборки. Соберите черновик заново.'}</span>
-          <button type="button" className="btn btn--primary btn--small" disabled={rebuilding.isLoading} onClick={() => void rebuild()}>
+          <button type="button" className="btn btn--primary btn--small" disabled={rebuilding.isLoading || rebuildingOutgoing.isLoading} onClick={() => void rebuild()}>
             Собрать заново
           </button>
         </div>

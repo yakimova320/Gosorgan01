@@ -4278,6 +4278,336 @@
           ]
         }
       ]
+    },
+    {
+      "name": "11 Свои письма (B16)",
+      "description": "Свои письма по шаблонам без входящего письма. Нужен sessionToken из папки 10 (или любой другой кабинет с профилем).",
+      "item": [
+        {
+          "name": "GET /templates: шесть шаблонов",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('6 шаблонов', () => pm.expect(pm.response.json().map(t => t.id)).to.eql(['KUENDIGUNG','AENDERUNG','NEUES_KONTO','BESCHWERDE','SACHSTANDSANFRAGE','FRISTVERLAENGERUNG']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /outgoing: новый банковский счёт",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/outgoing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "outgoing"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"NEUES_KONTO\",\n  \"recipient\": {\n    \"name\": \"Jobcenter Berlin Mitte\",\n    \"address\": \"Postfach 1234\\n10115 Berlin\"\n  },\n  \"fields\": {\n    \"reference\": \"123A456789\",\n    \"iban\": \"DE89 3704 0044 0532 0130 00\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('черновик TEMPLATE проверен', () => { pm.expect(b.draft.kind).to.eql('TEMPLATE'); pm.expect(b.draft.verification.passed).to.eql(true); });",
+                  "pm.test('IBAN в тексте группами', () => pm.expect(b.draft.germanText).to.include('IBAN: DE89 3704 0044 0532 0130 00'));",
+                  "pm.collectionVariables.set('outCaseId', b.caseId);",
+                  "pm.collectionVariables.set('outDraftId', b.draft.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /cases/:id: дело OUTGOING",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{outCaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{outCaseId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('origin OUTGOING', () => pm.expect(pm.response.json().origin).to.eql('OUTGOING'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /drafts/:id/pdf: своё письмо",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drafts/{{outDraftId}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drafts",
+                "{{outDraftId}}",
+                "pdf"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('application/pdf', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft: собрать заново (TEMPLATE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{outCaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{outCaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"TEMPLATE\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.test('тот же шаблон', () => pm.expect(pm.response.json().outgoingTemplateId).to.eql('NEUES_KONTO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /outgoing: ошибки полей",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/outgoing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "outgoing"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"SACHSTANDSANFRAGE\",\n  \"recipient\": {\n    \"name\": \"Джобцентр\",\n    \"address\": \"Postfach 1234, 10115 Berlin\"\n  },\n  \"fields\": {\n    \"subject\": \"заявление\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "const f = pm.response.json().details.fields;",
+                  "pm.test('ошибки у полей', () => pm.expect(Object.keys(f).sort()).to.eql(['fields.subject','fields.submitted','recipient.name']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /outgoing: продление прошедшего срока",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/outgoing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "outgoing"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"FRISTVERLAENGERUNG\",\n  \"recipient\": {\n    \"name\": \"Jobcenter Berlin Mitte\",\n    \"address\": \"Postfach 1234\\n10115 Berlin\"\n  },\n  \"fields\": {\n    \"deadline\": \"2020-01-01\",\n    \"reason\": \"NONE\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('срок прошёл', () => pm.expect(pm.response.json().details.fields).to.have.property('fields.deadline'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /outgoing: продление срока",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/outgoing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "outgoing"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"FRISTVERLAENGERUNG\",\n  \"recipient\": {\n    \"name\": \"Jobcenter Berlin Mitte\",\n    \"address\": \"Postfach 1234\\n10115 Berlin\"\n  },\n  \"fields\": {\n    \"deadline\": \"{{outDeadline}}\",\n    \"reason\": \"DOCUMENTS_PENDING\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date(); d.setUTCDate(d.getUTCDate() + 14);",
+                  "pm.collectionVariables.set('outDeadline', d.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "pm.test('срок в тексте', () => pm.expect(pm.response.json().draft.germanText).to.include('eine Frist bis zum'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -4315,6 +4645,18 @@
     },
     {
       "key": "demoToken",
+      "value": ""
+    },
+    {
+      "key": "outCaseId",
+      "value": ""
+    },
+    {
+      "key": "outDraftId",
+      "value": ""
+    },
+    {
+      "key": "outDeadline",
       "value": ""
     }
   ]

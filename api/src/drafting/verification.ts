@@ -115,7 +115,7 @@ export function verifyDraft(input: VerifyInput): VerificationReport {
     checks,
     checklist: used.map((c) => ({
       claimId: c.id,
-      text: `${LABEL[c.kind] ?? c.kind}: ${c.value}`,
+      text: c.label ?? `${LABEL[c.kind] ?? c.kind}: ${c.value}`,
       quote: c.quote,
     })),
     note: 'Проверка: текст соответствует шаблону и подтверждённым фактам. Это не юридическая проверка.',

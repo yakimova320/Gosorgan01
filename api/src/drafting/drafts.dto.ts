@@ -20,6 +20,7 @@ const id = () => z.string().min(1).max(64);
 /**
  * Входной вид WIDERSPRUCH допустим и ведёт к LEGAL_REFERRAL (ТЗ v3 6.6).
  * B12: DOCUMENTS, EXTENSION (срок и причина из готового списка), STATUS_REQUEST.
+ * B16: TEMPLATE — собрать заново своё письмо (дело OUTGOING), без письма и параметров.
  */
 export const CreateDraftSchema = z.discriminatedUnion('kind', [
   z
@@ -40,6 +41,8 @@ export const CreateDraftSchema = z.discriminatedUnion('kind', [
     })
     .strict(),
   z.object({ kind: z.literal('STATUS_REQUEST'), letterId: id() }).strict(),
+  // B16: «Собрать заново» своего письма: тот же шаблон из подтверждённых полей дела OUTGOING
+  z.object({ kind: z.literal('TEMPLATE') }).strict(),
   z.object({ kind: z.literal('WIDERSPRUCH') }).passthrough(),
 ]);
 export type CreateDraftInput = z.infer<typeof CreateDraftSchema>;
@@ -53,6 +56,8 @@ export interface DraftView {
   /** EXTENSION: причина и срок, который просим продлить */
   reason: string | null;
   deadlineClaimId: string | null;
+  /** B16: шаблон своего письма (OUTGOING), иначе null */
+  outgoingTemplateId: string | null;
   germanText: string;
   russianText: string;
   claimIds: string[];
@@ -108,4 +113,10 @@ export interface ReportSentResult {
   caseId: string;
   draftId: string | null;
   closedDeadlineId: string | null;
+}
+
+/** B16: POST /outgoing — дело своего письма и первый черновик. */
+export interface OutgoingResult {
+  caseId: string;
+  draft: DraftView;
 }

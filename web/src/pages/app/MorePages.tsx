@@ -45,33 +45,6 @@ export function AskPage() {
   );
 }
 
-const TEMPLATES = [
-  'Сообщить о смене адреса',
-  'Попросить копию документа',
-  'Сообщить о новой работе',
-  'Попросить встречу',
-  'Сообщить о болезни',
-  'Отозвать заявление',
-];
-
-/** «Написать письмо самому» (B16, если останется время). */
-export function WritePage() {
-  return (
-    <>
-      <PageHeader title="Написать письмо" subtitle="Письмо в ведомство по готовому шаблону: Ja!sno переведёт и проверит." />
-      <DemoNote>Скоро. Шаблоны собственных писем делаются, если останется время (задача B16)</DemoNote>
-      <ul className="list-reset grid-2">
-        {TEMPLATES.map((t) => (
-          <li key={t} className="card stack-s" style={{ opacity: 0.7 }}>
-            <Icon name="doc" color="var(--c-teal)" />
-            <span style={{ fontWeight: 600 }}>{t}</span>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
 export function ProfilePage() {
   const dispatch = useAppDispatch();
   const signOut = () => dispatch(signedOut());

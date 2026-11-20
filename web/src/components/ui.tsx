@@ -78,7 +78,8 @@ const BADGE_COLORS = ['#EC7A5C', '#F2B83F', '#2F8C8A', '#2E3F72'];
 
 export function CaseRow({ c, index = 0 }: { c: CaseSummary; index?: number }) {
   const s = STAGE[c.stage];
-  const subtitle = c.nextDeadline ? `${c.authority ?? ''} · до ${formatDate(c.nextDeadline)}` : (c.authority ?? '');
+  const who = c.origin === 'OUTGOING' ? `Своё письмо · ${c.authority ?? ''}` : (c.authority ?? '');
+  const subtitle = c.nextDeadline ? `${who} · до ${formatDate(c.nextDeadline)}` : who;
   return (
     <Link to={`/app/cases/${c.id}`} className="card row" data-testid="case-row" style={{ padding: '10px 14px 10px 10px', borderRadius: 20 }}>
       <AuthorityBadge name={c.authority} color={BADGE_COLORS[index % BADGE_COLORS.length]} />

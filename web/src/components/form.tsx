@@ -77,7 +77,7 @@ export function EmailField({
   );
 }
 
-/** Обычное текстовое поле: имя, фамилия, адрес. */
+/** Обычное текстовое поле: имя, фамилия, адрес. B16: type date для дат. */
 export function TextField({
   id,
   label,
@@ -85,19 +85,71 @@ export function TextField({
   error,
   hint,
   autoComplete,
-}: FieldProps & { autoComplete?: string }) {
+  type = 'text',
+  autoCapitalize,
+}: FieldProps & { autoComplete?: string; type?: 'text' | 'date'; autoCapitalize?: 'off' | 'characters' }) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
         className="input"
-        type="text"
+        type={type}
         autoComplete={autoComplete}
+        autoCapitalize={autoCapitalize}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, error, hint)}
         {...registration}
       />
+      <FieldMessages id={id} error={error} hint={hint} />
+    </div>
+  );
+}
+
+/** Многострочное поле (B16: адрес адресата). */
+export function TextAreaField({ id, label, registration, error, hint, rows = 3 }: FieldProps & { rows?: number }) {
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <textarea
+        id={id}
+        className="textarea"
+        rows={rows}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(id, error, hint)}
+        {...registration}
+      />
+      <FieldMessages id={id} error={error} hint={hint} />
+    </div>
+  );
+}
+
+/** Выбор из готового списка (B16). Пустой вариант — «выберите». */
+export function SelectField({
+  id,
+  label,
+  registration,
+  error,
+  hint,
+  options,
+}: FieldProps & { options: { id: string; ru: string }[] }) {
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <select
+        id={id}
+        className="select"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(id, error, hint)}
+        {...registration}
+      >
+        <option value="">Выберите…</option>
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.ru}
+          </option>
+        ))}
+      </select>
       <FieldMessages id={id} error={error} hint={hint} />
     </div>
   );
