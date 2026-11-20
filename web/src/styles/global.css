@@ -830,3 +830,10 @@ details.faq .faq-body {
   padding: 0;
   margin-bottom: 4px;
 }
+
+/* B12: правка черновика */
+.draft-textarea {
+  min-height: 360px;
+  font-family: inherit;
+  line-height: 1.45;
+}

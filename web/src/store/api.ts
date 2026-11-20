@@ -26,8 +26,9 @@ import type {
   ApiCaseDetail,
   ApiDraft,
   ApiExplanation,
+  CreateDraftArgs,
   DraftQuestions,
-  QuestionId,
+  SentVia,
   Cabinet,
   CaseDetail,
   CaseSummary,
@@ -82,7 +83,7 @@ export interface InboxLetter {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: apiBaseQuery,
-  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter'],
+  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter', 'Draft'],
   endpoints: (b) => ({
     health: b.query<Health, void>({
       queryFn: (_a, _api, _x, base) =>
@@ -531,24 +532,16 @@ export const api = createApi({
     }),
 
     /** Собрать черновик. Один запрос на нажатие, без автоматического повтора. */
-    createDraft: b.mutation<
-      ApiDraft,
-      {
-        caseId: string;
-        letterId: string;
-        questionId: QuestionId;
-        amountClaimId?: string;
-      }
-    >({
+    createDraft: b.mutation<ApiDraft, CreateDraftArgs>({
       queryFn: ({ caseId, ...body }, _api, _x, base) => {
         if (isMock) {
-          const r = mockCreateDraft(caseId, body.letterId, body.questionId);
+          const r = mockCreateDraft(caseId, body);
           return 'code' in r ? { error: r } : ok(r);
         }
         return base({
           method: 'POST',
           path: `/cases/${encodeURIComponent(caseId)}/draft`,
-          body: { kind: 'CLARIFICATION', ...body },
+          body,
         }) as Promise<Result<ApiDraft>>;
       },
       invalidatesTags: (_r, _e, a) => [
@@ -556,6 +549,76 @@ export const api = createApi({
         { type: 'Case', id: 'LIST' },
         'History',
       ],
+    }),
+
+    /** B12: правка черновика. Сервер проверяет оба текста заново; без проверки ничего не сохраняется. */
+    editDraft: b.mutation<ApiDraft, { id: string; germanText: string; russianText: string }>({
+      queryFn: ({ id, ...body }, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              method: 'PATCH',
+              path: `/drafts/${encodeURIComponent(id)}`,
+              body,
+            }) as Promise<Result<ApiDraft>>),
+      invalidatesTags: (_r, _e, a) => [{ type: 'Draft', id: a.id }],
+    }),
+
+    /** B12: «Я отправил(а)» — сообщение пользователя; закрывает только выбранный срок. */
+    reportSent: b.mutation<
+      { caseId: string; draftId: string | null; closedDeadlineId: string | null },
+      { caseId: string; draftId?: string; via: SentVia; date: string; closeDeadlineId?: string }
+    >({
+      queryFn: ({ caseId, ...body }, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              method: 'POST',
+              path: `/cases/${encodeURIComponent(caseId)}/sent`,
+              body,
+            }) as Promise<
+              Result<{ caseId: string; draftId: string | null; closedDeadlineId: string | null }>
+            >),
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Case', id: a.caseId },
+        { type: 'Case', id: 'LIST' },
+        'Cabinet',
+        'History',
+        ...(a.draftId ? [{ type: 'Draft' as const, id: a.draftId }] : []),
+      ],
+    }),
+
+    /** B12: срок выполнен или снова открыт. */
+    setDeadlineDone: b.mutation<
+      { id: string; caseId: string | null; date: string; done: boolean },
+      { id: string; caseId: string; done: boolean }
+    >({
+      queryFn: ({ id, done }, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              method: 'PATCH',
+              path: `/deadlines/${encodeURIComponent(id)}`,
+              body: { done },
+            }) as Promise<Result<{ id: string; caseId: string | null; date: string; done: boolean }>>),
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Case', id: a.caseId },
+        { type: 'Case', id: 'LIST' },
+        'Cabinet',
+        'History',
+        'Letter',
+      ],
+    }),
+
+    /** B12: файл календаря срока. Ответ — временный адрес blob:, его освобождает экран. */
+    deadlineIcs: b.mutation<string, string>({
+      queryFn: (id, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              path: `/deadlines/${encodeURIComponent(id)}/ics`,
+              binary: true,
+            }) as Promise<Result<string>>),
     }),
 
     /** Черновик (текст, основания-снимок, stale). Перед копированием экран запрашивает его заново. */
@@ -570,6 +633,7 @@ export const api = createApi({
         >;
       },
       keepUnusedDataFor: 0,
+      providesTags: (_r, _e, id) => [{ type: 'Draft', id }],
     }),
   }),
 });
@@ -597,6 +661,10 @@ export const {
   useDraftQuery,
   useDraftQuestionsQuery,
   useCreateDraftMutation,
+  useEditDraftMutation,
+  useReportSentMutation,
+  useSetDeadlineDoneMutation,
+  useDeadlineIcsMutation,
   useLettersQuery,
   useLetterQuery,
   useConfirmClaimsMutation,

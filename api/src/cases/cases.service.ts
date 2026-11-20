@@ -299,13 +299,21 @@ function toSummary(c: CaseRow, today: string): CaseSummary {
   };
 }
 
+const SENT_VIA_RU: Record<string, string> = {
+  post: 'Почтой',
+  online: 'Онлайн',
+  email: 'По e-mail',
+  in_person: 'Лично',
+  other: 'Другим способом',
+};
+
 const TIMELINE_TITLE: Record<string, string> = {
   LETTER_RECEIVED: 'Письмо добавлено в дело',
   CASE_CREATED_FROM_LETTER: 'Дело создано из письма',
   CLAIM_CONFIRMED: 'Факты подтверждены',
   CLAIM_REJECTED: 'Факты отклонены',
   QUESTION_ASKED: 'Вопрос по делу',
-  USER_REPORTED_SENT: 'Ответ отправлен',
+  USER_REPORTED_SENT: 'Вы отметили: ответ отправлен',
   DRAFT_PREPARED: 'Черновик ответа',
   DRAFT_SENT: 'Черновик отправлен',
   DEADLINE_DONE: 'Срок выполнен',
@@ -323,6 +331,8 @@ function toTimeline(e: {
     draftId?: string;
     claimIds?: string[];
     text?: string;
+    via?: string;
+    date?: string;
   };
   return {
     id: e.id,
@@ -333,6 +343,12 @@ function toTimeline(e: {
         ? d.text
         : (TIMELINE_TITLE[e.type] ?? e.type),
     ...(d.claimIds ? { subtitle: `Фактов: ${d.claimIds.length}` } : {}),
+    // B12: «Я отправил(а)» — канал и дата со слов пользователя
+    ...(e.type === 'USER_REPORTED_SENT' && d.via
+      ? {
+          subtitle: `${SENT_VIA_RU[d.via] ?? d.via}${d.date ? ` · ${d.date.split('-').reverse().join('.')}` : ''}`,
+        }
+      : {}),
     ...(d.letterId ? { letterId: d.letterId } : {}),
     ...(d.draftId ? { draftId: d.draftId } : {}),
   };

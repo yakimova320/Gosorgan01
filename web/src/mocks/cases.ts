@@ -2,6 +2,7 @@ import { apiError, type ApiError } from '../api/errors';
 import type {
   ApiCaseDetail,
   ApiDraft,
+  CreateDraftArgs,
   DraftQuestions,
   QuestionId,
   ApiExplanation,
@@ -209,14 +210,24 @@ export function mockDraftQuestions(
       },
     ],
     amounts: [],
+    kinds: ['CLARIFICATION', 'DOCUMENTS', 'STATUS_REQUEST'],
+    deadlines: [],
+    extensionReasons: [
+      { id: 'DOCUMENTS_PENDING', ru: 'Мне нужно больше времени, чтобы собрать документы' },
+      { id: 'ADVICE', ru: 'Я хочу сначала получить консультацию' },
+      { id: 'NONE', ru: 'Без указания причины' },
+    ],
   };
 }
 
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
 export function mockCreateDraft(
   caseId: string,
-  letterId: string,
-  questionId: QuestionId,
+  args: DistributiveOmit<CreateDraftArgs, 'caseId'>,
 ): ApiDraft | ApiError {
+  const { letterId } = args;
+  const questionId: QuestionId | null = args.kind === 'CLARIFICATION' ? args.questionId : null;
   const c = MOCK_CASES.find((x) => x.id === caseId);
   const base = c?.drafts[0];
   if (!c || !base) return apiError('NO_CONFIRMED_CLAIMS', 409);
@@ -225,7 +236,12 @@ export function mockCreateDraft(
     caseId,
     letterId,
     questionId,
-    kind: 'CLARIFICATION',
+    kind: args.kind,
+    reason: args.kind === 'EXTENSION' ? args.reason : null,
+    deadlineClaimId: null,
+    edited: false,
+    sentAt: null,
+    sentVia: null,
     germanText: base.germanText,
     russianText: base.russianText,
     claimIds: base.claimIds,

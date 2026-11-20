@@ -2,6 +2,11 @@ import type { ConfirmedClaim } from '../claims/claims.service.js';
 import { availableQuestions } from './questions.js';
 import { buildClarification } from './templates/clarification.js';
 import { verifyDraft } from './verification.js';
+import {
+  availableReplyKinds,
+  buildReply,
+  extendableDeadlines,
+} from './templates/replies.js';
 
 const profile = {
   firstName: 'Anna',
@@ -226,5 +231,83 @@ describe('проверка черновика (DE и RU)', () => {
         today: TODAY,
       }).passed,
     ).toBe(false);
+  });
+});
+
+describe('B12: шаблоны DOCUMENTS, EXTENSION, STATUS_REQUEST', () => {
+  const withDeadlines: ConfirmedClaim[] = [
+    ...full,
+    claim('f1', 'DEADLINE', '2026-11-30', 'Bitte antworten Sie bis zum 30.11.2026.'),
+    claim('f0', 'DEADLINE', '2026-11-01', 'bis zum 01.11.2026'),
+  ];
+  const verify = (b: ReturnType<typeof buildReply>, claims = withDeadlines) =>
+    verifyDraft({ ...b, confirmed: claims, profile, today: TODAY });
+
+  it('виды доступны по фактам: прошедший срок продлить нельзя', () => {
+    expect(availableReplyKinds(withDeadlines, TODAY)).toEqual([
+      'DOCUMENTS',
+      'EXTENSION',
+      'STATUS_REQUEST',
+    ]);
+    expect(extendableDeadlines(withDeadlines, TODAY).map((c) => c.id)).toEqual(['f1']);
+    const onlyAuthority = [claim('a', 'AUTHORITY', 'Jobcenter Musterstadt')];
+    expect(availableReplyKinds(onlyAuthority, TODAY)).toEqual(['STATUS_REQUEST']);
+    expect(availableReplyKinds([], TODAY)).toEqual([]);
+  });
+
+  it('DOCUMENTS: требование — цитата оригинала в RU, проверка проходит', () => {
+    const b = buildReply({ kind: 'DOCUMENTS', claims: withDeadlines, profile, today: TODAY });
+    expect(b.germanText).toContain('Betreff: Übersendung von Unterlagen zu Ihrem Schreiben vom 11.11.2026');
+    expect(b.germanText).toContain('Anbei übersende ich Ihnen die angeforderten Unterlagen.');
+    expect(b.germanText).toContain('Ihr Zeichen: JC-2026-1001');
+    expect(b.russianText).toContain('(цитата из письма на немецком): «Bitte reichen Sie die Kontoauszüge für September ein.»');
+    expect(b.claimIds.sort()).toEqual(['a', 'd', 'n', 'r']);
+    expect(verify(b).passed).toBe(true);
+  });
+
+  it('EXTENSION: выбранный срок и причина; без причины — только просьба', () => {
+    const b = buildReply({
+      kind: 'EXTENSION',
+      claims: withDeadlines,
+      profile,
+      today: TODAY,
+      deadlineClaimId: 'f1',
+      extensionReason: 'DOCUMENTS_PENDING',
+    });
+    expect(b.germanText).toContain('haben Sie mir eine Frist bis zum 30.11.2026 gesetzt.');
+    expect(b.germanText).toContain(
+      'Ich benötige mehr Zeit, um die Unterlagen vollständig zusammenzustellen. Ich bitte Sie, die Frist um zwei Wochen zu verlängern.',
+    );
+    expect(b.russianText).toContain('вы установили мне срок до 30.11.2026.');
+    expect(b.claimIds).toContain('f1');
+    expect(verify(b).passed).toBe(true);
+    const none = buildReply({
+      kind: 'EXTENSION',
+      claims: withDeadlines,
+      profile,
+      today: TODAY,
+      deadlineClaimId: 'f1',
+      extensionReason: 'NONE',
+    });
+    expect(none.germanText).toContain('\nIch bitte Sie, die Frist um zwei Wochen zu verlängern.\n');
+    expect(verify(none).passed).toBe(true);
+  });
+
+  it('STATUS_REQUEST без даты письма и ведомства: другая фраза, без пустых мест', () => {
+    const claims = [claim('n', 'CASE_NUMBER', 'JC-2026-1001', 'Aktenzeichen: JC-2026-1001')];
+    const b = buildReply({ kind: 'STATUS_REQUEST', claims, profile, today: TODAY });
+    expect(b.germanText).toContain('Betreff: Sachstandsanfrage zu Ihrem Schreiben\n');
+    expect(b.russianText).toContain('Тема: запрос о ходе рассмотрения по вашему письму\n');
+    expect(b.germanText).not.toMatch(/\n\n\n/);
+    expect(verify(b, claims).passed).toBe(true);
+  });
+
+  it('правка с чужой датой или другим номером дела не проходит проверку', () => {
+    const b = buildReply({ kind: 'STATUS_REQUEST', claims: withDeadlines, profile, today: TODAY });
+    expect(verify({ ...b, germanText: b.germanText + '\nBitte antworten Sie bis zum 24.12.2026.' }).passed).toBe(false);
+    expect(
+      verify({ ...b, germanText: b.germanText.replace('Ihr Zeichen: JC-2026-1001', 'Ihr Zeichen: XY-1') }).passed,
+    ).toBe(false);
+    expect(verify({ ...b, russianText: b.russianText + '\nДобавлю свой вопрос.' }).passed).toBe(true);
   });
 });
