@@ -72,3 +72,36 @@ export function parseFaq(md: string): FaqSection[] {
 }
 
 export const FAQ: FaqSection[] = parseFaq(faqRaw);
+
+export interface Consultation {
+  name: string;
+  text: string;
+}
+
+/** Вопрос FAQ со списком консультаций: экран «Найти консультацию» берёт тексты отсюда (F05). */
+export const CONSULTATION_QUESTION = 'Куда обратиться, если нужен юридический совет?';
+
+/**
+ * Консультации из FAQ: пункты списка «Название: текст» и абзацы после него.
+ * Тексты не меняются, только делятся на название и описание.
+ */
+export function consultationsFromFaq(sections: FaqSection[]): { places: Consultation[]; notes: string[] } {
+  const item = sections.flatMap((s) => s.items).find((i) => i.question === CONSULTATION_QUESTION);
+  const places: Consultation[] = [];
+  const notes: string[] = [];
+  for (const block of item?.blocks ?? []) {
+    if (block.kind === 'p') notes.push(block.text);
+    else
+      for (const line of block.items) {
+        const at = line.indexOf(': ');
+        if (at < 0) places.push({ name: line, text: '' });
+        else {
+          const text = line.slice(at + 2);
+          places.push({ name: line.slice(0, at), text: text.charAt(0).toUpperCase() + text.slice(1) });
+        }
+      }
+  }
+  return { places, notes };
+}
+
+export const FAQ_CONSULTATIONS = consultationsFromFaq(FAQ);

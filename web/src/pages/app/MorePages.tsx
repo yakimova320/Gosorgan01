@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PASSWORD_MIN_CHARS } from '@jasno/shared';
+import { PASSWORD_MIN_CHARS, PROFILE_NUMBERS_MAX } from '@jasno/shared';
 import { useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormError, PasswordField, SubmitButton, TextField } from '../../components/form';
 import { ChangePasswordFormSchema, DeleteAccountFormSchema, ProfileFormSchema } from '../../forms/schemas';
 import { applyServerError } from '../../forms/serverErrors';
 import { revalidateIfTouched } from '../../forms/revalidate';
 import { errorCode } from '../../api/errors';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useAppDispatch } from '../../store';
 import {
   useCabinetQuery,
@@ -162,7 +162,7 @@ export function ProfilePage() {
       <div className="desktop-2col stack">
         <section className="card stack">
           <h2 style={{ fontSize: 19 }}>Мои данные</h2>
-          <p className="muted">Имя, фамилия и адрес нужны для черновика ответа: это данные отправителя.</p>
+          <p className="muted">Имя, фамилия, адрес и номера нужны для черновика ответа: это данные отправителя.</p>
           {p && <ProfileForm key={cabinet.data?.email} profile={p} />}
           <div className="field">
             <label htmlFor="p-email">E-mail</label>
@@ -175,6 +175,12 @@ export function ProfilePage() {
             </select>
             <span className="muted">Украинский и простой немецкий появятся позже.</span>
           </div>
+          <p className="muted">
+            Нужен юридический совет?{' '}
+            <Link to="/beratung" className="link">
+              Где получить консультацию
+            </Link>
+          </p>
         </section>
 
         <section className="stack">
@@ -258,18 +264,39 @@ export function ProfilePage() {
 }
 
 type ProfileForm = z.input<typeof ProfileFormSchema>;
+type ProfileData = { firstName?: string; lastName?: string; address?: string; numbers?: { label: string; value: string }[] };
 
-/** Имя, фамилия, адрес. На сервер уходят только изменённые поля, сервер проверяет итог целиком. */
-function ProfileForm({ profile }: { profile: { firstName?: string; lastName?: string; address?: string } }) {
+const toFormValues = (p: ProfileData | null | undefined): ProfileForm => ({
+  firstName: p?.firstName ?? '',
+  lastName: p?.lastName ?? '',
+  address: p?.address ?? '',
+  numbers: p?.numbers ?? [],
+});
+
+/**
+ * Имя, фамилия, адрес и номера (F05). На сервер уходят только изменённые поля,
+ * список номеров целиком; сервер проверяет итог.
+ */
+function ProfileForm({ profile }: { profile: ProfileData }) {
   const [updateProfile] = useUpdateProfileMutation();
   const [saved, setSaved] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<ProfileForm, unknown, z.output<typeof ProfileFormSchema>>({
     resolver: zodResolver(ProfileFormSchema),
     mode: 'onTouched',
-    defaultValues: { firstName: profile.firstName ?? '', lastName: profile.lastName ?? '', address: profile.address ?? '' },
+    defaultValues: toFormValues(profile),
   });
-  const { errors, isSubmitting, dirtyFields } = form.formState;
+  const numbers = useFieldArray({ control: form.control, name: 'numbers' });
+  const { errors, isSubmitting, dirtyFields, touchedFields, isSubmitted } = form.formState;
+  /*
+   * useFieldArray проверяет весь список после «Добавить» и «Убрать»: без этого фильтра пустая новая строка
+   * сразу показывала бы ошибки. Правило формы: ошибка после первого ухода из поля или после отправки.
+   */
+  const numberError = (i: number, key: 'label' | 'value') => {
+    const error = errors.numbers?.[i]?.[key];
+    return error && (isSubmitted || touchedFields.numbers?.[i]?.[key] || error.type === 'server') ? error : undefined;
+  };
+  const numberFields = numbers.fields.flatMap((_, i) => [`numbers.${i}.label`, `numbers.${i}.value`]);
 
   const submit = form.handleSubmit(async (values) => {
     setSaved(false);
@@ -277,17 +304,17 @@ function ProfileForm({ profile }: { profile: { firstName?: string; lastName?: st
     const changed = Object.fromEntries(
       (Object.keys(values) as (keyof ProfileForm)[]).filter((k) => dirtyFields[k]).map((k) => [k, values[k]]),
     );
+    // Удалённая строка не отмечает список как изменённый: сравниваем с сохранённым
+    if (JSON.stringify(values.numbers) !== JSON.stringify(profile.numbers ?? [])) changed.numbers = values.numbers;
     if (Object.keys(changed).length === 0) return setSaved(true);
     try {
       const cabinet = await updateProfile(changed).unwrap();
-      form.reset({
-        firstName: cabinet.profile?.firstName ?? '',
-        lastName: cabinet.profile?.lastName ?? '',
-        address: cabinet.profile?.address ?? '',
-      });
+      form.reset(toFormValues(cabinet.profile));
       setSaved(true);
     } catch (err) {
-      setFormError(applyServerError(err, form.setError, ['firstName', 'lastName', 'address'], 'profile.'));
+      setFormError(
+        applyServerError(err, form.setError, ['firstName', 'lastName', 'address', 'numbers', ...numberFields], 'profile.'),
+      );
     }
   });
 
@@ -296,6 +323,43 @@ function ProfileForm({ profile }: { profile: { firstName?: string; lastName?: st
       <TextField id="p-first" label="Имя" autoComplete="given-name" registration={form.register('firstName')} error={errors.firstName} />
       <TextField id="p-last" label="Фамилия" autoComplete="family-name" registration={form.register('lastName')} error={errors.lastName} />
       <TextField id="p-address" label="Адрес проживания" autoComplete="street-address" registration={form.register('address')} error={errors.address} />
+
+      <fieldset className="stack-s profile-numbers" aria-describedby="p-numbers-hint">
+        <legend>Номера для писем</legend>
+        <p id="p-numbers-hint" className="small text-2">
+          Например, Kundennummer или BG-Nummer: название по-немецки, как в письме ведомства. Номера стоят в каждом черновике под
+          вашим адресом. Добавляйте только те, что ведомства просят указывать.
+        </p>
+        {numbers.fields.map((f, i) => (
+          <div key={f.id} className="card stack-s" data-testid="profile-number">
+            <TextField
+              id={`p-num-${i}-label`}
+              label={`Название номера ${i + 1}`}
+              autoComplete="off"
+              registration={form.register(`numbers.${i}.label`)}
+              error={numberError(i, 'label')}
+            />
+            <TextField
+              id={`p-num-${i}-value`}
+              label={`Номер ${i + 1}`}
+              autoComplete="off"
+              registration={form.register(`numbers.${i}.value`)}
+              error={numberError(i, 'value')}
+            />
+            <button type="button" className="btn btn--ghost btn--small" onClick={() => numbers.remove(i)}>
+              <Icon name="trash" size={16} /> Убрать номер {i + 1}
+            </button>
+          </div>
+        ))}
+        {numbers.fields.length < PROFILE_NUMBERS_MAX ? (
+          <button type="button" className="btn btn--secondary btn--small" onClick={() => numbers.append({ label: '', value: '' })}>
+            <Icon name="plus" size={16} /> Добавить номер
+          </button>
+        ) : (
+          <p className="muted">Не больше {PROFILE_NUMBERS_MAX} номеров.</p>
+        )}
+      </fieldset>
+
       {saved && (
         <div className="alert alert--info" role="status">
           Сохранено

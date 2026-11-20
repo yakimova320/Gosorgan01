@@ -254,6 +254,7 @@ function sourcesVersion(
   const rows = claims.map((c) => `${c.id}|${c.value}`).sort();
   rows.push(
     `profile|${profile.firstName}|${profile.lastName}|${profile.address}`,
+    `numbers|${JSON.stringify(profile.numbers ?? [])}`,
   );
   return createHash('sha256').update(rows.join('\n')).digest('hex');
 }

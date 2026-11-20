@@ -312,4 +312,40 @@ describe('Черновик «запрос уточнения» (e2e, B10)', () =
       data: { profile: PERSON },
     });
   });
+
+  it('F05: номера из профиля в блоке отправителя DE и RU; их изменение делает черновик устаревшим', async () => {
+    await http()
+      .patch('/cabinet')
+      .set(auth())
+      .send({
+        profile: { numbers: [{ label: 'Kundennummer', value: '123A456' }] },
+      })
+      .expect(200);
+    const { caseId, letterId } = await letterInCase(
+      '01_jobcenter_request.pdf',
+      true,
+    );
+    const res = await draft(caseId, {
+      kind: 'CLARIFICATION',
+      letterId,
+      questionId: 'WHICH_DOCUMENTS',
+    }).expect(201);
+    const sender = `${PERSON.firstName} ${PERSON.lastName}\n${PERSON.address}\nKundennummer: 123A456\n`;
+    expect(res.body.germanText.startsWith(sender)).toBe(true);
+    expect(res.body.russianText.startsWith(sender)).toBe(true);
+    expect(res.body.verification.passed).toBe(true);
+
+    await http()
+      .patch('/cabinet')
+      .set(auth())
+      .send({ profile: { numbers: [] } })
+      .expect(200);
+    expect(
+      (await http().get(`/drafts/${res.body.id}`).set(auth())).body.stale,
+    ).toBe(true);
+    await db.cabinet.update({
+      where: { id: cabinetId },
+      data: { profile: PERSON },
+    });
+  });
 });

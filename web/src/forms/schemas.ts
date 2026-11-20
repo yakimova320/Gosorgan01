@@ -4,6 +4,8 @@ import {
   FirstNameSchema,
   LastNameSchema,
   DeleteAccountSchema,
+  PROFILE_NUMBERS_MAX,
+  ProfileNumberSchema,
   ForgotPasswordSchema,
   LoginSchema,
   NewPasswordSchema,
@@ -61,9 +63,13 @@ export const ChangePasswordFormSchema = ChangePasswordSchema.extend({
 
 export const DeleteAccountFormSchema = DeleteAccountSchema;
 
-/** Профиль на сайте: имя, фамилия, адрес. На сервер уходят только изменённые поля. */
+/**
+ * Профиль на сайте: имя, фамилия, адрес и номера для черновика (F05).
+ * На сервер уходят только изменённые поля; список номеров — целиком.
+ */
 export const ProfileFormSchema = z.object({
   firstName: FirstNameSchema,
   lastName: LastNameSchema,
   address: AddressSchema,
+  numbers: z.array(ProfileNumberSchema).max(PROFILE_NUMBERS_MAX),
 });

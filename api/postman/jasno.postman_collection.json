@@ -2224,6 +2224,168 @@
           ]
         },
         {
+          "name": "PATCH /cabinet: номера профиля (F05)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"numbers\": [\n      {\n        \"label\": \"Kundennummer\",\n        \"value\": \"123A456\"\n      }\n    ]\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('номер сохранён', () => pm.expect(pm.response.json().profile.numbers).to.eql([{ label: 'Kundennummer', value: '123A456' }]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /drafts/:id: устарел после изменения номеров",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drafts/{{draftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drafts",
+                "{{draftId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('устарел', () => pm.expect(pm.response.json().stale).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cases/:id/draft: номер профиля в блоке отправителя",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{draftCaseId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cases",
+                "{{draftCaseId}}",
+                "draft"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"CLARIFICATION\",\n  \"letterId\": \"{{draftLetterId}}\",\n  \"questionId\": \"WHICH_DOCUMENTS\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('draftId', b.id);",
+                  "pm.test('проверка пройдена', () => pm.expect(b.verification.passed).to.eql(true));",
+                  "pm.test('номер в DE и RU', () => { pm.expect(b.germanText).to.include('Kundennummer: 123A456'); pm.expect(b.russianText).to.include('Kundennummer: 123A456'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet: название номера кириллицей",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"numbers\": [\n      {\n        \"label\": \"Номер клиента\",\n        \"value\": \"1\"\n      }\n    ]\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('ошибка у поля', () => pm.expect(pm.response.json().details.fields['profile.numbers.0.label']).to.eql('Название по-немецки, как в письме ведомства'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /cases/:id/draft: AMOUNT без суммы",
           "request": {
             "method": "POST",
