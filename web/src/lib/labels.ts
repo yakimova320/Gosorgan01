@@ -21,11 +21,11 @@ export const CLAIM_KIND: Record<ClaimKind, string> = {
   OTHER: 'Другое',
 };
 
-export const DRAFT_KIND: Record<DraftKind, { title: string; text: string; ready: boolean }> = {
-  CLARIFICATION: { title: 'Задать вопрос ведомству', text: 'Если что-то в письме непонятно', ready: true },
-  DOCUMENTS: { title: 'Отправить документы', text: 'Сопроводительное письмо к документам', ready: false },
-  EXTENSION: { title: 'Попросить продлить срок', text: 'Если не успеваете к сроку', ready: false },
-  STATUS_REQUEST: { title: 'Узнать, как дела', text: 'Если ведомство долго не отвечает', ready: false },
+export const DRAFT_KIND: Record<DraftKind, { title: string; text: string; unavailable: string }> = {
+  CLARIFICATION: { title: 'Задать вопрос ведомству', text: 'Если что-то в письме непонятно', unavailable: 'Нужны подтверждённые факты письма' },
+  DOCUMENTS: { title: 'Отправить документы', text: 'Сопроводительное письмо к документам', unavailable: 'Нужно подтверждённое требование письма' },
+  EXTENSION: { title: 'Попросить продлить срок', text: 'Если не успеваете к сроку', unavailable: 'Нужен подтверждённый срок, который ещё не прошёл' },
+  STATUS_REQUEST: { title: 'Узнать, как дела', text: 'Если ведомство долго не отвечает', unavailable: 'Нужны подтверждённые факты письма' },
 };
 
 /** Инициалы ведомства для круглого значка: «Jobcenter Musterstadt» → «JM» */

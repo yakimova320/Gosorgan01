@@ -12,6 +12,9 @@ import type {
   CreateDraftInput,
   DraftQuestions,
   DraftView,
+  EditDraftInput,
+  ReportSentInput,
+  ReportSentResult,
 } from './drafts.dto.js';
 import {
   availableQuestions,
@@ -21,8 +24,16 @@ import {
 } from './questions.js';
 import {
   buildClarification,
+  type BuiltDraft,
   type SenderProfile,
 } from './templates/clarification.js';
+import {
+  availableReplyKinds,
+  buildReply,
+  EXTENSION_REASONS,
+  extendableDeadlines,
+  type ExtensionReason,
+} from './templates/replies.js';
 import {
   verifyDraft,
   type VerificationReport,
@@ -47,7 +58,10 @@ export class VerificationService {
 
 interface SnapshotJson {
   letterId: string;
-  questionId: QuestionId;
+  questionId?: QuestionId;
+  /** B12, EXTENSION */
+  reason?: ExtensionReason;
+  deadlineClaimId?: string;
   claims: Record<string, string>;
 }
 
@@ -80,25 +94,54 @@ export class DraftsService {
       input.letterId,
     );
     if (confirmed.length === 0) throw new ApiError('NO_CONFIRMED_CLAIMS');
-    if (!availableQuestions(confirmed).includes(input.questionId))
-      throw new ApiError('QUESTION_NOT_AVAILABLE', {
-        questionId: input.questionId,
-      });
-    const amountClaimId = this.pickAmount(
-      confirmed,
-      input.questionId,
-      input.amountClaimId,
-    );
+    const today = toIsoDate(berlinToday());
     const profile = await this.profile(cabinetId);
 
-    const today = toIsoDate(berlinToday());
-    const built = buildClarification({
-      claims: confirmed,
-      profile,
-      questionId: input.questionId,
-      amountClaimId,
-      today,
-    });
+    let built: BuiltDraft;
+    let options: Omit<SnapshotJson, 'letterId' | 'claims'>;
+    let templateId: string;
+    if (input.kind === 'CLARIFICATION') {
+      if (!availableQuestions(confirmed).includes(input.questionId))
+        throw new ApiError('QUESTION_NOT_AVAILABLE', {
+          questionId: input.questionId,
+        });
+      const amountClaimId = this.pickAmount(
+        confirmed,
+        input.questionId,
+        input.amountClaimId,
+      );
+      built = buildClarification({
+        claims: confirmed,
+        profile,
+        questionId: input.questionId,
+        amountClaimId,
+        today,
+      });
+      options = { questionId: input.questionId };
+      templateId = `clarification.${input.questionId}`;
+    } else {
+      // B12: вид ответа доступен только по подтверждённым фактам этого письма
+      if (!availableReplyKinds(confirmed, today).includes(input.kind))
+        throw new ApiError('QUESTION_NOT_AVAILABLE', { kind: input.kind });
+      const deadlineClaimId =
+        input.kind === 'EXTENSION'
+          ? this.pickDeadline(confirmed, today, input.deadlineClaimId)
+          : undefined;
+      const reason = input.kind === 'EXTENSION' ? input.reason : undefined;
+      built = buildReply({
+        kind: input.kind,
+        claims: confirmed,
+        profile,
+        today,
+        deadlineClaimId,
+        extensionReason: reason,
+      });
+      options = {
+        ...(reason ? { reason } : {}),
+        ...(deadlineClaimId ? { deadlineClaimId } : {}),
+      };
+      templateId = `${input.kind.toLowerCase()}${reason ? `.${reason}` : ''}`;
+    }
     const report = await this.verification.verify({
       ...built,
       confirmed,
@@ -143,7 +186,7 @@ export class DraftsService {
 
       const snapshot: SnapshotJson = {
         letterId: input.letterId,
-        questionId: input.questionId,
+        ...options,
         claims: Object.fromEntries(
           confirmed
             .filter((c) => built.claimIds.includes(c.id))
@@ -153,8 +196,8 @@ export class DraftsService {
       const created = await tx.draft.create({
         data: {
           caseId,
-          kind: 'CLARIFICATION',
-          templateId: `clarification.${input.questionId}`,
+          kind: input.kind,
+          templateId,
           germanText: built.germanText,
           russianText: built.russianText,
           claimIds: built.claimIds,
@@ -186,6 +229,136 @@ export class DraftsService {
     return toView(draft);
   }
 
+  /**
+   * B12: правка черновика человеком. Оба текста проверяются заново по тем же источникам
+   * (подтверждённые факты письма, профиль, дата создания); без пройденной проверки ничего не сохраняется.
+   * Отправленный и устаревший черновик не правится.
+   */
+  async edit(
+    cabinetId: string,
+    draftId: string,
+    input: EditDraftInput,
+  ): Promise<DraftView> {
+    const draft = await this.db.draft.findFirst({
+      where: { id: draftId, case: { cabinetId } },
+    });
+    if (!draft) throw new ApiError('NOT_FOUND');
+    if (draft.status === 'SENT') throw new ApiError('DRAFT_ALREADY_SENT');
+    if (draft.stale) throw new ApiError('DRAFT_STALE');
+    const snap = (draft.claimSnapshot ?? {}) as Partial<SnapshotJson>;
+    if (!snap.letterId) throw new ApiError('DRAFT_STALE');
+    const confirmed = await this.claims.getConfirmed(
+      cabinetId,
+      draft.caseId,
+      snap.letterId,
+    );
+    const profile = await this.profile(cabinetId);
+    // «Datum:» в тексте — дата сборки: она и есть разрешённая дата создания
+    const created = toIsoDate(berlinToday(draft.createdAt));
+    const report = await this.verification.verify({
+      germanText: input.germanText,
+      russianText: input.russianText,
+      claimIds: (draft.claimIds as string[]) ?? [],
+      confirmed,
+      profile,
+      today: created,
+    });
+    if (!report.passed) throw new ApiError('DRAFT_VERIFICATION_FAILED', report);
+
+    // Условное обновление: черновик не устарел и не отправлен, пока шла проверка.
+    const updated = await this.db.$transaction(async (tx) => {
+      const res = await tx.draft.updateMany({
+        where: { id: draftId, status: 'PREPARED', stale: false },
+        data: {
+          germanText: input.germanText,
+          russianText: input.russianText,
+          verification: { ...report, edited: true } as unknown as object,
+        },
+      });
+      if (res.count !== 1) throw new ApiError('DRAFT_STALE');
+      return tx.draft.findUniqueOrThrow({ where: { id: draftId } });
+    });
+    return toView(updated);
+  }
+
+  /**
+   * B12: «Я отправил(а)». Записывает канал, дату и черновик; закрывает только явно выбранный срок.
+   * Одна транзакция: черновик SENT, события USER_REPORTED_SENT и DEADLINE_DONE.
+   */
+  async reportSent(
+    cabinetId: string,
+    caseId: string,
+    input: ReportSentInput,
+  ): Promise<ReportSentResult> {
+    const kase = await this.db.case.findFirst({
+      where: { id: caseId, cabinetId },
+      select: { id: true },
+    });
+    if (!kase) throw new ApiError('NOT_FOUND');
+    if (input.date > toIsoDate(berlinToday()))
+      throw new ApiError('VALIDATION_FAILED', {
+        fields: { date: 'Дата отправки не может быть в будущем' },
+      });
+    const sentAt = new Date(`${input.date}T00:00:00.000Z`);
+
+    await this.db.$transaction(async (tx) => {
+      if (input.draftId) {
+        const draft = await tx.draft.findFirst({
+          where: { id: input.draftId, caseId },
+          select: { status: true },
+        });
+        if (!draft) throw new ApiError('NOT_FOUND');
+        const res = await tx.draft.updateMany({
+          where: { id: input.draftId, caseId, status: 'PREPARED' },
+          data: { status: 'SENT', sentAt, sentVia: input.via },
+        });
+        if (res.count !== 1) throw new ApiError('DRAFT_ALREADY_SENT');
+      }
+      if (input.closeDeadlineId) {
+        const deadline = await tx.deadline.findFirst({
+          where: { id: input.closeDeadlineId, caseId },
+          select: { doneAt: true, claim: { select: { status: true } } },
+        });
+        if (!deadline) throw new ApiError('NOT_FOUND');
+        if (deadline.claim.status !== 'CONFIRMED')
+          throw new ApiError('DEADLINE_NOT_CONFIRMED');
+        const res = await tx.deadline.updateMany({
+          where: { id: input.closeDeadlineId, caseId, doneAt: null },
+          data: { doneAt: new Date() },
+        });
+        if (res.count !== 1) throw new ApiError('DEADLINE_ALREADY_DONE');
+      }
+      await tx.event.create({
+        data: {
+          caseId,
+          type: 'USER_REPORTED_SENT',
+          details: {
+            via: input.via,
+            date: input.date,
+            ...(input.draftId ? { draftId: input.draftId } : {}),
+          },
+        },
+      });
+      if (input.closeDeadlineId)
+        await tx.event.create({
+          data: {
+            caseId,
+            type: 'DEADLINE_DONE',
+            details: { deadlineId: input.closeDeadlineId },
+          },
+        });
+      await tx.case.update({
+        where: { id: caseId },
+        data: { updatedAt: new Date() },
+      });
+    });
+    return {
+      caseId,
+      draftId: input.draftId ?? null,
+      closedDeadlineId: input.closeDeadlineId ?? null,
+    };
+  }
+
   /** Какие вопросы доступны для письма (для экрана черновика, F04). */
   async questions(
     cabinetId: string,
@@ -202,10 +375,23 @@ export class DraftsService {
       letterId,
     );
     const amounts = confirmed.filter((c) => c.kind === 'AMOUNT');
+    const today = toIsoDate(berlinToday());
+    const questionIds = availableQuestions(confirmed);
     return {
+      kinds: [
+        ...(questionIds.length > 0 ? (['CLARIFICATION'] as const) : []),
+        ...availableReplyKinds(confirmed, today),
+      ],
+      deadlines: extendableDeadlines(confirmed, today).map((d) => ({
+        claimId: d.id,
+        date: d.value,
+      })),
+      extensionReasons: (
+        Object.keys(EXTENSION_REASONS) as ExtensionReason[]
+      ).map((id) => ({ id, ru: EXTENSION_REASONS[id].ru })),
       letterId,
       caseId: letter.caseId,
-      questions: availableQuestions(confirmed).map((id) => ({
+      questions: questionIds.map((id) => ({
         id,
         ru: QUESTIONS[id].ru(
           id === 'AMOUNT' && amounts.length === 1
@@ -215,6 +401,24 @@ export class DraftsService {
       })),
       amounts: amounts.map((a) => ({ claimId: a.id, value: a.value })),
     };
+  }
+
+  /** EXTENSION: выбранный срок письма; при нескольких сроках выбор обязателен. */
+  private pickDeadline(
+    confirmed: ConfirmedClaim[],
+    today: string,
+    deadlineClaimId?: string,
+  ): string {
+    const deadlines = extendableDeadlines(confirmed, today);
+    if (deadlineClaimId) {
+      if (!deadlines.some((d) => d.id === deadlineClaimId))
+        throw new ApiError('QUESTION_NOT_AVAILABLE', { deadlineClaimId });
+      return deadlineClaimId;
+    }
+    if (deadlines.length === 1) return deadlines[0].id;
+    throw new ApiError('VALIDATION_FAILED', {
+      fields: { deadlineClaimId: 'Выберите срок, который нужно продлить' },
+    });
   }
 
   /** Сумма для вопроса AMOUNT: выбранный факт этого письма; при нескольких суммах выбор обязателен. */
@@ -269,22 +473,32 @@ function toView(d: {
   claimSnapshot: unknown;
   stale: boolean;
   status: string;
+  sentAt: Date | null;
+  sentVia: string | null;
   verification: unknown;
   createdAt: Date;
 }): DraftView {
   const snap = (d.claimSnapshot ?? {}) as Partial<SnapshotJson>;
+  const verification = d.verification as VerificationReport & {
+    edited?: boolean;
+  };
   return {
     id: d.id,
     caseId: d.caseId,
     letterId: snap.letterId ?? null,
     questionId: snap.questionId ?? null,
     kind: d.kind,
+    reason: snap.reason ?? null,
+    deadlineClaimId: snap.deadlineClaimId ?? null,
     germanText: d.germanText,
     russianText: d.russianText,
     claimIds: (d.claimIds as string[]) ?? [],
     stale: d.stale,
+    edited: verification.edited === true,
     status: d.status,
-    verification: d.verification as VerificationReport,
+    sentAt: d.sentAt ? d.sentAt.toISOString().slice(0, 10) : null,
+    sentVia: d.sentVia,
+    verification,
     createdAt: d.createdAt.toISOString(),
   };
 }
