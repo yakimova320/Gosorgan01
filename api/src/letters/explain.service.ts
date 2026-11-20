@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/api-error.js';
 import { LlmService } from '../llm/llm.service.js';
-import { ExplainSchema } from '../llm/schemas/explain.schema.js';
+import { ExplainV2Schema } from '../llm/schemas/explain.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   checkExplanation,
@@ -13,7 +13,7 @@ import {
 } from './explain.logic.js';
 
 /** Версия промпта объяснения: входит в ключ кэша. */
-export const EXPLAIN_PROMPT_VERSION = 1;
+export const EXPLAIN_PROMPT_VERSION = 2;
 
 interface CachedExplanation {
   lang: 'ru';
@@ -66,7 +66,7 @@ export class ExplainService {
         prompt: 'explain',
         version: EXPLAIN_PROMPT_VERSION,
         variables: { facts: factsForPrompt(facts), letterText: letter.rawText },
-        schema: ExplainSchema,
+        schema: ExplainV2Schema,
         check: (r) => {
           const problem = checkExplanation(r, facts);
           if (problem) checkFailures++;

@@ -107,6 +107,15 @@ describe('Объяснение письма (e2e, B08)', () => {
         (a: { claimIds: string[] }) => a.claimIds.length > 0,
       ),
     ).toBe(true);
+    // K08: требование письма по-русски и немецкий оригинал из факта
+    expect(first.body.requests).toEqual([
+      {
+        claimId: expect.any(String),
+        ru: 'Прислать: выписки с банковского счёта за сентябрь.',
+        de: 'Bitte reichen Sie die Kontoauszüge für September ein.',
+        unconfirmed: true,
+      },
+    ]);
     expect(first.body.deadlines).toEqual([
       {
         date: '2026-11-30',

@@ -1,5 +1,8 @@
-import { ExplainSchema } from '../llm/schemas/explain.schema.js';
-import { demoExplain } from '../llm/adapters/demo.adapter.js';
+import {
+  ExplainSchema,
+  ExplainV2Schema,
+} from '../llm/schemas/explain.schema.js';
+import { demoExplain, demoRequestRu } from '../llm/adapters/demo.adapter.js';
 import {
   checkExplanation,
   datesInAny,
@@ -164,6 +167,70 @@ describe('ответ API', () => {
 
   it('demo-объяснение проходит проверку', () => {
     const r = ExplainSchema.parse(demoExplain(JSON.stringify(facts)));
+    expect(checkExplanation(r, facts)).toBeNull();
+  });
+});
+
+describe('K08: что просит ведомство по-русски и по-немецки', () => {
+  const base = { about: { text: 'Письмо.', claimIds: ['a'] }, actions: [] };
+
+  it('перевод только для фактов REQUIREMENT, без повторов', () => {
+    expect(
+      checkExplanation(
+        { ...base, requests: [{ claimId: 'a', ru: 'Прислать.' }] },
+        facts,
+      ),
+    ).toMatch(/не факт REQUIREMENT/);
+    expect(
+      checkExplanation(
+        {
+          ...base,
+          requests: [
+            { claimId: 'r', ru: 'Прислать выписки.' },
+            { claimId: 'r', ru: 'Ещё раз.' },
+          ],
+        },
+        facts,
+      ),
+    ).toMatch(/повторяется/);
+  });
+
+  it('дата в переводе, которой нет в требовании, отклоняется', () => {
+    expect(
+      checkExplanation(
+        { ...base, requests: [{ claimId: 'r', ru: 'Прислать до 01.12.2026.' }] },
+        facts,
+      ),
+    ).toMatch(/requests\.0: дата/);
+  });
+
+  it('немецкий текст берёт код из факта; без перевода ru = null', () => {
+    const withRu = finalizeExplanation(
+      { ...base, requests: [{ claimId: 'r', ru: 'Прислать выписки со счёта.' }] },
+      facts,
+    );
+    expect(withRu.requests).toEqual([
+      {
+        claimId: 'r',
+        ru: 'Прислать выписки со счёта.',
+        de: 'Bitte reichen Sie die Kontoauszüge ein.',
+        unconfirmed: true,
+      },
+    ]);
+    const v1 = finalizeExplanation(base, facts);
+    expect(v1.requests[0]).toMatchObject({ ru: null, de: facts[1].value });
+  });
+
+  it('demo: перевод по словарю, неизвестное требование без перевода', () => {
+    expect(demoRequestRu('Bitte reichen Sie die Kontoauszüge für September ein.')).toBe(
+      'Прислать: выписки с банковского счёта за сентябрь.',
+    );
+    expect(demoRequestRu('Bitte legen Sie den Mietvertrag vor.')).toBe(
+      'Предъявить: договор аренды.',
+    );
+    expect(demoRequestRu('Bitte rufen Sie uns an.')).toBeNull();
+    const r = ExplainV2Schema.parse(demoExplain(JSON.stringify(facts)));
+    expect(r.requests).toHaveLength(1);
     expect(checkExplanation(r, facts)).toBeNull();
   });
 });

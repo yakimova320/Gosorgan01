@@ -1,5 +1,5 @@
 /**
- * pnpm llm:check:explain — live-проверка explain.v1 на синтетических письмах 01, 04, 06.
+ * pnpm llm:check:explain — live-проверка explain (последняя версия) на синтетических письмах 01, 04, 06.
  * Факты: extract.v2 + проверки кодом, все факты считаются подтверждёнными (как после проверки человеком).
  * Печатает для каждого письма: попытки, прошли ли проверки дат, чисел и запретов, текст объяснения
  * и сроки в сравнении с эталоном. Смысл по оригиналу проверяет человек.
@@ -22,7 +22,8 @@ import {
   type ExplainFact,
 } from '../letters/explain.logic.js';
 import { LlmService } from '../llm/llm.service.js';
-import { ExplainSchema } from '../llm/schemas/explain.schema.js';
+import { EXPLAIN_PROMPT_VERSION } from '../letters/explain.service.js';
+import { ExplainV2Schema } from '../llm/schemas/explain.schema.js';
 import { ExtractV2Schema } from '../llm/schemas/extract.schema.js';
 
 const apiDir = resolve(import.meta.dirname, '..', '..');
@@ -68,9 +69,9 @@ for (const id of ids) {
     }));
     const r = await llm.callWithTrace({
       prompt: 'explain',
-      version: 1,
+      version: EXPLAIN_PROMPT_VERSION,
       variables: { facts: factsForPrompt(facts), letterText: text },
-      schema: ExplainSchema,
+      schema: ExplainV2Schema,
       check: (x) => checkExplanation(x, facts),
       context: { cabinetId: null },
     });

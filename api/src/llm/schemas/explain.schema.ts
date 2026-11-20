@@ -15,3 +15,19 @@ export const ExplainSchema = z.object({
   actions: z.array(statement(200)).max(5),
 });
 export type ExplainResult = z.infer<typeof ExplainSchema>;
+
+/**
+ * Ответ explain.v2 (K08, #133): как v1 и русский текст каждого требования ведомства.
+ * Немецкий оригинал модель не возвращает: его берёт код из факта.
+ */
+export const ExplainV2Schema = ExplainSchema.extend({
+  requests: z
+    .array(
+      z.object({
+        claimId: z.string().min(1),
+        ru: z.string().trim().min(1).max(200),
+      }),
+    )
+    .max(20),
+});
+export type ExplainV2Result = z.infer<typeof ExplainV2Schema>;

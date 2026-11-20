@@ -784,7 +784,8 @@
                   "pm.test('статус 200', () => pm.response.to.have.status(200));",
                   "const b = pm.response.json();",
                   "pm.test('у каждого утверждения есть факты', () => { pm.expect(b.about.claimIds.length).to.be.above(0); b.actions.forEach(a => pm.expect(a.claimIds.length).to.be.above(0)); });",
-                  "pm.test('сроки в формате YYYY-MM-DD', () => b.deadlines.forEach(x => pm.expect(x.date).to.match(/^\\d{4}-\\d{2}-\\d{2}$/)));"
+                  "pm.test('сроки в формате YYYY-MM-DD', () => b.deadlines.forEach(x => pm.expect(x.date).to.match(/^\\d{4}-\\d{2}-\\d{2}$/)));",
+                  "pm.test('K08: что просит ведомство — немецкий текст из факта, русский или null', () => { pm.expect(b.requests).to.be.an('array'); b.requests.forEach(q => { pm.expect(q.de).to.be.a('string').and.not.empty; pm.expect(q.ru === null || typeof q.ru === 'string').to.be.true; }); });"
                 ]
               }
             }
