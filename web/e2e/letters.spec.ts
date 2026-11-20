@@ -121,6 +121,55 @@ test('исправление: решения по другим фактам ос
   ).toContainText('Кандидат');
 });
 
+for (const dateClaim of ['Дата письма: ', 'Срок: до']) {
+  test(`${dateClaim}исправление с запятыми на телефоне и с точками на компьютере`, async ({
+    page,
+    request,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const u = await createUser(request, 'datefix', `Anna${letters()}`);
+    await signedIn(page, u.token);
+    await uploadUi(page, fixture('01_jobcenter_request.pdf'));
+    await expect(page).toHaveURL(/\/check$/, { timeout: 30_000 });
+
+    const card = claim(page, dateClaim);
+    await card.getByRole('button', { name: 'Исправить' }).click();
+    const input = page.getByLabel('Верная дата (ТТ.ММ.ГГГГ)');
+    await input.fill('31,11,2026');
+    await page.getByRole('button', { name: 'Сохранить исправление' }).click();
+    await expect(input).toHaveAttribute('aria-invalid', 'true');
+    await expect(card).toContainText('Такой даты нет');
+
+    await input.fill('13,11,2026');
+    await page.getByRole('button', { name: 'Сохранить исправление' }).click();
+    await expect(card).toContainText('13.11.2026');
+    await expect(input).toHaveCount(0);
+    await page.reload();
+    await expect(card).toContainText('13.11.2026');
+    await expect(card).toContainText('Исправлено вами');
+
+    await card.getByRole('button', { name: 'Исправить' }).click();
+    await expect(input).toHaveValue('13.11.2026');
+    if (dateClaim === 'Дата письма: ') {
+      for (const width of [390, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await input.scrollIntoViewIfNeeded();
+        await testInfo.attach(`date-correction-${width}`, {
+          body: await page.screenshot(),
+          contentType: 'image/png',
+        });
+      }
+    }
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await input.fill('14.11.2026');
+    await page.getByRole('button', { name: 'Сохранить исправление' }).click();
+    await expect(input).toHaveCount(0);
+    await page.reload();
+    await expect(card).toContainText('14.11.2026');
+  });
+}
+
 test('факты не найдены: отдельное понятное состояние, текст письма доступен', async ({
   page,
   request,
