@@ -26,8 +26,10 @@ import {
 export const DEFAULT_MAX_CALLS = 50;
 /** Письма, где один факт срока остаётся неподтверждённым (Q2). */
 const Q2_LETTERS = new Set(['01_jobcenter_request', '04_buergeramt', '06_multiple_deadlines']);
-/** Дополнительные варианты файлов: сканы PDF без текста — ожидается понятный отказ. */
-const VARIANT_REFUSAL = 'SCAN_PDF_NOT_SUPPORTED';
+/*
+ * Дополнительные варианты файлов: PDF-версии писем с фото и сканами. С B11 скан PDF
+ * распознаётся постранично: читаемое письмо должно быть принято, нечитаемое — понятный UNREADABLE.
+ */
 
 class CallCapReached extends Error {
   constructor() {
@@ -97,20 +99,23 @@ const emptyUsage = (): Usage => ({
 });
 
 /** Основной файл логического письма: текстовый PDF или одно фото; сканы PDF — варианты. */
-export function plan(fixturesDir: string): { letters: { fx: Fixture; file: string }[]; variants: { id: string; file: string }[] } {
+export function plan(fixturesDir: string): {
+  letters: { fx: Fixture; file: string }[];
+  variants: { id: string; file: string; readable: boolean }[];
+} {
   const files = readdirSync(fixturesDir);
   const fixtures = files
     .filter((f) => f.endsWith('.json'))
     .sort()
     .map((f) => JSON.parse(readFileSync(resolve(fixturesDir, f), 'utf8')) as Fixture);
   const letters: { fx: Fixture; file: string }[] = [];
-  const variants: { id: string; file: string }[] = [];
+  const variants: { id: string; file: string; readable: boolean }[] = [];
   for (const fx of fixtures) {
     const image = files.find((f) => f.startsWith(`${fx.id}.`) && /\.(jpe?g|png)$/i.test(f));
     const pdf = files.find((f) => f === `${fx.id}.pdf`);
     if (fx.source === 'OCR') {
       if (image) letters.push({ fx, file: image });
-      if (pdf) variants.push({ id: fx.id, file: pdf });
+      if (pdf) variants.push({ id: fx.id, file: pdf, readable: fx.readable });
     } else letters.push({ fx, file: fx.file });
   }
   return { letters, variants };
@@ -228,10 +233,15 @@ export async function runEval(options: {
     const isClearRefusal = (err: { code: string; message: string }, expected: string[]) =>
       expected.includes(err.code) && /[а-яё]/i.test(err.message) && err.message.length >= 20;
 
-    const runOne = async (id: string, file: string, fx: Fixture | null): Promise<LetterRun> => {
+    const runOne = async (
+      id: string,
+      file: string,
+      fx: Fixture | null,
+      variantReadable = false,
+    ): Promise<LetterRun> => {
       const started = Date.now();
       const kind = file.endsWith('.pdf') ? 'PDF' : 'PHOTO';
-      const expectedRefusal = fx ? !fx.readable : true;
+      const expectedRefusal = fx ? !fx.readable : !variantReadable;
       const run: LetterRun = {
         id, file, kind, status: 'FAILED', expectedRefusal, error: null, refusalClear: null,
         score: null, explanation: null, draft: null, q2Variant: false, dropped: 0, ms: 0, usage: emptyUsage(),
@@ -246,13 +256,13 @@ export async function runEval(options: {
         const quota = err.code === 'LLM_QUOTA';
         run.status = expectedRefusal && !quota ? 'REFUSED' : 'FAILED';
         if (expectedRefusal && !quota)
-          run.refusalClear = isClearRefusal(err, fx ? ['UNREADABLE'] : [VARIANT_REFUSAL]);
+          run.refusalClear = isClearRefusal(err, ['UNREADABLE']);
         run.usage = await usageOf(before);
         run.ms = Date.now() - started;
         return run;
       }
       if (!fx) {
-        // вариант файла принят (например, PDF с текстовым слоем): это не отказ и не оценка,
+        // вариант файла принят (B11: скан PDF распознан постранично): это не отказ и не оценка,
         // дальше по пути не идём, чтобы не тратить обращения к модели
         run.status = 'OK';
         run.expectedRefusal = false;
@@ -309,9 +319,13 @@ export async function runEval(options: {
       return run;
     };
 
-    const todo: { id: string; file: string; fx: Fixture | null; variant: boolean }[] = [
-      ...letters.filter((l) => wanted(l.fx.id)).map((l) => ({ id: l.fx.id, file: l.file, fx: l.fx, variant: false })),
-      ...variants.filter((v) => wanted(v.id)).map((v) => ({ id: v.id, file: v.file, fx: null, variant: true })),
+    const todo: { id: string; file: string; fx: Fixture | null; variant: boolean; readable: boolean }[] = [
+      ...letters
+        .filter((l) => wanted(l.fx.id))
+        .map((l) => ({ id: l.fx.id, file: l.file, fx: l.fx, variant: false, readable: l.fx.readable })),
+      ...variants
+        .filter((v) => wanted(v.id))
+        .map((v) => ({ id: v.id, file: v.file, fx: null, variant: true, readable: v.readable })),
     ];
     for (const item of todo) {
       const target = item.variant ? result.variants : result.letters;
@@ -320,7 +334,7 @@ export async function runEval(options: {
         continue;
       }
       log(`→ ${item.file}`);
-      const run = await runOne(item.id, item.file, item.fx);
+      const run = await runOne(item.id, item.file, item.fx, item.readable);
       if (capHit) {
         // предел достигнут во время этого письма: оценки нет, расход сохраняется
         result.partial = true;

@@ -59,6 +59,7 @@ for (const [id, expectReadable] of [
   try {
     const r = await llm.callWithTrace({
       prompt: 'transcribe',
+      version: 1,
       variables: {},
       images: [{ mime: 'image/jpeg', data }],
       schema: TranscribeSchema,

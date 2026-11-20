@@ -53,7 +53,12 @@ describe('Оценка (B14, demo)', () => {
     expect(s.extractionLetters).toBe(3); // ожидаемый отказ не в знаменателе
     expect(s.refusals.rows.map((x) => [x.file, x.code, x.clear])).toEqual([
       ['11_bad_photo.jpg', 'UNREADABLE', true],
-      ['09_scan.pdf', 'SCAN_PDF_NOT_SUPPORTED', true],
+    ]);
+    // B11: скан PDF распознаётся постранично и принимается (раньше: SCAN_PDF_NOT_SUPPORTED);
+    // 11_bad_photo.pdf — PDF с текстовым слоем, принимается как и раньше
+    expect(r.variants.map((v) => [v.file, v.status, v.expectedRefusal])).toEqual([
+      ['09_scan.pdf', 'OK', false],
+      ['11_bad_photo.pdf', 'OK', false],
     ]);
     expect(Object.fromEntries(s.rules.map((x) => [x.id, x.verdict]))).toMatchObject({
       Q1: 'принято',

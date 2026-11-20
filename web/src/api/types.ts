@@ -61,7 +61,7 @@ export interface Explanation {
 export interface Letter {
   id: string;
   caseId: string | null;
-  sourceType: 'PDF_TEXT' | 'IMAGE';
+  sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
   rawText: string;
   pages: { n: number; readable: boolean; chars: number }[];
   createdAt: string;
@@ -191,7 +191,7 @@ export interface LetterDetail {
   letter: {
     id: string;
     caseId: string | null;
-    sourceType: 'PDF_TEXT' | 'IMAGE';
+    sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
     text: string;
     pages: { n: number; readable: boolean; chars: number }[];
     files: { n: number; mime: string; bytes: number }[];
@@ -221,7 +221,7 @@ export interface ApiTimelineItem {
 
 export interface ApiCaseDetail extends CaseSummary {
   status?: 'OPEN' | 'CLOSED';
-  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE'; authority: string | null; unconfirmed: number }[];
+  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN'; authority: string | null; unconfirmed: number }[];
   claims: LetterClaim[];
   deadlines: LetterDeadline[];
   drafts: { id: string; kind: string; status: string; stale: boolean; createdAt: string }[];
