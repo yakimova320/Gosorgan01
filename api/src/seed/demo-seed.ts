@@ -1,5 +1,9 @@
 import type { INestApplicationContext } from '@nestjs/common';
-import { EmailSchema, NewPasswordSchema } from '@jasno/shared';
+import {
+  AI_CONSENT_VERSION,
+  EmailSchema,
+  NewPasswordSchema,
+} from '@jasno/shared';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { hashPassword } from '../auth/password.js';
@@ -105,6 +109,9 @@ export async function seedDemo(
       email: prepared.email,
       passwordHash: await hashPassword(prepared.password),
       consentAt: new Date(),
+      // K11: демо-кабинет показывает основной путь, согласие на анализ ИИ дано
+      aiConsentAt: new Date(),
+      aiConsentVersion: AI_CONSENT_VERSION,
       profile: DEMO_PROFILE,
       demo: true,
     },

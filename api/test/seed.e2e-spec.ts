@@ -116,7 +116,7 @@ describe('Seed демо-кабинета (e2e, B19)', () => {
   it('обычный аккаунт с тем же e-mail не удаляется: seed отказывает', async () => {
     const auth = app.get(AuthService);
     const email = 'normal-user@example.org';
-    await auth.register({ email, password: 'normal-Passwort-1', consent: true, ...PERSON });
+    await auth.register({ email, password: 'normal-Passwort-1', consent: true, aiConsent: true, ...PERSON });
     const normal = await db.cabinet.findUniqueOrThrow({ where: { email } });
     await expect(seedDemo(app, { ...prepared, email })).rejects.toThrow(SeedError);
     const after = await db.cabinet.findUniqueOrThrow({ where: { email } });

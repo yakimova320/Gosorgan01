@@ -6,6 +6,8 @@ import { ApiError } from '../common/api-error.js';
 import { AccountErasureService } from '../erasure/account-erasure.service.js';
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AI_CONSENT_VERSION } from '@jasno/shared';
+import { hasAiConsent } from './ai-consent.js';
 import {
   ProfileSchema,
   type Profile,
@@ -18,6 +20,8 @@ export interface CabinetView {
   profile: Profile | null;
   counts: { openTasks: number; activeCases: number; inboxLetters: number };
   nextDeadline: { date: string; caseId: string; title: string } | null;
+  /** K11 (#134): согласие на анализ письма ИИ на текущую версию текста */
+  aiConsent: { given: boolean; at: string | null; version: number };
 }
 
 /** Открытый срок: подтверждённый факт, не отмечен «сделано», дело не завершено. */
@@ -84,6 +88,11 @@ export class CabinetService {
       language: cabinet.language,
       profile: (cabinet.profile as Profile | null) ?? null,
       counts: { openTasks, activeCases, inboxLetters },
+      aiConsent: {
+        given: hasAiConsent(cabinet),
+        at: hasAiConsent(cabinet) ? cabinet.aiConsentAt!.toISOString() : null,
+        version: AI_CONSENT_VERSION,
+      },
       nextDeadline:
         next && next.case
           ? {
@@ -102,6 +111,14 @@ export class CabinetService {
     const data: Prisma.CabinetUpdateInput = {};
     let senderChanged = false;
     if (input.language !== undefined) data.language = input.language;
+    // K11: дать (true) или отозвать (false) согласие на анализ ИИ. Уже загруженные письма остаются.
+    if (input.aiConsent === true) {
+      data.aiConsentAt = new Date();
+      data.aiConsentVersion = AI_CONSENT_VERSION;
+    } else if (input.aiConsent === false) {
+      data.aiConsentAt = null;
+      data.aiConsentVersion = null;
+    }
     if (input.profile !== undefined) {
       // Частичное изменение: объединяем с сохранённым и проверяем итог целиком.
       const current = await this.db.cabinet.findUniqueOrThrow({

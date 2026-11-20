@@ -35,6 +35,7 @@ describe('Объяснение письма (e2e, B08)', () => {
         email,
         password: 'mein-langes-Passwort',
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(201);

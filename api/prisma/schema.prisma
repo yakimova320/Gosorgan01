@@ -99,6 +99,10 @@ model Cabinet {
   language            String               @default("ru")
   profile             Json? // { firstName, lastName, address, numbers: [{label, value}] }
   consentAt           DateTime
+  // K11 (#134): отдельное согласие на анализ текста письма ИИ (DSGVO). null — не дано или отозвано.
+  // Версия — версия текста согласия (AI_CONSENT_VERSION в packages/shared); старая версия = нет согласия.
+  aiConsentAt         DateTime?
+  aiConsentVersion    Int?
   createdAt           DateTime             @default(now())
   lastSeenAt          DateTime             @default(now())
   // A01: временная блокировка записей на время удаления аккаунта. Не мягкое удаление:

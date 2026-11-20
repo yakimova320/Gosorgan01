@@ -23,6 +23,11 @@ export const ERROR_CODES = {
   },
   UNAUTHORIZED: { status: 401, message: 'Войдите, чтобы продолжить' },
   INVALID_CREDENTIALS: { status: 401, message: 'Неверный e-mail или пароль' },
+  AI_CONSENT_REQUIRED: {
+    status: 403,
+    message:
+      'Чтобы разобрать письмо, нужно согласие на анализ текста ИИ. Дайте его в профиле или перед загрузкой',
+  },
   NOT_FOUND: { status: 404, message: 'Не найдено' },
   EMAIL_TAKEN: { status: 409, message: 'Этот e-mail уже зарегистрирован' },
   CLAIM_STATE: {

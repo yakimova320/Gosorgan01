@@ -43,6 +43,7 @@ const CABINET_EXAMPLE: CabinetView = {
     numbers: [{ label: 'Kundennummer', value: '123A456' }],
   },
   counts: { openTasks: 1, activeCases: 2, inboxLetters: 0 },
+  aiConsent: { given: true, at: '2026-11-20T10:00:00.000Z', version: 1 },
   nextDeadline: {
     date: '2026-12-01',
     caseId: 'cm0abc123',
@@ -78,9 +79,10 @@ export class CabinetController {
 
   @Patch()
   @ApiOperation({
-    summary: 'Изменить язык или профиль',
+    summary: 'Изменить язык, профиль или согласие на анализ ИИ',
     description:
       'Профиль можно менять по одному полю. Итог проверяется целиком: имя, фамилию и адрес очистить нельзя. ' +
+      'aiConsent: true — дать согласие на анализ письма ИИ, false — отозвать (K11). ' +
       'Имя и фамилия: латинские буквы, пробел, дефис, апостроф.',
   })
   @ApiBody({

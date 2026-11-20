@@ -21,6 +21,7 @@ export async function createUser(
   request: APIRequestContext,
   tag: string,
   firstName: string,
+  options: { aiConsent?: boolean } = {},
 ) {
   const email = uniqueEmail(tag);
   const reg = await request.post(`${API_URL}/auth/register`, {
@@ -28,6 +29,7 @@ export async function createUser(
       email,
       password: PASSWORD,
       consent: true,
+      aiConsent: options.aiConsent ?? true,
       firstName,
       lastName: 'Muster',
       address: ADDRESS,
@@ -47,6 +49,8 @@ export async function fillRegistration(
     lastName?: string;
     address?: string;
     consent?: boolean;
+    /** K11: отдельное согласие на анализ ИИ (по умолчанию не отмечено) */
+    aiConsent?: boolean;
   },
 ) {
   await page.getByLabel('Имя', { exact: true }).fill(data.firstName ?? 'Anna');
@@ -57,7 +61,10 @@ export async function fillRegistration(
   await page.getByLabel('E-mail').fill(data.email);
   await page.getByLabel('Пароль', { exact: true }).fill(PASSWORD);
   await page.getByLabel('Повторите пароль').fill(PASSWORD);
-  if (data.consent !== false) await page.getByRole('checkbox').check();
+  if (data.consent !== false)
+    await page.getByRole('checkbox', { name: /обработкой моих данных/ }).check();
+  if (data.aiConsent)
+    await page.getByRole('checkbox', { name: /внешней модели ИИ/ }).check();
 }
 
 export async function loginUi(page: Page, email: string, password = PASSWORD) {

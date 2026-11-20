@@ -818,6 +818,30 @@ details.faq .faq-body {
   font-size: 13px;
 }
 
+/* K10: подсказка о хранении в браузере — в потоке страницы, ничего не перекрывает */
+.storage-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  background: var(--c-sand);
+  border-bottom: 1px solid var(--c-line-strong);
+  color: var(--c-navy);
+  font-size: 14px;
+}
+.storage-notice__text {
+  flex: 1 1 280px;
+  max-width: 720px;
+}
+.storage-notice__text p {
+  margin: 0 0 2px;
+}
+.storage-notice .btn {
+  min-height: 44px;
+}
+
 /* F05: номера в профиле */
 .profile-numbers {
   border: 0;

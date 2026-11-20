@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { AI_CONSENT_VERSION } from '@jasno/shared';
 import { Prisma } from '../generated/prisma/client.js';
 import { ApiError } from '../common/api-error.js';
 import { APP_CONFIG } from '../config/config.module.js';
@@ -54,6 +55,9 @@ export class AuthService {
           email: input.email,
           passwordHash,
           consentAt: new Date(),
+          ...(input.aiConsent === true
+            ? { aiConsentAt: new Date(), aiConsentVersion: AI_CONSENT_VERSION }
+            : {}),
           // Регистрационные данные: только имя, фамилия и адрес. Писем, дел и демо-данных нет.
           profile: {
             firstName: input.firstName,

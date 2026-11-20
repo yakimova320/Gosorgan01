@@ -24,7 +24,7 @@ describe('Смена пароля (e2e, A02)', () => {
     const email = `pw-${++n}@example.org`;
     const res = await http()
       .post('/auth/register')
-      .send({ email, password: PASSWORD, consent: true, ...PERSON })
+      .send({ email, password: PASSWORD, consent: true, aiConsent: true, ...PERSON })
       .expect(201);
     const { id } = await db.cabinet.findFirstOrThrow({ where: { email } });
     return { token: res.body.sessionToken as string, email, cabinetId: id };

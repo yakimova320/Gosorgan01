@@ -52,6 +52,8 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       profile: PERSON,
       counts: { openTasks: 0, activeCases: 0, inboxLetters: 0 },
       nextDeadline: null,
+      // K11: без aiConsent при регистрации согласия на анализ ИИ нет
+      aiConsent: { given: false, at: null, version: 1 },
     });
 
     await http()
@@ -95,6 +97,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
         email: 'TAKEN@example.org',
         password: PASSWORD,
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(409);
@@ -124,6 +127,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
         email: 'new@example.org',
         password: 'я'.repeat(40),
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(400);
@@ -136,6 +140,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
         email: 'new@example.org',
         password: 'short',
         consent: true,
+        aiConsent: true,
         ...PERSON,
       })
       .expect(400);
@@ -231,6 +236,7 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       email: 'cyr@example.org',
       password: PASSWORD,
       consent: true,
+      aiConsent: true,
     };
     const missing = await http().post('/auth/register').send(base).expect(400);
     expect(Object.keys(missing.body.details.fields).sort()).toEqual([

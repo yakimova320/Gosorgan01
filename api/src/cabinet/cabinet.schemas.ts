@@ -11,6 +11,8 @@ export const UpdateCabinetSchema = z
     language: z.enum(['ru']).optional(),
     /** Можно прислать одно поле профиля; очистить имя, фамилию или адрес нельзя */
     profile: ProfilePatchSchema.optional(),
+    /** K11 (#134): true — дать согласие на анализ письма ИИ, false — отозвать */
+    aiConsent: z.boolean().optional(),
   })
   .strict();
 export type UpdateCabinetInput = z.infer<typeof UpdateCabinetSchema>;

@@ -93,7 +93,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -143,7 +143,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"postman-cyr@example.org\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Анна\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"postman-cyr@example.org\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Анна\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -181,7 +181,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -257,7 +257,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"too-long@example.org\",\n  \"password\": \"яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"too-long@example.org\",\n  \"password\": \"яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -555,7 +555,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{lettersEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"{{lettersEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -575,6 +575,141 @@
                 "exec": [
                   "pm.test('статус 201', () => pm.response.to.have.status(201));",
                   "pm.environment.set('sessionToken', pm.response.json().sessionToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet: отозвать согласие на анализ ИИ (K11)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"aiConsent\": false}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('согласия нет', () => pm.expect(pm.response.json().aiConsent.given).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: без согласия на анализ ИИ — 403 (K11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 403', () => pm.response.to.have.status(403));",
+                  "pm.test('код AI_CONSENT_REQUIRED', () => pm.expect(pm.response.json().code).to.eql('AI_CONSENT_REQUIRED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet: дать согласие на анализ ИИ (K11)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"aiConsent\": true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('согласие дано, версия текста', () => { const a = pm.response.json().aiConsent; pm.expect(a.given).to.be.true; pm.expect(a.at).to.be.a('string'); pm.expect(a.version).to.be.a('number'); });"
                 ]
               }
             }
@@ -2615,7 +2750,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{deleteEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"{{deleteEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -3099,7 +3234,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{pwEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"{{pwEmail}}\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [
@@ -3800,7 +3935,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"b12-{{$timestamp}}@example.org\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
+              "raw": "{\n  \"email\": \"b12-{{$timestamp}}@example.org\",\n  \"password\": \"postman-Passwort-123\",\n  \"consent\": true,\n  \"aiConsent\": true,\n  \"firstName\": \"Anna\",\n  \"lastName\": \"Muster\",\n  \"address\": \"Musterstr. 1, 10115 Berlin\"\n}"
             }
           },
           "event": [

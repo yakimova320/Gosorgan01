@@ -59,7 +59,7 @@ describe('Лимиты (e2e, B18)', () => {
     const req = http().post('/auth/register');
     if (ip) req.set('X-Forwarded-For', ip);
     const res = await req
-      .send({ email, password: PASSWORD, consent: true, ...PERSON })
+      .send({ email, password: PASSWORD, consent: true, aiConsent: true, ...PERSON })
       .expect(201);
     const { id } = await db.cabinet.findFirstOrThrow({ where: { email } });
     return { token: res.body.sessionToken as string, email, cabinetId: id };
@@ -285,7 +285,7 @@ describe('Лимиты (e2e, B18)', () => {
       const res = await http()
         .post('/auth/register')
         .set('X-Forwarded-For', '198.18.10.1')
-        .send({ email: 'zu-viel@example.org', password: PASSWORD, consent: true, ...PERSON })
+        .send({ email: 'zu-viel@example.org', password: PASSWORD, consent: true, aiConsent: true, ...PERSON })
         .expect(429);
       expect(res.body.code).toBe('RATE_LIMITED');
       expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);

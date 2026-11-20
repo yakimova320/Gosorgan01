@@ -61,7 +61,7 @@ test('без согласия форма не уходит на сервер', a
     consent: false,
   });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
-  await expect(page.getByRole('checkbox')).toBeFocused();
+  await expect(page.getByRole('checkbox', { name: /обработкой моих данных/ })).toBeFocused();
   await expect(page.locator('#r-consent-error')).toBeVisible();
   expect(requests).toBe(0);
 });
