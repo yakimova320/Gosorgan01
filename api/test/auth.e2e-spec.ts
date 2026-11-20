@@ -52,6 +52,8 @@ describe('Регистрация, вход, кабинет (e2e)', () => {
       profile: PERSON,
       counts: { openTasks: 0, activeCases: 0, inboxLetters: 0 },
       nextDeadline: null,
+      // K11: без aiConsent при регистрации согласия на анализ ИИ нет
+      aiConsent: { given: false, at: null, version: 1 },
     });
 
     await http()

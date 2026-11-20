@@ -33,6 +33,7 @@ async function register(page: Page, firstName: string, lastName: string) {
     firstName,
     lastName,
     address: `${lastName}weg 5, 10115 Berlin`,
+    aiConsent: true,
   });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
