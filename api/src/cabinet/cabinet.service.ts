@@ -124,13 +124,16 @@ export class CabinetService {
       }
       data.profile = checked.data;
       const before = (current.profile ?? {}) as Partial<Profile>;
-      senderChanged = (['firstName', 'lastName', 'address'] as const).some(
-        (k) => before[k] !== checked.data[k],
-      );
+      senderChanged =
+        (['firstName', 'lastName', 'address'] as const).some(
+          (k) => before[k] !== checked.data[k],
+        ) ||
+        JSON.stringify(before.numbers ?? []) !==
+          JSON.stringify(checked.data.numbers ?? []);
     }
     await this.db.$transaction(async (tx) => {
       await tx.cabinet.update({ where: { id: cabinetId }, data });
-      // Отправитель в черновиках — из профиля: после изменения имени или адреса черновики устаревают.
+      // Отправитель в черновиках — из профиля: после изменения имени, адреса или номеров черновики устаревают.
       if (senderChanged)
         await tx.draft.updateMany({
           where: { case: { cabinetId }, stale: false, status: 'PREPARED' },

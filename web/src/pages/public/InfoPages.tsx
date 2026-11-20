@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { PageHeader } from '../../components/ui';
-import { CARDS, FAQ, TOPICS, type Card } from '../../content';
+import { CARDS, FAQ, FAQ_CONSULTATIONS, TOPICS, type Card, type Consultation } from '../../content';
 import { formatDate } from '../../lib/dates';
 
 export function FaqPage() {
@@ -120,18 +120,8 @@ export function WissenPage() {
   );
 }
 
-const CONSULTATIONS = [
-  {
-    name: 'Migrationsberatung für erwachsene Zuwanderer (MBE)',
-    text: 'Бесплатная консультация для взрослых мигрантов.',
-  },
-  { name: 'Verbraucherzentrale', text: 'Вопросы договоров, счетов, долгов.' },
-  { name: 'Mieterverein', text: 'Вопросы аренды и договора аренды.' },
-  {
-    name: 'Адвокат',
-    text: 'Если вопрос серьёзный или срок короткий. При низком доходе можно получить Beratungshilfeschein в Amtsgericht.',
-  },
-];
+/** Список консультаций (F05): названия и тексты из FAQ (content/faq.ru.md, вопрос «Куда обратиться…»), без адресов и цен. */
+const CONSULTATIONS: Consultation[] = FAQ_CONSULTATIONS.places;
 
 export function BeratungPage() {
   return (
@@ -151,7 +141,11 @@ export function BeratungPage() {
           </li>
         ))}
       </ul>
-      <div className="alert alert--info">Контакты консультаций в вашем городе Ja!sno пока не показывает.</div>
+      {FAQ_CONSULTATIONS.notes.map((note) => (
+        <div key={note} className="alert alert--info">
+          {note}
+        </div>
+      ))}
     </>
   );
 }

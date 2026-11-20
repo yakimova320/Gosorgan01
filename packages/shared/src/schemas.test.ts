@@ -176,6 +176,31 @@ describe('имя, фамилия, адрес', () => {
     expect(ProfilePatchSchema.safeParse({ firstName: '' }).success).toBe(false);
     expect(ProfileSchema.safeParse({ firstName: 'Anna' }).success).toBe(false);
   });
+
+  it('номера профиля: немецкое название, без кириллицы и строк шаблона, не больше 10', () => {
+    const msg = (numbers: unknown) => {
+      const r = ProfilePatchSchema.safeParse({ numbers });
+      return r.success ? null : r.error.issues[0].message;
+    };
+    expect(msg([{ label: ' Kundennummer ', value: '123A456' }])).toBeNull();
+    expect(
+      ProfilePatchSchema.parse({
+        numbers: [{ label: ' BG-Nummer ', value: ' 12345BG0001234 ' }],
+      }).numbers,
+    ).toEqual([{ label: 'BG-Nummer', value: '12345BG0001234' }]);
+    expect(msg([])).toBeNull();
+    expect(msg([{ label: 'Номер клиента', value: '1' }])).toBe(
+      'Название по-немецки, как в письме ведомства',
+    );
+    expect(msg([{ label: 'Kundennummer', value: '' }])).toBe('Введите номер');
+    expect(msg([{ label: '', value: '1' }])).toBe('Введите название номера');
+    expect(msg([{ label: 'Ihr Zeichen', value: '1' }])).toContain(
+      'уже есть в шаблоне',
+    );
+    expect(
+      msg(Array.from({ length: 11 }, (_, i) => ({ label: `N${i}`, value: '1' }))),
+    ).toBe('Не больше 10 номеров');
+  });
 });
 
 describe('формат ошибок', () => {

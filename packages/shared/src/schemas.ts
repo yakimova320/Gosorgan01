@@ -95,6 +95,33 @@ export const DeleteAccountSchema = z.object({
 });
 export type DeleteAccountInput = z.infer<typeof DeleteAccountSchema>;
 
+export const PROFILE_NUMBERS_MAX = 10;
+const NO_CYRILLIC = /^[^\p{Script=Cyrillic}]*$/u;
+/** Строки шаблона черновика: номер профиля с таким названием спутал бы проверку. */
+const RESERVED_NUMBER_LABEL = /^(ihr zeichen|datum|betreff)$/i;
+
+/**
+ * Номер из профиля для черновика (F05): название по-немецки, как в письмах ведомства
+ * («Kundennummer», «BG-Nummer»), и сам номер. Попадает в блок отправителя черновика,
+ * поэтому кириллица не допускается.
+ */
+export const ProfileNumberSchema = z
+  .object({
+    label: text(80)
+      .min(1, { message: 'Введите название номера' })
+      .regex(NO_CYRILLIC, {
+        message: 'Название по-немецки, как в письме ведомства',
+      })
+      .refine((v) => !RESERVED_NUMBER_LABEL.test(v), {
+        message: 'Эта строка уже есть в шаблоне письма, назовите номер иначе',
+      }),
+    value: text(80)
+      .min(1, { message: 'Введите номер' })
+      .regex(NO_CYRILLIC, { message: 'Номер латинскими буквами и цифрами' }),
+  })
+  .strict();
+export type ProfileNumber = z.infer<typeof ProfileNumberSchema>;
+
 /** Профиль целиком: имя, фамилия и адрес обязательны всегда. */
 export const ProfileSchema = z
   .object({
@@ -102,10 +129,10 @@ export const ProfileSchema = z
     lastName: LastNameSchema,
     address: AddressSchema,
     numbers: z
-      .array(
-        z.object({ label: text(80).min(1), value: text(80).min(1) }).strict(),
-      )
-      .max(10)
+      .array(ProfileNumberSchema)
+      .max(PROFILE_NUMBERS_MAX, {
+        message: `Не больше ${PROFILE_NUMBERS_MAX} номеров`,
+      })
       .optional(),
   })
   .strict();

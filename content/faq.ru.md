@@ -179,6 +179,7 @@ Jobcenter, Familienkasse, Bürgeramt, Ausländerbehörde, Finanzamt, Krankenkass
 
 - Migrationsberatung für erwachsene Zuwanderer (MBE): бесплатная консультация для взрослых мигрантов.
 - Verbraucherzentrale: вопросы договоров, счетов, долгов.
+- Mieterverein: вопросы аренды и договора аренды.
 - Адвокат: если вопрос серьёзный или срок короткий. При низком доходе можно получить Beratungshilfeschein в Amtsgericht.
 
 Контакты консультаций в вашем городе Ja!sno пока не показывает.

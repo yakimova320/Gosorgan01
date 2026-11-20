@@ -69,6 +69,40 @@ describe('шаблон CLARIFICATION', () => {
     ).toBe(true);
   });
 
+  it('номера из профиля стоят под адресом в DE и RU и проходят проверку', () => {
+    const withNumbers = {
+      ...profile,
+      numbers: [
+        { label: 'Kundennummer', value: '123A456' },
+        { label: 'BG-Nummer', value: '98765BG0004321' },
+      ],
+    };
+    const built = buildClarification({
+      claims: full,
+      profile: withNumbers,
+      questionId: 'WHICH_DOCUMENTS',
+      today: TODAY,
+    });
+    for (const text of [built.germanText, built.russianText]) {
+      const lines = text.split('\n');
+      expect(lines.slice(0, 5)).toEqual([
+        'Anna Muster',
+        'Musterstr. 12, 10115 Berlin',
+        'Kundennummer: 123A456',
+        'BG-Nummer: 98765BG0004321',
+        '',
+      ]);
+    }
+    expect(
+      verifyDraft({ ...built, confirmed: full, profile: withNumbers, today: TODAY })
+        .passed,
+    ).toBe(true);
+    // Без номеров в профиле те же числа — «не из источников»
+    expect(
+      verifyDraft({ ...built, confirmed: full, profile, today: TODAY }).passed,
+    ).toBe(false);
+  });
+
   it('AMOUNT: выбранная сумма, другая сумма письма не попадает', () => {
     const d = buildClarification({
       claims: full,
