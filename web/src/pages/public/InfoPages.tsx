@@ -120,15 +120,8 @@ export function WissenPage() {
   );
 }
 
-/**
- * Список консультаций (F05): тексты из FAQ (content/faq.ru.md, вопрос «Куда обратиться…»),
- * без адресов и цен. Mieterverein есть в списке задачи F05 и в ответе LEGAL_REFERRAL API,
- * но его пока нет в FAQ: показываем его отдельной строкой, пока команда не добавит его в FAQ.
- */
-const MIETERVEREIN: Consultation = { name: 'Mieterverein', text: 'Вопросы аренды и договора аренды.' };
-const CONSULTATIONS: Consultation[] = FAQ_CONSULTATIONS.places.some((c) => c.name === MIETERVEREIN.name)
-  ? FAQ_CONSULTATIONS.places
-  : [...FAQ_CONSULTATIONS.places.slice(0, 2), MIETERVEREIN, ...FAQ_CONSULTATIONS.places.slice(2)];
+/** Список консультаций (F05): названия и тексты из FAQ (content/faq.ru.md, вопрос «Куда обратиться…»), без адресов и цен. */
+const CONSULTATIONS: Consultation[] = FAQ_CONSULTATIONS.places;
 
 export function BeratungPage() {
   return (

@@ -7,7 +7,7 @@ describe('консультации из FAQ (F05)', () => {
     expect(item).toBeDefined();
     const lines = item!.blocks.flatMap((b) => (b.kind === 'p' ? [] : b.items));
     expect(FAQ_CONSULTATIONS.places).toHaveLength(lines.length);
-    expect(FAQ_CONSULTATIONS.places.map((c) => c.name)).toContain('Verbraucherzentrale');
+    expect(FAQ_CONSULTATIONS.places.map((c) => c.name)).toEqual(expect.arrayContaining(['Verbraucherzentrale', 'Mieterverein']));
     for (const [i, c] of FAQ_CONSULTATIONS.places.entries())
       expect(lines[i].toLowerCase()).toBe(`${c.name}: ${c.text}`.toLowerCase());
     expect(FAQ_CONSULTATIONS.notes.length).toBeGreaterThan(0);
