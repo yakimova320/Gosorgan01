@@ -21,7 +21,7 @@ import {
   mockUpload,
 } from '../mocks/letters';
 import { DATA_MODE } from '../api/config';
-import type { ApiError } from '../api/errors';
+import { apiError, type ApiError } from '../api/errors';
 import type {
   ApiCaseDetail,
   ApiDraft,
@@ -73,7 +73,7 @@ function summary(c: CaseDetail): CaseSummary {
 export interface InboxLetter {
   id: string;
   createdAt: string;
-  sourceType: 'PDF_TEXT' | 'IMAGE';
+  sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
   authority: string | null;
   caseNumber: string | null;
   unconfirmed: number;
@@ -285,6 +285,20 @@ export const api = createApi({
         }) as Promise<Result<UploadResponse>>;
       },
       invalidatesTags: ['Cabinet', 'Letters'],
+    }),
+
+    /**
+     * B11: оригинал письма (фото страницы n или PDF). Не кэшируется: ответ — временный адрес blob:,
+     * его освобождает экран (URL.revokeObjectURL). В mock оригиналов нет.
+     */
+    letterFile: b.mutation<string, { id: string; page: number }>({
+      queryFn: ({ id, page }, _api, _x, base) =>
+        isMock
+          ? { error: apiError('NOT_CONNECTED') }
+          : (base({
+              path: `/letters/${encodeURIComponent(id)}/file?page=${page}`,
+              binary: true,
+            }) as Promise<Result<string>>),
     }),
 
     letter: b.query<LetterDetail, string>({
@@ -573,6 +587,7 @@ export const {
   useDeleteAccountMutation,
   useCabinetQuery,
   useUploadLetterMutation,
+  useLetterFileMutation,
   useCasesQuery,
   useCaseDetailQuery,
   useLazyHistoryPageQuery,

@@ -13,6 +13,11 @@ export interface RequestArgs {
   /** false: запрос без токена (вход, регистрация) */
   auth?: boolean;
   timeoutMs?: number;
+  /**
+   * B11: двоичный ответ (оригинал письма). Успех: временный адрес blob: в браузере (строка);
+   * освобождает его тот, кто вызвал (URL.revokeObjectURL). Ошибка разбирается как обычно.
+   */
+  binary?: boolean;
 }
 
 /* Незавершённые запросы. При смене пользователя их отменяет abortAllRequests(). */
@@ -38,7 +43,9 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
     args.auth === false
       ? null
       : (api.getState() as { session: SessionState }).session.token;
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = {
+    Accept: args.binary ? '*/*' : 'application/json',
+  };
   if (token) headers.Authorization = `Bearer ${token}`;
   let body: BodyInit | undefined;
   if (args.form) body = args.form;
@@ -77,6 +84,13 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
   }
 
   if (res.status === 204) return { data: undefined };
+  if (args.binary && res.ok) {
+    try {
+      return { data: URL.createObjectURL(await res.blob()) };
+    } catch {
+      return { error: apiError('NETWORK') };
+    }
+  }
 
   let data: unknown = null;
   const text = await res.text();

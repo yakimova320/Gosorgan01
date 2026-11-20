@@ -1,8 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { demoTranscribe } from '../llm/adapters/demo.adapter.js';
+import {
+  demoTranscribe,
+  demoTranscribePages,
+  loadScanPages,
+} from '../llm/adapters/demo.adapter.js';
+import { renderPdfPages as render } from './pdf-text.js';
 import { detectKind, imageSize } from './file-checks.js';
-import { readPdfText, withTimeout } from './pdf-text.js';
+import {
+  RENDER_WIDTH_PX,
+  readPdfText,
+  renderPdfPages,
+  withTimeout,
+} from './pdf-text.js';
 import { encryptedPdf, mixedPdf, textPdf } from '../../test/pdf-fixtures.js';
 
 const fixture = (name: string) =>
@@ -45,35 +55,28 @@ describe('текст PDF', () => {
     expect(pages[0].text).toContain('Jobcenter');
   });
 
-  it('скан: SCAN_PDF_NOT_SUPPORTED с номером страницы и советом про фото', async () => {
-    await expect(readPdfText(fixture('09_scan.pdf'))).rejects.toMatchObject({
-      code: 'SCAN_PDF_NOT_SUPPORTED',
-    });
-    try {
-      await readPdfText(fixture('09_scan.pdf'));
-    } catch (e) {
-      const body = (
-        e as { getResponse(): { message: string; details: unknown } }
-      ).getResponse();
-      expect(body.details).toEqual({ pages: [1], totalPages: 1 });
-      expect(body.message).toContain('Сфотографируйте');
-    }
+  it('скан (B11): страница без текста помечена scan, PDF не отклоняется', async () => {
+    const pages = await readPdfText(fixture('09_scan.pdf'));
+    expect(pages).toEqual([{ n: 1, text: expect.any(String), scan: true }]);
   });
 
-  it('смешанный PDF: письмо не сохраняется частично, страница скана названа', async () => {
+  it('смешанный PDF: текстовая страница с текстом, страница скана помечена', async () => {
+    const pages = await readPdfText(await mixedPdf(fixture('09_scan.png')));
+    expect(pages.map((p) => [p.n, p.scan])).toEqual([
+      [1, false],
+      [2, true],
+    ]);
+    expect(pages[0].text.length).toBeGreaterThan(20);
+  });
+
+  it('рендер страниц скана в PNG: только выбранные страницы, одинаковый результат', async () => {
     const pdf = await mixedPdf(fixture('09_scan.png'));
-    await expect(readPdfText(pdf)).rejects.toMatchObject({
-      code: 'SCAN_PDF_NOT_SUPPORTED',
-    });
-    try {
-      await readPdfText(pdf);
-    } catch (e) {
-      const body = (
-        e as { getResponse(): { message: string; details: unknown } }
-      ).getResponse();
-      expect(body.details).toEqual({ pages: [2], totalPages: 2 });
-      expect(body.message).toContain('Страницы 2');
-    }
+    const a = await renderPdfPages(pdf, [2]);
+    expect(a.map((p) => p.n)).toEqual([2]);
+    expect(detectKind(a[0].data)).toBe('png');
+    expect(imageSize(a[0].data, 'png').width).toBe(RENDER_WIDTH_PX);
+    const b = await renderPdfPages(pdf, [2]);
+    expect(b[0].data.equals(a[0].data)).toBe(true);
   });
 
   it('21 страница: LETTER_TOO_LARGE до чтения текста', async () => {
@@ -120,5 +123,23 @@ describe('transcribe в режиме demo', () => {
       readable: false,
       reason: 'DEMO_UNKNOWN',
     });
+  });
+});
+
+describe('transcribe.v2 в режиме demo (B11)', () => {
+  it('по элементу на каждую страницу, по порядку; страница скана из fixtures узнаётся после рендера', async () => {
+    await loadScanPages();
+    const [scan] = await render(fixture('09_scan.pdf'), [1]);
+    const r = demoTranscribePages([
+      fixture('08_photo.jpg'),
+      scan.data,
+      fixture('11_bad_photo.jpg'),
+    ]);
+    expect(r.pages.map((p) => [p.readable, p.reason])).toEqual([
+      [true, null],
+      [true, null],
+      [false, 'BLURRY'],
+    ]);
+    expect(r.pages[1].text).toContain('SA-2026-8810');
   });
 });

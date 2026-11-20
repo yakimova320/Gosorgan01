@@ -171,6 +171,7 @@ export class LlmService {
       try {
         const res = await this.adapter.complete({
           promptName: prompt.name,
+          promptVersion: prompt.version,
           system: prompt.system,
           user: user + retryNote,
           variables,

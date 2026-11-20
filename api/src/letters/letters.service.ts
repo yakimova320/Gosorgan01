@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { ApiError } from '../common/api-error.js';
 import { DocumentsService } from '../documents/documents.service.js';
+import { MIME } from '../documents/file-checks.js';
 import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { StorageService } from '../documents/storage.service.js';
 import { Prisma } from '../generated/prisma/client.js';
@@ -53,14 +54,18 @@ export class LettersService {
 
   // ---------- Загрузка ----------
 
-  async upload(cabinetId: string, data: Buffer): Promise<UploadLetterResponse> {
-    const kind = this.documents.precheck(data);
+  /** B11: files — один PDF или до 10 фото по порядку страниц. */
+  async upload(
+    cabinetId: string,
+    uploaded: Buffer[],
+  ): Promise<UploadLetterResponse> {
+    const inputs = this.documents.precheckAll(uploaded);
     const letterId = randomUUID();
     const context = { cabinetId, letterId };
     // B18: одна операция на загрузку. Резерв лимита — перед первым обращением к модели,
-    // то есть после проверки файла; фото = transcribe + extract в общем пределе 3 обращений.
+    // то есть после проверки файлов; фото и скан = transcribe + extract в общем пределе 3 обращений.
     const operation = this.llm.operation(cabinetId, 'UPLOAD');
-    const doc = await this.documents.extractText(data, kind, context, operation);
+    const doc = await this.documents.extractText(inputs, context, operation);
 
     const { data: extracted } = await this.llm.callWithTrace({
       prompt: 'extract',
@@ -70,17 +75,23 @@ export class LettersService {
       context,
       operation,
     });
+    // Текст распознан моделью (фото, скан): цитаты сравниваются нестрого.
     const { claims, dropped } = buildClaims(
       extracted,
       doc.pageTexts,
-      doc.sourceType === 'IMAGE',
+      doc.sourceType !== 'PDF_TEXT',
     );
 
-    const ext = kind === 'jpeg' ? 'jpg' : kind;
-    const fileKey = this.storage.newKey(cabinetId, ext);
-    const files: StoredFile[] = [
-      { n: 1, fileKey, mime: doc.mime, bytes: data.length },
-    ];
+    // Оригиналы по порядку страниц: n = номер файла (фото n = страница n; PDF — один файл).
+    const files: (StoredFile & { data: Buffer })[] = inputs.map((f, i) => ({
+      n: i + 1,
+      fileKey: this.storage.newKey(cabinetId, f.kind === 'jpeg' ? 'jpg' : f.kind),
+      mime: MIME[f.kind],
+      bytes: f.data.length,
+      data: f.data,
+    }));
+    const removeAll = () =>
+      Promise.all(files.map((f) => this.storage.remove(f.fileKey)));
 
     // Файл пишется под блокировкой строки кабинета (A01): удаление аккаунта ждёт эту транзакцию,
     // а после его начала загрузка получает 409 ACCOUNT_DELETING и файла не пишет.
@@ -88,7 +99,7 @@ export class LettersService {
       await this.db.$transaction(async (tx) => {
         if (!(await lockActiveCabinet(tx, cabinetId)))
           throw new ApiError('ACCOUNT_DELETING');
-        await this.storage.write(fileKey, data);
+        for (const f of files) await this.storage.write(f.fileKey, f.data);
         try {
           await tx.letter.create({
             data: {
@@ -97,7 +108,12 @@ export class LettersService {
               sourceType: doc.sourceType,
               rawText: doc.text,
               pages: doc.pages,
-              files: files as unknown as object[],
+              files: files.map(({ n, fileKey, mime, bytes }) => ({
+                n,
+                fileKey,
+                mime,
+                bytes,
+              })),
             },
           });
           for (const c of claims) {
@@ -127,12 +143,12 @@ export class LettersService {
           }
         } catch (e) {
           // до отката транзакции, пока строка кабинета ещё заблокирована
-          await this.storage.remove(fileKey);
+          await removeAll();
           throw e;
         }
       });
     } catch (e) {
-      await this.storage.remove(fileKey); // сбой фиксации транзакции
+      await removeAll(); // сбой фиксации транзакции
       throw e;
     }
 
@@ -215,6 +231,25 @@ export class LettersService {
       claims,
       deadlines,
     };
+  }
+
+  /** B11: оригинал письма только владельцу. Чужое письмо, нет такого номера или файла: 404. */
+  async originalFile(
+    cabinetId: string,
+    letterId: string,
+    n: number,
+  ): Promise<{ data: Buffer; mime: string }> {
+    const letter = await this.db.letter.findFirst({
+      where: { id: letterId, cabinetId },
+      select: { files: true },
+    });
+    const file = ((letter?.files as StoredFile[] | undefined) ?? []).find(
+      (f) => f.n === n,
+    );
+    if (!file) throw new ApiError('NOT_FOUND');
+    const data = await this.storage.read(file.fileKey);
+    if (!data) throw new ApiError('NOT_FOUND');
+    return { data, mime: file.mime };
   }
 
   // ---------- Подтверждение ----------

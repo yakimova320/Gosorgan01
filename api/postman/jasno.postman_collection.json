@@ -1192,7 +1192,7 @@
           ]
         },
         {
-          "name": "POST /letters: скан PDF (09)",
+          "name": "POST /letters: скан PDF (09) распознаётся (B11)",
           "request": {
             "method": "POST",
             "header": [
@@ -1227,8 +1227,244 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('источник PDF_SCAN', () => pm.expect(b.letter.sourceType).to.eql('PDF_SCAN'));",
+                  "pm.test('номер дела со скана', () => pm.expect(b.letter.text).to.include('SA-2026-8810'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: 3 фото = одно письмо (B11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/09_scan.png"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/10_medium_scan.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('multiLetterId', b.letter.id);",
+                  "pm.test('3 страницы и 3 оригинала', () => { pm.expect(b.letter.pages.length).to.eql(3); pm.expect(b.letter.files.map((f) => f.n)).to.eql([1, 2, 3]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id/file?page=2 (B11)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{multiLetterId}}/file?page=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{multiLetterId}}",
+                "file"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('фото страницы 2', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png'));",
+                  "pm.test('не кэшируется', () => pm.expect(pm.response.headers.get('Cache-Control')).to.eql('private, no-store'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /letters/:id/file?page=4: нет такой страницы",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{multiLetterId}}/file?page=4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{multiLetterId}}",
+                "file"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "4"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: фото и плохое фото — страница 2 не читается (B11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/11_bad_photo.jpg"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
                   "pm.test('статус 422', () => pm.response.to.have.status(422));",
-                  "pm.test('code SCAN_PDF_NOT_SUPPORTED', () => pm.expect(pm.response.json().code).to.eql('SCAN_PDF_NOT_SUPPORTED'));"
+                  "const b = pm.response.json();",
+                  "pm.test('UNREADABLE, страница 2', () => { pm.expect(b.code).to.eql('UNREADABLE'); pm.expect(b.details.pages).to.eql([2]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters: PDF вместе с фото (B11)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/08_photo.jpg"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "fixtures/letters/01_jobcenter_request.pdf"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('code MIXED_FILES', () => pm.expect(pm.response.json().code).to.eql('MIXED_FILES'));"
                 ]
               }
             }
