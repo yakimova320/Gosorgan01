@@ -259,3 +259,35 @@ test('двойное нажатие: один черновик; чужой че�
     page.getByRole('heading', { name: 'Черновик не найден' }),
   ).toBeVisible();
 });
+
+test('B15: «PDF для печати» скачивает PDF; кириллица в адресе — понятная ошибка с подсказкой', async ({
+  page,
+  request,
+}) => {
+  const u = await createUser(request, 'pdf', `Anna${letters()}`);
+  const p = await prepared(request, u.token);
+  await signedIn(page, u.token);
+  await page.goto(p.url);
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'PDF для печати' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('brief.pdf');
+  expect(readFileSync((await download.path())!).subarray(0, 5).toString('latin1')).toBe('%PDF-');
+
+  // адрес кириллицей: черновик собирается, но PDF честно отказывает
+  await request.patch(`${API_URL}/cabinet`, {
+    headers: p.h,
+    data: { profile: { address: 'ул. Мира 1, 10115 Berlin' } },
+  });
+  const fresh = await (
+    await request.post(`${API_URL}/cases/${p.caseId}/draft`, {
+      headers: p.h,
+      data: { kind: 'CLARIFICATION', letterId: p.letterId, questionId: 'REASON' },
+    })
+  ).json();
+  await page.goto(`/app/cases/${p.caseId}/answer/draft?draft=${fresh.id}&letter=${p.letterId}&q=REASON`);
+  await page.getByRole('button', { name: 'PDF для печати' }).click();
+  await expect(page.getByRole('alert')).toContainText('нельзя напечатать в PDF');
+  await expect(page.getByRole('alert')).toContainText('латиницей');
+});

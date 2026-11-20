@@ -348,4 +348,43 @@ describe('Черновик «запрос уточнения» (e2e, B10)', () =
       data: { profile: PERSON },
     });
   });
+
+  it('B15: PDF черновика для печати — только владельцу; устаревший 409; кириллица в адресе 422', async () => {
+    const { caseId, letterId } = await letterInCase('01_jobcenter_request.pdf', true);
+    const draftRes = await draft(caseId, {
+      kind: 'CLARIFICATION',
+      letterId,
+      questionId: 'WHICH_DOCUMENTS',
+    }).expect(201);
+    const id = draftRes.body.id as string;
+    const binary = (req: request.Test) =>
+      req.buffer(true).parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+
+    const pdf = await binary(http().get(`/drafts/${id}/pdf`).set(auth())).expect(200);
+    expect(pdf.headers['content-type']).toBe('application/pdf');
+    expect(pdf.headers['cache-control']).toBe('private, no-store');
+    expect((pdf.body as Buffer).subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    await http().get(`/drafts/${id}/pdf`).set(auth(other)).expect(404);
+    await http().get(`/drafts/${id}/pdf`).expect(401);
+
+    // адрес кириллицей: в PDF нельзя без подмены знаков
+    await http()
+      .patch('/cabinet')
+      .set(auth())
+      .send({ profile: { address: 'ул. Мира 1, 10115 Berlin' } })
+      .expect(200);
+    const cyr = await draft(caseId, { kind: 'CLARIFICATION', letterId, questionId: 'REASON' }).expect(201);
+    const bad = await http().get(`/drafts/${cyr.body.id}/pdf`).set(auth()).expect(422);
+    expect(bad.body.code).toBe('PDF_UNSUPPORTED_CHARS');
+    expect(bad.body.details.chars).toContain('М');
+
+    // профиль изменился → первый черновик устарел → PDF не печатается
+    const stale = await http().get(`/drafts/${id}/pdf`).set(auth()).expect(409);
+    expect(stale.body.code).toBe('DRAFT_STALE');
+    await db.cabinet.update({ where: { id: cabinetId }, data: { profile: PERSON } });
+  });
 });

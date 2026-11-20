@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   Inject,
   Param,
   Post,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -82,6 +84,37 @@ export class DraftsController {
     @Param('id') id: string,
   ): Promise<DraftView> {
     return this.drafts.get(auth.cabinetId, id);
+  }
+
+  @Get('drafts/:id/pdf')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @ApiOperation({
+    summary: 'PDF письма для печати (B15): немецкий текст черновика, A4, место для подписи',
+    description:
+      'Только владельцу. Устаревший черновик: 409 DRAFT_STALE. Знаки вне стандартного шрифта (например, кириллица в адресе): ' +
+      '422 PDF_UNSUPPORTED_CHARS со списком знаков. В метаданных PDF нет личных данных.',
+  })
+  @ApiOkResponse({ description: 'application/pdf' })
+  @ApiNotFoundResponse(err('NOT_FOUND', 'Не найдено'))
+  @ApiConflictResponse(
+    err('DRAFT_STALE', 'Данные изменились после сборки черновика. Соберите черновик заново'),
+  )
+  @ApiUnprocessableEntityResponse(
+    err('PDF_UNSUPPORTED_CHARS', 'В тексте есть знаки, которые нельзя напечатать в PDF: д р', {
+      chars: ['д', 'р'],
+    }),
+  )
+  async pdf(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') id: string,
+  ): Promise<StreamableFile> {
+    const data = await this.drafts.pdf(auth.cabinetId, id);
+    return new StreamableFile(data, {
+      type: 'application/pdf',
+      length: data.length,
+      disposition: 'inline; filename="brief.pdf"',
+    });
   }
 
   @Get('letters/:id/draft-questions')

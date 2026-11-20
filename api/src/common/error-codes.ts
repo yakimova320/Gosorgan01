@@ -42,6 +42,23 @@ export const ERROR_CODES = {
     status: 409,
     message: 'Нет фактов для объяснения. Проверьте факты письма',
   },
+  DRAFT_STALE: {
+    status: 409,
+    message:
+      'Данные изменились после сборки черновика. Соберите черновик заново',
+  },
+  DRAFT_ALREADY_SENT: {
+    status: 409,
+    message: 'Этот черновик уже отмечен как отправленный',
+  },
+  DEADLINE_NOT_CONFIRMED: {
+    status: 409,
+    message: 'Срок ещё не подтверждён. Сначала подтвердите его в фактах письма',
+  },
+  DEADLINE_ALREADY_DONE: {
+    status: 409,
+    message: 'Этот срок уже отмечен как выполненный',
+  },
   DRAFT_SOURCES_CHANGED: {
     status: 409,
     message:
@@ -99,6 +116,10 @@ export const ERROR_CODES = {
   QUESTION_NOT_AVAILABLE: {
     status: 422,
     message: 'Этот вопрос недоступен для письма: нет подтверждённого факта',
+  },
+  PDF_UNSUPPORTED_CHARS: {
+    status: 422,
+    message: 'В тексте есть знаки, которые нельзя напечатать в PDF',
   },
   LEGAL_REFERRAL: {
     status: 422,

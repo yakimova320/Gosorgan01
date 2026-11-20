@@ -351,6 +351,10 @@ export function LetterCheckPage({ id }: { id: string }) {
   useBeforeUnload((e) => {
     if (pending > 0) e.preventDefault();
   });
+  // Уход нажат, пока шло сохранение: когда оно закончилось и несохранённого не осталось, спрашивать нечего.
+  useEffect(() => {
+    if (blocker.state === 'blocked' && pending === 0) blocker.proceed();
+  }, [blocker, pending]);
 
   // Решения только для фактов, которые сервер ещё считает непроверенными.
   useEffect(() => {
