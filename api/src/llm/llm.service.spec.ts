@@ -283,6 +283,7 @@ describe('LlmService: маскирование', () => {
     ]);
     const res = await service.call({
       prompt: 'transcribe',
+      version: 1,
       variables: {},
       images: [{ mime: 'image/jpeg', data: Buffer.from('x') }],
       schema: TranscribeSchema,
@@ -300,6 +301,7 @@ describe('LlmService: маскирование', () => {
     await expect(
       service.call({
         prompt: 'transcribe',
+        version: 1,
         variables: {},
         images: [{ mime: 'image/jpeg', data: Buffer.from('x') }],
         schema: TranscribeSchema,

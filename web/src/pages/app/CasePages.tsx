@@ -15,6 +15,7 @@ import {
   useSetDeadlineDoneMutation,
   useDeadlineIcsMutation,
 } from '../../store/api';
+import { LetterOriginals } from '../../components/LetterOriginals';
 
 /*
  * Экраны дела, письма с объяснением и истории (F03) на API B07 и B08.
@@ -323,6 +324,7 @@ export function LetterPage({ id }: { id: string }) {
   return (
     <>
       <PageHeader title="Письмо" subtitle="Объяснение по фактам письма. Перепроверьте сроки по оригиналу." back={back} />
+      <LetterOriginals letterId={id} files={letter.data.letter.files} />
       <div className="desktop-2col stack">
         <section className="stack">
           {expl.isFetching && <Loading text="Ja!sno объясняет письмо…" />}

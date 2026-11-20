@@ -10,6 +10,7 @@ const MESSAGES: Record<string, string> = {
   PASSWORD_TOO_LONG: 'Пароль слишком длинный',
   RESET_TOKEN_INVALID: 'Ссылка недействительна или устарела. Запросите новое письмо',
   TOO_MANY_FILES: 'Слишком много файлов для одного письма',
+  MIXED_FILES: 'Загрузите либо один PDF, либо фото страниц одного письма',
   UNAUTHORIZED: 'Войдите, чтобы продолжить',
   INVALID_CREDENTIALS: 'Неверный e-mail или пароль',
   NOT_FOUND: 'Не найдено',

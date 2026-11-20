@@ -4,7 +4,7 @@ import { z } from 'zod';
 export interface LetterView {
   id: string;
   caseId: string | null;
-  sourceType: 'PDF_TEXT' | 'IMAGE';
+  sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
   text: string;
   pages: { n: number; readable: boolean; chars: number }[];
   files: { n: number; mime: string; bytes: number }[];
@@ -55,7 +55,7 @@ export interface UploadLetterResponse extends LetterDetail {
 export interface InboxItem {
   id: string;
   createdAt: string;
-  sourceType: 'PDF_TEXT' | 'IMAGE';
+  sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
   authority: string | null;
   caseNumber: string | null;
   unconfirmed: number;
@@ -90,6 +90,12 @@ export const DeleteLetterQuerySchema = z
 export const ListLettersQuerySchema = z
   .object({ inbox: z.enum(['true', 'false']).optional() })
   .strict();
+
+/** B11: номер оригинала (фото n = страница n; у PDF один файл, n = 1). */
+export const LetterFileQuerySchema = z
+  .object({ page: z.coerce.number().int().min(1).max(20).default(1) })
+  .strict();
+export type LetterFileQuery = z.infer<typeof LetterFileQuerySchema>;
 
 /** В дело: существующее дело или новое (название необязательно). */
 export const AssignLetterSchema = z.union([

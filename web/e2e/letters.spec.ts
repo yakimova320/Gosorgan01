@@ -190,7 +190,7 @@ test('факты не найдены: отдельное понятное сос
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-test('ошибки файла: нечитаемое фото и скан PDF — понятный текст и «Выбрать другой файл»', async ({
+test('ошибки файла: нечитаемое фото — понятный текст и «Выбрать другой файл»; скан PDF (B11) принимается', async ({
   page,
   request,
 }) => {
@@ -201,7 +201,8 @@ test('ошибки файла: нечитаемое фото и скан PDF —
   await page.getByRole('button', { name: 'Выбрать другой файл' }).click();
   await expect(page).toHaveURL(/\/app\/scan$/);
   await uploadUi(page, fixture('09_scan.pdf'));
-  await expect(page.getByRole('alert')).toContainText('Сфотографируйте письмо');
+  await expect(page).toHaveURL(/\/app\/letters\/[^/]+\/check$/);
+  await expect(claim(page, 'SA-2026-8810')).toBeVisible();
 });
 
 test('обрыв связи: POST не повторяется автоматически, предлагается проверить входящие', async ({

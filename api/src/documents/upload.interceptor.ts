@@ -13,8 +13,6 @@ import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
 
 const MB = 1024 * 1024;
-/** B05: одно фото или один PDF на письмо. Несколько фото: B11 (UPLOAD_MAX_FILES). */
-export const FILES_PER_LETTER_NOW = 1;
 
 /*
  * Приём multipart с пределами прямо при чтении запроса (multer): большой файл не читается в память целиком.
@@ -25,24 +23,30 @@ export class LetterUploadInterceptor implements NestInterceptor {
   private readonly upload: ReturnType<ReturnType<typeof multer>['array']>;
   private readonly maxFileMb: number;
   private readonly maxLetterMb: number;
+  private readonly maxFiles: number;
 
   constructor(
     @Inject(APP_CONFIG)
-    config: Pick<Env, 'UPLOAD_MAX_FILE_MB' | 'UPLOAD_MAX_LETTER_MB'>,
+    config: Pick<
+      Env,
+      'UPLOAD_MAX_FILE_MB' | 'UPLOAD_MAX_LETTER_MB' | 'UPLOAD_MAX_FILES'
+    >,
   ) {
+    // B11: один PDF или до UPLOAD_MAX_FILES фото на письмо; сочетание проверяет DocumentsService.
+    this.maxFiles = config.UPLOAD_MAX_FILES;
     this.maxFileMb = config.UPLOAD_MAX_FILE_MB;
     this.maxLetterMb = config.UPLOAD_MAX_LETTER_MB;
     this.upload = multer({
       storage: multer.memoryStorage(),
       limits: {
         fileSize: config.UPLOAD_MAX_FILE_MB * MB,
-        files: FILES_PER_LETTER_NOW,
+        files: config.UPLOAD_MAX_FILES,
         fields: 5,
         fieldSize: 1024,
-        parts: FILES_PER_LETTER_NOW + 5,
+        parts: config.UPLOAD_MAX_FILES + 5,
         headerPairs: 100,
       },
-    }).array('files', FILES_PER_LETTER_NOW);
+    }).array('files', config.UPLOAD_MAX_FILES);
   }
 
   async intercept(
@@ -85,8 +89,8 @@ export class LetterUploadInterceptor implements NestInterceptor {
           ? new ApiError('NO_FILE', { field: err.field })
           : new ApiError(
               'TOO_MANY_FILES',
-              { max: FILES_PER_LETTER_NOW },
-              'Пока можно загрузить одно фото или один PDF на письмо',
+              { max: this.maxFiles },
+              `Можно загрузить не больше ${this.maxFiles} фото на письмо`,
             );
       default:
         return new ApiError('VALIDATION_FAILED', { form: [err.message] });

@@ -114,10 +114,16 @@ describe('Лимиты (e2e, B18)', () => {
     expect(await db.llmOperation.count({ where: { cabinetId: u.cabinetId } })).toBe(2);
   });
 
-  it('неверный файл и скан без текста лимит модели не тратят', async () => {
+  it('неверный файл и недопустимое сочетание файлов лимит модели не тратят', async () => {
     const u = await register();
     await http().post('/letters').set(auth(u.token)).attach('files', Buffer.from('kein PDF'), 'a.txt').expect(415);
-    await upload(u.token, '09_scan.pdf').expect(422);
+    // B11: PDF вместе с фото отклоняется до модели
+    await http()
+      .post('/letters')
+      .set(auth(u.token))
+      .attach('files', fixture('08_photo.jpg'), 'a.jpg')
+      .attach('files', fixture('01_jobcenter_request.pdf'), 'b.pdf')
+      .expect(400);
     expect(await db.llmOperation.count({ where: { cabinetId: u.cabinetId } })).toBe(0);
     await upload(u.token).expect(201);
     await upload(u.token).expect(201);

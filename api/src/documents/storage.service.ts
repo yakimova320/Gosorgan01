@@ -4,6 +4,7 @@ import {
   access,
   mkdir,
   readdir,
+  readFile,
   rename,
   rm,
   rmdir,
@@ -53,6 +54,15 @@ export class StorageService {
     } catch (e) {
       await this.remove(key); // частично записанный файл не оставляем
       throw e;
+    }
+  }
+
+  /** B11: оригинал письма. Нет файла: null (ответ API 404), путь в лог не пишется. */
+  async read(key: string): Promise<Buffer | null> {
+    try {
+      return await readFile(this.pathOf(key));
+    } catch {
+      return null;
     }
   }
 

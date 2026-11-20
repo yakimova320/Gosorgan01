@@ -17,6 +17,10 @@ export const ERROR_CODES = {
     status: 400,
     message: 'Слишком много файлов для одного письма',
   },
+  MIXED_FILES: {
+    status: 400,
+    message: 'Загрузите либо один PDF, либо фото страниц одного письма',
+  },
   UNAUTHORIZED: { status: 401, message: 'Войдите, чтобы продолжить' },
   INVALID_CREDENTIALS: { status: 401, message: 'Неверный e-mail или пароль' },
   NOT_FOUND: { status: 404, message: 'Не найдено' },
