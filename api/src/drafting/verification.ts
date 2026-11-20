@@ -6,7 +6,7 @@ import type { SenderProfile } from './templates/clarification.js';
  * Проверка черновика без модели (ТЗ v2 раздел 10, ТЗ v3 6.6). Для немецкого и русского варианта.
  * «Пройдена» значит: текст соответствует шаблону и источникам. Это не юридическая проверка.
  * Разрешённые источники дат и чисел: подтверждённые факты черновика, поля профиля
- * (адрес, имя, фамилия), дата создания. Текст вопроса источником не является.
+ * (адрес, имя, фамилия, номера отправителя), дата создания. Текст вопроса источником не является.
  */
 
 export interface VerificationReport {
@@ -43,6 +43,7 @@ export function verifyDraft(input: VerifyInput): VerificationReport {
     input.profile.address,
     input.profile.firstName,
     input.profile.lastName,
+    ...(input.profile.numbers ?? []).flatMap((n) => [n.label, n.value]),
   ].join('\n');
   const allowedDates = new Set([
     ...datesInAny(sources),

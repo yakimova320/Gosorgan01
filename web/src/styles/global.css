@@ -817,3 +817,16 @@ details.faq .faq-body {
 .mock-banner code {
   font-size: 13px;
 }
+
+/* F05: номера в профиле */
+.profile-numbers {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.profile-numbers legend {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 4px;
+}

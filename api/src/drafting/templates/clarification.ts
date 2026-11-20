@@ -12,6 +12,8 @@ export interface SenderProfile {
   firstName: string;
   lastName: string;
   address: string;
+  /** F05: номера из профиля, под адресом отправителя в обоих вариантах */
+  numbers?: { label: string; value: string }[];
 }
 
 export interface ClarificationInput {
@@ -61,10 +63,15 @@ export function buildClarification(input: ClarificationInput): BuiltDraft {
     ? `В ${letterDate ? `письме от ${de(letterDate.value)}` : 'письме'} вы пишете (цитата из письма на немецком): «${requirement.value}»`
     : null;
   const amountText = amount ? deAmount(amount.value) : undefined;
+  // Название номера пользователь пишет по-немецки, как в письме ведомства: в обоих вариантах одинаково.
+  const senderNumbers = (input.profile.numbers ?? []).map(
+    (n) => `${n.label}: ${n.value}`,
+  );
 
   const germanText = [
     name,
     input.profile.address,
+    ...senderNumbers,
     '',
     ...(authority ? [authority.value, ''] : []),
     `Datum: ${de(input.today)}`,
@@ -86,6 +93,7 @@ export function buildClarification(input: ClarificationInput): BuiltDraft {
   const russianText = [
     name,
     input.profile.address,
+    ...senderNumbers,
     '',
     ...(authority ? [authority.value, ''] : []),
     `Дата: ${de(input.today)}`,
