@@ -432,6 +432,7 @@ export function LetterPage({ id }: { id: string }) {
 const GROUPS: { id: HistoryGroup | 'all'; label: string }[] = [
   { id: 'all', label: 'Всё' },
   { id: 'letter', label: 'Письма' },
+  { id: 'case', label: 'Дела' },
   { id: 'question', label: 'Вопросы' },
   { id: 'draft', label: 'Черновики' },
 ];

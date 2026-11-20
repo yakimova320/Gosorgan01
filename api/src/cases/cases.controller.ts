@@ -148,12 +148,13 @@ export class CasesController {
   @ApiOperation({
     summary: 'История всех дел: по убыванию времени, по 30 событий',
     description:
-      'type: letter | question | draft. cursor: nextCursor из прошлой страницы.',
+      'type: letter (письмо получено, факты, исправления) | case (дело создано, срок выполнен) | question | draft. ' +
+      'Каждое событие ровно в одной группе. cursor: nextCursor из прошлой страницы.',
   })
   @ApiQuery({
     name: 'type',
     required: false,
-    enum: ['letter', 'question', 'draft'],
+    enum: ['letter', 'case', 'question', 'draft'],
   })
   @ApiQuery({ name: 'cursor', required: false })
   history(

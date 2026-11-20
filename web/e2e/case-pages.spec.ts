@@ -204,7 +204,7 @@ test('состояния объяснения: DATES_NOT_VERIFIED, LLM_QUOTA, CL
   expect(afterConflict.slice(0, 2)).toEqual(['letter', 'explain']);
 });
 
-test('история: больше 30 событий без пропусков и повторов, смена фильтра сбрасывает список', async ({
+test('история: больше 30 событий без пропусков и повторов, смена фильтра сбрасывает список, «Дела» отдельно от писем (#124)', async ({
   page,
   request,
 }) => {
@@ -247,6 +247,17 @@ test('история: больше 30 событий без пропусков �
 
   await page.getByRole('button', { name: 'Вопросы' }).click();
   await expect(page.getByText('Событий пока нет.')).toBeVisible();
+  await page.getByRole('button', { name: 'Письма' }).click();
+  await expect(page.getByTestId('history-item')).toHaveCount(30);
+  // #124: в «Письмах» нет «Дело создано из письма», оно в «Делах»; страницы без потерь и повторов
+  await page.getByRole('button', { name: 'Показать ещё' }).click();
+  await expect(page.getByTestId('history-item')).toHaveCount(total - 1);
+  await expect(page.getByTestId('history-item').filter({ hasText: 'Дело создано из письма' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Дела', exact: true }).click();
+  await expect(page.getByTestId('history-item')).toHaveCount(1);
+  await expect(page.getByTestId('history-item')).toContainText('Дело создано из письма');
+  await page.getByRole('button', { name: 'Всё', exact: true }).click();
+  await expect(page.getByTestId('history-item')).toHaveCount(30);
   await page.getByRole('button', { name: 'Письма' }).click();
   await expect(page.getByTestId('history-item')).toHaveCount(30);
 

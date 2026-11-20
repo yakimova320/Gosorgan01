@@ -1827,6 +1827,86 @@
           ]
         },
         {
+          "name": "GET /history?type=case (#124)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/history?type=case",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "case"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const types = pm.response.json().items.map(i => i.type);",
+                  "pm.test('только события дел', () => types.forEach(t => pm.expect(['CASE_CREATED_FROM_LETTER','DEADLINE_DONE']).to.include(t)));",
+                  "pm.test('есть «Дело создано из письма»', () => pm.expect(types).to.include('CASE_CREATED_FROM_LETTER'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /history?type=letter: без событий дел (#124)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/history?type=letter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "letter"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('нет «Дело создано из письма»', () => pm.expect(pm.response.json().items.map(i => i.type)).to.not.include('CASE_CREATED_FROM_LETTER'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "GET /history?type=неизвестный",
           "request": {
             "method": "GET",
