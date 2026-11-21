@@ -27,3 +27,4 @@ web/playwright-report
 .pnpm-store
 api/test
 web/e2e
+api/certs

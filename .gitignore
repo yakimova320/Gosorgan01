@@ -85,3 +85,6 @@ web/playwright-report/
 
 # Резервные копии базы и файлов (docs/deploy.md): личные данные, не коммитить
 backup/
+
+# DB01-S: сертификаты внешней базы (Supabase), не в git
+api/certs/

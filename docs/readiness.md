@@ -12,6 +12,7 @@
 | GET /health | B01 | api+demo, e2e-тест |
 | Swagger /docs | B01 | api+demo, e2e-тест |
 | Схема базы, миграции, PrismaService | B02 | PostgreSQL (B17): миграции, тесты и CI на PostgreSQL, тест каскадного удаления; проверка Дмитрием D03 |
+| База в Supabase | DB01-S (#139) | готово к подключению, не подключено: адрес в формате Prisma понимает и сервер (`schema=jasno`, `sslmode`, `sslcert` с проверкой сертификата, `connection_limit`); тесты и eval отказываются работать с нелокальной базой; `docker-compose.supabase.yml` — приложение без сервиса `db`; `web/.env.example` по умолчанию `api`; шаги, засыпание бесплатного проекта, ручная копия — `docs/deploy.md` раздел 4; unit-тесты. Миграции в настоящий проект Supabase не применялись: пароль вводит человек (пароль из Issue #139 нужно сменить) |
 | Слой ИИ: LlmService, маскирование, журнал LlmCall, demo и Gemini | B04 | api+real: `pnpm llm:check` на письме 01 прошёл с gemini-3.1-flash-lite; промпт extract.v1 (API фактов в B06) |
 | Регистрация, вход, выход, GET и PATCH /cabinet | B03 | api+demo, e2e-тесты, Postman «01 Регистрация и вход» |
 | Регистрация с именем, фамилией, адресом; профиль; пустой кабинет со списком входящих | B06 (правки) | api+demo: проверка латиницы на сайте и сервере, частичный PATCH профиля, Playwright-приёмка; FAQ исправлен (PR #106) |
