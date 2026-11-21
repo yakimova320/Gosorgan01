@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import pg from 'pg';
+import { assertLocalDatabase } from '../prisma/database-url.js';
 
 const API_DIR = resolve(import.meta.dirname, '..', '..');
 const PREFIX = 'eval_';
@@ -22,6 +23,7 @@ export interface EvalSandbox {
 }
 
 export async function createSandbox(baseUrl: string): Promise<EvalSandbox> {
+  assertLocalDatabase(baseUrl, 'eval');
   const base = new URL(baseUrl);
   base.searchParams.delete('schema');
   const schema = `${PREFIX}${Date.now()}_${randomBytes(4).toString('hex')}`;

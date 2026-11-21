@@ -160,3 +160,79 @@ docker compose up -d
 ```
 
 При запуске права тома снова передаются пользователю `node`, недостающие миграции применяются.
+
+## 4. База в Supabase (DB01-S, Issue #139)
+
+Supabase здесь — только PostgreSQL в облаке. Prisma, миграции и код те же. Файлы писем остаются в `STORAGE_DIR` на сервере; Supabase Storage — отдельная задача.
+
+> **Статус.** Код и инструкция готовы, проверены на локальной базе. **Подключение к настоящему проекту Supabase не проверено**: его делает человек со своим паролем.
+
+### Бесплатный тариф: что важно
+
+| Что | Значение | Что делать |
+|---|---|---|
+| Размер базы | 500 МБ на проект | хватает для демо; файлы писем в базе не лежат |
+| Неактивность | проект **засыпает после недели** почти без запросов | за день до показа открыть сайт или панель; разбудить: Dashboard → проект → *Restore* |
+| Резервные копии | автоматических нет | копия вручную, ниже |
+| Подключение | прямое — только IPv6; **Session pooler** (порт 5432) — IPv4 | использовать Session pooler, не Transaction pooler (6543) |
+
+Регион проекта Ja!sno: EU (`aws-0-eu-west-1`). Пока команда не решила иначе — только демо- и тестовые аккаунты, без настоящих писем.
+
+### Шаги (делает человек)
+
+1. **Пароль базы — секрет.** Не писать его в Issue, чат, коммит. Если он где-то опубликован: Dashboard → Project Settings → Database → *Reset database password*, старый перестаёт работать.
+2. **Закрыть REST-доступ к таблицам.** Dashboard → Project Settings → Data API → выключить *Enable Data API*. Иначе таблицы в схеме `public` доступны через публичный ключ проекта. Ja!sno дополнительно хранит таблицы в своей схеме `jasno`, которой нет в списке *Exposed schemas*.
+3. **Сертификат.** Project Settings → Database → SSL Configuration → *Download certificate*. Сохранить как `api/certs/supabase-ca.crt` (папка `api/certs/` в git не попадает).
+4. **Адрес в `api/.env`** (Connect → Session pooler; пароль в адресе: спецзнаки кодируются, `$` → `%24`, `@` → `%40`, без квадратных скобок):
+
+   ```
+   DATABASE_URL=postgresql://postgres.<id проекта>:<пароль>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?schema=jasno&sslmode=require&sslcert=../certs/supabase-ca.crt&sslaccept=strict&connection_limit=5
+   TEST_DATABASE_URL=postgresql://jasno:jasno@localhost:5432/jasno
+   ```
+
+   - `schema=jasno` — своя схема, не `public`.
+   - `sslcert` — путь от папки `api/prisma` (так считает Prisma); сервер Ja!sno считает так же. `sslaccept=strict` — сертификат сервера проверяется.
+   - `connection_limit=5` — у бесплатного пулера мало соединений.
+   - `TEST_DATABASE_URL` обязателен: тесты и `pnpm eval` создают и удаляют схемы и **отказываются работать** с нелокальной базой.
+5. **Таблицы из миграций:**
+
+   ```bash
+   pnpm --filter jasno-api db:deploy
+   ```
+
+   В выводе: все миграции применены. В Dashboard → Table Editor → схема `jasno` — таблицы `Cabinet`, `Case`, `Letter` и другие.
+6. **Демо-кабинет** (по желанию, `DEMO_PASSWORD` в `api/.env`):
+
+   ```bash
+   pnpm db:seed
+   ```
+
+7. **Запуск:** `pnpm dev:api` и `pnpm dev:web` (`web/.env`: `VITE_DATA_MODE=api`). На сайте в углу «сервер», регистрация и загрузка письма работают; в Table Editor появляются строки.
+
+### Docker с Supabase
+
+В корневом `.env` (права `600`):
+
+```
+JASNO_DATABASE_URL=<тот же адрес, что в api/.env>
+```
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.supabase.yml up -d --build app
+```
+
+Сервис `db` не нужен и не запускается. Сертификат из `api/certs/` виден в контейнере по тому же относительному пути. Миграции применяются при запуске, как обычно.
+
+### Резервная копия базы Supabase
+
+Нужен `pg_dump` версии 17 (через Docker). Адрес для `pg_dump` — в формате libpq, без параметров Prisma:
+
+```bash
+docker run --rm -v "$PWD/api/certs":/certs:ro -v "$PWD/backup":/backup postgres:17-alpine pg_dump "postgresql://postgres.<id>:<пароль>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=verify-full&sslrootcert=/certs/supabase-ca.crt" -n jasno -Fc -f /backup/jasno-supabase-$(date +%F).dump
+```
+
+Чтобы пароль не остался в истории терминала, перед командой можно задать `export PGPASSWORD=...` и убрать пароль из адреса.
+
+### Вернуться на локальную базу
+
+В `api/.env` снова `DATABASE_URL=postgresql://jasno:jasno@localhost:5432/jasno`, `pnpm db:up`. Данные в Supabase остаются, локальная база своя.

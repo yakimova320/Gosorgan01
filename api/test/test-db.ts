@@ -2,10 +2,15 @@ import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import pg from 'pg';
+import { assertLocalDatabase } from '../src/prisma/database-url.js';
 
 const API_DIR = resolve(import.meta.dirname, '..');
 
-/** База PostgreSQL для тестов: TEST_DATABASE_URL, иначе DATABASE_URL, иначе локальный docker-compose. */
+/**
+ * База PostgreSQL для тестов: TEST_DATABASE_URL, иначе DATABASE_URL, иначе локальный docker-compose.
+ * DB01-S: только локальная. Если в api/.env адрес Supabase, тесты не создают в нём схемы, а просят
+ * TEST_DATABASE_URL с локальной базой.
+ */
 const BASE_URL =
   process.env.TEST_DATABASE_URL ??
   process.env.DATABASE_URL ??
@@ -19,6 +24,7 @@ export function createTestDatabase(): {
   url: string;
   cleanup: () => Promise<void>;
 } {
+  assertLocalDatabase(BASE_URL, 'Тесты');
   const schema = `test_${Date.now()}_${randomBytes(4).toString('hex')}`;
   const base = new URL(BASE_URL);
   base.searchParams.delete('schema');
