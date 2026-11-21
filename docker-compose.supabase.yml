@@ -1,0 +1,12 @@
+# DB01-S: приложение с внешней базой (Supabase) вместо сервиса db.
+#   docker compose -f docker-compose.yml -f docker-compose.supabase.yml up -d --build app
+# Адрес базы — JASNO_DATABASE_URL в корневом .env (в git не попадает), шаги: docs/deploy.md, раздел «Supabase».
+# Сертификат Supabase кладётся в api/certs/ (в git не попадает) и виден в контейнере как /app/api/certs.
+
+services:
+  app:
+    depends_on: !reset {}
+    environment:
+      DATABASE_URL: ${JASNO_DATABASE_URL:?JASNO_DATABASE_URL не задан — адрес Supabase в корневом .env}
+    volumes:
+      - ./api/certs:/app/api/certs:ro
