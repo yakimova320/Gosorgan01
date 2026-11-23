@@ -8,8 +8,8 @@ const fixture = (name: string) =>
   resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters', name);
 const claim = (page: Page, text: string) =>
   page.getByTestId('claim').filter({ hasText: text });
-const caseCard = (page: Page) =>
-  page.getByTestId('case-row').filter({ hasText: 'Новое дело' });
+// у каждого теста свой пользователь и одно дело; название дела — предложенное название письма (поправка 8)
+const caseCard = (page: Page) => page.getByTestId('case-row').first();
 
 async function signedIn(page: Page, token: string) {
   await page.goto('/');
@@ -33,9 +33,14 @@ test('в дело: «Нужна проверка», после подтверж�
   const checkUrl = await uploadAndCheck(page, '01_jobcenter_request.pdf');
 
   await page.getByRole('radio', { name: 'Новое дело' }).check();
+  // поправка 8: название нового дела заполнено названием письма от Ja!sno, его можно изменить
+  await expect(page.getByLabel('Название дела (можно изменить)')).toHaveValue('Jobcenter: документы к заявлению');
   await page.getByRole('button', { name: 'В дело', exact: true }).click();
   await expect(page).toHaveURL(/\/app$/);
+  await expect(caseCard(page)).toContainText('Jobcenter: документы к заявлению');
   await expect(caseCard(page)).toContainText('Нужна проверка');
+  // поправка 14: прогресс по шагам дела
+  await expect(caseCard(page).getByTestId('case-progress')).toContainText('из 3');
   await expect(page.getByTestId('inbox-letter')).toHaveCount(0);
 
   // только срок: подтверждённый срок важнее остальных непроверенных фактов
