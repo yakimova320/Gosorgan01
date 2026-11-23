@@ -1,5 +1,4 @@
 import {
-  AddressSchema,
   CitySchema,
   PostalCodeSchema,
   StreetSchema,
