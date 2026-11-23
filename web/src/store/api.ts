@@ -61,8 +61,12 @@ const wait = (ms = 350): Promise<void> =>
   new Promise<void>((r) => setTimeout(r, ms));
 const ok = <T>(data: T): Result<T> => ({ data });
 const isMock = DATA_MODE === 'mock';
-/** Загрузка фото: распознавание и извлечение фактов могут идти больше минуты. */
-const UPLOAD_TIMEOUT_MS = 180_000;
+/**
+ * Загрузка фото: распознавание и извлечение фактов могут идти больше минуты.
+ * Сервер делает до 3 попыток по LLM_TIMEOUT_MS (60 с): сайт ждёт чуть дольше сервера, иначе сдаётся
+ * в ту же секунду, когда сервер ещё отвечает (вечерняя поправка 1, 23.11).
+ */
+const UPLOAD_TIMEOUT_MS = 200_000;
 
 function summary(c: CaseDetail): CaseSummary {
   const {

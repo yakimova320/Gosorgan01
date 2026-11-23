@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AiConsentSection } from '../../components/consent';
-import { PASSWORD_MIN_CHARS, PROFILE_NUMBERS_MAX } from '@jasno/shared';
+import { PASSWORD_MIN_CHARS, PROFILE_NUMBERS_MAX, splitAddress } from '@jasno/shared';
 import { useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import type { z } from 'zod';
@@ -155,20 +155,6 @@ export function ProfilePage() {
               Где получить консультацию
             </Link>
           </p>
-          {/* Поправка 3 (23.11): из кабинета можно вернуться на публичную главную (блог, FAQ, Impressum, Datenschutz) */}
-          <p className="muted">
-            <Link to="/" className="link" data-testid="to-home">
-              На главную Ja!sno
-            </Link>
-            {' · '}
-            <Link to="/blog" className="link">Блог</Link>
-            {' · '}
-            <Link to="/faq" className="link">Частые вопросы</Link>
-            {' · '}
-            <Link to="/impressum" className="link">Impressum</Link>
-            {' · '}
-            <Link to="/datenschutz" className="link">Datenschutz</Link>
-          </p>
         </section>
 
         <section className="stack">
@@ -253,14 +239,29 @@ export function ProfilePage() {
 }
 
 type ProfileForm = z.input<typeof ProfileFormSchema>;
-type ProfileData = { firstName?: string; lastName?: string; address?: string; numbers?: { label: string; value: string }[] };
+type ProfileData = {
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  street?: string;
+  postalCode?: string;
+  city?: string;
+  numbers?: { label: string; value: string }[];
+};
 
-const toFormValues = (p: ProfileData | null | undefined): ProfileForm => ({
-  firstName: p?.firstName ?? '',
-  lastName: p?.lastName ?? '',
-  address: p?.address ?? '',
-  numbers: p?.numbers ?? [],
-});
+/** Поправка 6: старый профиль хранит адрес одной строкой — разбираем «Улица 1, 12345 Город». */
+const toFormValues = (p: ProfileData | null | undefined): ProfileForm => {
+  const split = p?.street ? null : splitAddress(p?.address ?? '');
+  return {
+    firstName: p?.firstName ?? '',
+    lastName: p?.lastName ?? '',
+    street: p?.street ?? split?.street ?? p?.address ?? '',
+    postalCode: p?.postalCode ?? split?.postalCode ?? '',
+    city: p?.city ?? split?.city ?? '',
+    numbers: p?.numbers ?? [],
+  };
+};
+const ADDRESS_PARTS = ['street', 'postalCode', 'city'] as const;
 
 /**
  * Имя, фамилия, адрес и номера (F05). На сервер уходят только изменённые поля,
@@ -293,6 +294,8 @@ function ProfileForm({ profile }: { profile: ProfileData }) {
     const changed = Object.fromEntries(
       (Object.keys(values) as (keyof ProfileForm)[]).filter((k) => dirtyFields[k]).map((k) => [k, values[k]]),
     );
+    // адрес уходит только целиком: сервер собирает из частей строку для писем
+    if (ADDRESS_PARTS.some((k) => k in changed)) for (const k of ADDRESS_PARTS) changed[k] = values[k];
     // Удалённая строка не отмечает список как изменённый: сравниваем с сохранённым
     if (JSON.stringify(values.numbers) !== JSON.stringify(profile.numbers ?? [])) changed.numbers = values.numbers;
     if (Object.keys(changed).length === 0) return setSaved(true);
@@ -302,7 +305,7 @@ function ProfileForm({ profile }: { profile: ProfileData }) {
       setSaved(true);
     } catch (err) {
       setFormError(
-        applyServerError(err, form.setError, ['firstName', 'lastName', 'address', 'numbers', ...numberFields], 'profile.'),
+        applyServerError(err, form.setError, ['firstName', 'lastName', 'street', 'postalCode', 'city', 'numbers', ...numberFields], 'profile.'),
       );
     }
   });
@@ -311,7 +314,22 @@ function ProfileForm({ profile }: { profile: ProfileData }) {
     <form className="stack" onSubmit={submit} noValidate>
       <TextField id="p-first" label="Имя" autoComplete="given-name" registration={form.register('firstName')} error={errors.firstName} />
       <TextField id="p-last" label="Фамилия" autoComplete="family-name" registration={form.register('lastName')} error={errors.lastName} />
-      <TextField id="p-address" label="Адрес проживания" autoComplete="street-address" registration={form.register('address')} error={errors.address} />
+      <fieldset className="stack-s">
+        <legend>Адрес проживания</legend>
+        <TextField id="p-street" label="Улица и номер дома" autoComplete="address-line1" registration={form.register('street')} error={errors.street} />
+        <div className="address-row">
+          <TextField
+            id="p-zip"
+            label="Индекс"
+            autoComplete="postal-code"
+            inputMode="numeric"
+            maxLength={5}
+            registration={form.register('postalCode')}
+            error={errors.postalCode}
+          />
+          <TextField id="p-city" label="Город" autoComplete="address-level2" registration={form.register('city')} error={errors.city} />
+        </div>
+      </fieldset>
 
       <fieldset className="stack-s profile-numbers" aria-describedby="p-numbers-hint">
         <legend>Номера для писем</legend>

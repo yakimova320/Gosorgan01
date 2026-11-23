@@ -7,12 +7,7 @@ import { Illustration } from '../../components/Watercolor';
 import { CaseRow, ErrorAlert, Loading, NextStepCard, PageHeader } from '../../components/ui';
 import { formatDate } from '../../lib/dates';
 
-function greeting(): string {
-  const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: 'numeric', hour12: false }).format(new Date()));
-  if (h < 11) return 'Доброе утро';
-  if (h < 18) return 'Добрый день';
-  return 'Добрый вечер';
-}
+import { greeting } from '../../lib/greeting';
 
 export function CabinetPage() {
   const cabinet = useCabinetQuery();

@@ -1,13 +1,13 @@
 {
   "source": "Документ «Ja!sno: карточки «Важно знать»», версия от 15.11.2026 (rev 16). Тексты пишут и проверяют люди, код их не меняет.",
   "topics": [
+    { "id": "children", "title": "Всё о детях" },
     { "id": "housing", "title": "Жильё" },
     { "id": "insurance", "title": "Страховки" },
     { "id": "health", "title": "Здоровье" },
     { "id": "taxes", "title": "Налоги" },
     { "id": "letters", "title": "Письма и сроки" },
     { "id": "contracts", "title": "Договоры" },
-    { "id": "children", "title": "Всё о детях" },
     { "id": "german", "title": "Немецкий язык" }
   ],
   "cards": [

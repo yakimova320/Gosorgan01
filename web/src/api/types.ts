@@ -15,6 +15,10 @@ export interface Profile {
   firstName?: string;
   lastName?: string;
   address?: string;
+  /** Поправка 6: адрес по частям; address сервер собирает из них */
+  street?: string;
+  postalCode?: string;
+  city?: string;
   numbers?: { label: string; value: string }[];
 }
 

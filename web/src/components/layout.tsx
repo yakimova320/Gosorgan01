@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { DATA_MODE, IS_PRODUCTION } from '../api/config';
 import { Link, NavLink } from 'react-router';
 import { useSession } from '../store';
+import { useCabinetQuery } from '../store/api';
+import { greeting } from '../lib/greeting';
 import { Icon } from './Icon';
 import { Logo } from './ui';
 
@@ -43,21 +45,46 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="page page--public">{children}</main>
-      <footer className="footer">
-        <Link to="/faq">Частые вопросы</Link>
-        <Link to="/blog">Блог</Link>
-        <Link to="/datenschutz">Datenschutz</Link>
-        <Link to="/impressum">Impressum</Link>
-        <span style={{ flexBasis: '100%', lineHeight: 1.5 }}>
-          Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.
-        </span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
 
+/**
+ * Поправки 3 и 7 (23.11): один подвал на всех страницах — публичных и в кабинете.
+ * Поправка 3: «Частые вопросы» в подвале называются FAQ.
+ */
+export function SiteFooter() {
+  return (
+    <footer className="footer" data-testid="site-footer">
+      <Link to="/">На главную Ja!sno</Link>
+      <Link to="/blog">Блог</Link>
+      <Link to="/faq">FAQ</Link>
+      <Link to="/impressum">Impressum</Link>
+      <Link to="/datenschutz">Datenschutz</Link>
+      <span style={{ flexBasis: '100%', lineHeight: 1.5 }}>
+        Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.
+      </span>
+    </footer>
+  );
+}
+
+/** Поправка 5 (23.11): внизу бокового меню приветствие с именем, например «Добрый вечер, Anna». */
+function SideNavGreeting() {
+  const cabinet = useCabinetQuery();
+  const name = cabinet.data?.profile?.firstName;
+  return (
+    <div className="side-nav__user" data-testid="side-nav-user">
+      <span className="muted">{greeting()},</span>
+      <strong>{name ?? '…'}</strong>
+    </div>
+  );
+}
+
 const MAIN_NAV = [
-  { to: '/app', label: 'Кабинет', icon: 'home', exact: true },
+  // поправка 4 (23.11): «Главная» ведёт на публичную главную, как логотип
+  { to: '/', label: 'Главная', icon: 'home', exact: true },
+  { to: '/app', label: 'Кабинет', icon: 'doc', exact: true },
   { to: '/app/cases', label: 'Мои дела', icon: 'folder', exact: false },
   { to: '/app/history', label: 'История', icon: 'history', exact: false },
   { to: '/app/write', label: 'Написать письмо', icon: 'pen', exact: false },
@@ -80,13 +107,28 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Icon name={n.icon} size={20} /> {n.label}
           </NavLink>
         ))}
+        <SideNavGreeting />
       </nav>
 
-      <main className="page">{children}</main>
+      <div className="app-main">
+        {/* Поправка 4: на телефоне логотип и «Главная» над страницей кабинета */}
+        <header className="app-topbar">
+          <Link to="/" aria-label="Ja!sno, на главную">
+            <Logo />
+          </Link>
+          <Link to="/" className="btn btn--ghost btn--small" data-testid="home-link">
+            <Icon name="home" size={18} /> Главная
+          </Link>
+        </header>
+        <main className="page">{children}</main>
+        <div className="app-footer">
+          <SiteFooter />
+        </div>
+      </div>
 
       <nav className="bottom-nav" aria-label="Главное меню">
         <NavLink to="/app" end>
-          <Icon name="home" />
+          <Icon name="doc" />
           Кабинет
         </NavLink>
         <NavLink to="/app/history">

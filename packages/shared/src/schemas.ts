@@ -53,6 +53,49 @@ export const AddressSchema = z
   .min(5, { message: 'Введите адрес проживания' })
   .max(300, { message: 'Не больше 300 знаков' });
 
+/*
+ * Поправка 6 (23.11, вечер): адрес в профиле по частям — улица с домом, индекс, город.
+ * Черновики и письма по-прежнему берут одну строку address: сервер собирает её из частей
+ * (composeAddress). Старые профили без частей сайт разбирает по шаблону «Улица 1, 12345 Город».
+ */
+export const StreetSchema = z
+  .string()
+  .trim()
+  .min(3, { message: 'Введите улицу и номер дома' })
+  .max(150, { message: 'Не больше 150 знаков' });
+export const PostalCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{5}$/, { message: 'Индекс: 5 цифр' });
+export const CitySchema = z
+  .string()
+  .trim()
+  .min(2, { message: 'Введите город' })
+  .max(100, { message: 'Не больше 100 знаков' });
+
+export interface AddressParts {
+  street: string;
+  postalCode: string;
+  city: string;
+}
+
+export const AddressPartsSchema = z.object({
+  street: StreetSchema,
+  postalCode: PostalCodeSchema,
+  city: CitySchema,
+});
+
+/** «Musterstr. 1, 10115 Berlin» — так адрес стоит в блоке отправителя черновика. */
+export function composeAddress(p: AddressParts): string {
+  return `${p.street.trim()}, ${p.postalCode.trim()} ${p.city.trim()}`;
+}
+
+/** Обратный разбор одной строки; не по шаблону — null (человек заполнит части сам). */
+export function splitAddress(address: string): AddressParts | null {
+  const m = /^(.+?),\s*(\d{5})\s+(.+)$/.exec(address.trim());
+  return m ? { street: m[1].trim(), postalCode: m[2], city: m[3].trim() } : null;
+}
+
 export const RegisterSchema = z.object({
   email: EmailSchema,
   password: NewPasswordSchema,
@@ -139,6 +182,9 @@ export const ProfileSchema = z
     firstName: FirstNameSchema,
     lastName: LastNameSchema,
     address: AddressSchema,
+    street: StreetSchema.optional(),
+    postalCode: PostalCodeSchema.optional(),
+    city: CitySchema.optional(),
     numbers: z
       .array(ProfileNumberSchema)
       .max(PROFILE_NUMBERS_MAX, {

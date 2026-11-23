@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ChangePasswordSchema,
+  composeAddress,
+  splitAddress,
   FirstNameSchema,
   LastNameSchema,
   ProfilePatchSchema,
@@ -230,5 +232,14 @@ describe('пакет работает в браузере', () => {
         expect(s === 'zod' || s.startsWith('./'), `${file}: ${s}`).toBe(true);
       expect(src).not.toMatch(/\b(Buffer|process|require)\b/);
     }
+  });
+});
+
+describe('адрес по частям (поправка 6)', () => {
+  it('собирает и разбирает строку', () => {
+    const parts = { street: 'Musterstr. 1', postalCode: '10115', city: 'Berlin' };
+    expect(composeAddress(parts)).toBe('Musterstr. 1, 10115 Berlin');
+    expect(splitAddress('Musterstr. 1, 10115 Berlin')).toEqual(parts);
+    expect(splitAddress('где-то в Берлине')).toBeNull();
   });
 });

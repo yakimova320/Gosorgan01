@@ -59,6 +59,8 @@ export class AuthService {
             ? { aiConsentAt: new Date(), aiConsentVersion: AI_CONSENT_VERSION }
             : {}),
           // Регистрационные данные: только имя, фамилия и адрес. Писем, дел и демо-данных нет.
+          firstName: input.firstName,
+          lastName: input.lastName,
           profile: {
             firstName: input.firstName,
             lastName: input.lastName,

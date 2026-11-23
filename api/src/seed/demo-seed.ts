@@ -112,6 +112,8 @@ export async function seedDemo(
       // K11: демо-кабинет показывает основной путь, согласие на анализ ИИ дано
       aiConsentAt: new Date(),
       aiConsentVersion: AI_CONSENT_VERSION,
+      firstName: DEMO_PROFILE.firstName,
+      lastName: DEMO_PROFILE.lastName,
       profile: DEMO_PROFILE,
       demo: true,
     },
