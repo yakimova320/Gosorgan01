@@ -68,6 +68,7 @@ const err = (code: string, message: string, details?: unknown) => ({
 const EXAMPLE: UploadLetterResponse = {
   letter: {
     id: '7f1c2e9a-3b4d-4c5e-8f60-1a2b3c4d5e6f',
+    title: 'Jobcenter: документы к заявлению',
     caseId: null,
     sourceType: 'PDF_TEXT',
     text: 'Jobcenter Musterstadt\n…\nBitte reichen Sie bis zum 30.11.2026 Kontoauszüge ein.',
