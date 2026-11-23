@@ -223,6 +223,20 @@ docker compose -f docker-compose.yml -f docker-compose.supabase.yml up -d --buil
 
 Сервис `db` не нужен и не запускается. Сертификат из `api/certs/` виден в контейнере по тому же относительному пути. Миграции применяются при запуске, как обычно.
 
+### Миграции с Mac: ошибка P1011
+
+Проверено 23.11.2026: таблицы в Supabase созданы (8 миграций, 16 таблиц в схеме `jasno`), сервер Ja!sno подключается со строгой проверкой сертификата.
+
+Но `prisma migrate` **на Mac** со `sslaccept=strict` отвечает `P1011: Error opening a TLS connection: The certificate was not trusted`. Причина в macOS, не в Supabase и не в коде: сертификат пулера Supabase выдан на 5 лет, а macOS для собственных корневых сертификатов (Supabase Root 2021 CA) принимает серверные сертификаты не дольше 825 дней. Prisma CLI проверяет сертификат через macOS. Сервер (Node, OpenSSL) и Linux, в том числе Docker, это ограничение не касается.
+
+Новые миграции на Supabase поэтому запускать **через Docker** (Linux, проверка сертификата остаётся):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.supabase.yml run --rm app jasno migrate
+```
+
+Запасной вариант — разово для одной команды, осознанно: в адресе `sslaccept=accept_invalid_certs` вместо `strict`. Соединение шифруется, но сертификат не проверяется. В `api/.env` оставить `strict`.
+
 ### Резервная копия базы Supabase
 
 Нужен `pg_dump` версии 17 (через Docker). Адрес для `pg_dump` — в формате libpq, без параметров Prisma:
