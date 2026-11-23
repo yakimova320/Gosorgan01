@@ -17,7 +17,9 @@ test('подсказка о хранении: видна при запуске, 
 
   await page.getByRole('button', { name: 'Понятно' }).click();
   await expect(notice).toHaveCount(0);
-  await page.goto('/faq');
+  // переход внутри сайта (без перезагрузки): подсказка остаётся скрытой
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Частые вопросы' }).click();
+  await expect(page).toHaveURL(/\/faq$/);
   await expect(page.getByTestId('storage-notice')).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId('storage-notice')).toBeVisible();
