@@ -1,7 +1,7 @@
 /** ТЗ v4 раздел 10: не больше 3 обращений к модели на одну операцию, включая все проверки и повторы. */
 export const MAX_ATTEMPTS = 3;
 
-export type LlmOperationKind = 'UPLOAD' | 'EXPLAIN' | 'OTHER';
+export type LlmOperationKind = 'UPLOAD' | 'EXPLAIN' | 'TRANSLATE' | 'OTHER';
 
 /**
  * B18: одна операция пользователя (загрузка письма, объяснение). Все вызовы модели внутри неё

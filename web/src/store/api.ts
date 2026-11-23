@@ -18,6 +18,8 @@ import {
   mockDelete,
   mockLetter,
   mockLetters,
+  mockRename,
+  mockTranslate,
   mockUpload,
 } from '../mocks/letters';
 import { DATA_MODE } from '../api/config';
@@ -26,6 +28,7 @@ import type {
   ApiCaseDetail,
   ApiDraft,
   ApiExplanation,
+  ApiTranslation,
   CreateDraftArgs,
   DraftQuestions,
   SentVia,
@@ -78,6 +81,8 @@ export interface InboxLetter {
   id: string;
   createdAt: string;
   sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
+  /** Поправка 8: название письма; null — нет */
+  title?: string | null;
   authority: string | null;
   caseNumber: string | null;
   unconfirmed: number;
@@ -383,6 +388,44 @@ export const api = createApi({
         'Letters',
         'Cabinet',
       ],
+    }),
+
+    /** Поправка 8 (23.11): переименовать письмо. */
+    renameLetter: b.mutation<LetterDetail, { id: string; title: string }>({
+      queryFn: ({ id, title }, _api, _x, base) => {
+        if (isMock) {
+          const r = mockRename(id, title);
+          return 'code' in r ? { error: r } : ok(r);
+        }
+        return base({
+          method: 'PATCH',
+          path: `/letters/${encodeURIComponent(id)}`,
+          body: { title },
+        }) as Promise<Result<LetterDetail>>;
+      },
+      invalidatesTags: (_r, _e, a) => [
+        { type: 'Letter', id: a.id },
+        'Letters',
+        { type: 'Case', id: 'LIST' },
+      ],
+    }),
+
+    /**
+     * Поправка 7 (23.11): машинный перевод письма на русский. Только по кнопке: обращение к модели.
+     * Повтор сервер отдаёт из кэша.
+     */
+    translateLetter: b.mutation<ApiTranslation, { id: string; text: string }>({
+      queryFn: async ({ id, text }, _api, _x, base) => {
+        if (isMock) {
+          await wait(600);
+          return ok(mockTranslate(text));
+        }
+        return base({
+          method: 'POST',
+          path: `/letters/${encodeURIComponent(id)}/translate?lang=ru`,
+          timeoutMs: UPLOAD_TIMEOUT_MS,
+        }) as Promise<Result<ApiTranslation>>;
+      },
     }),
 
     /** Полное удаление письма. «Оставить во входящих» запроса не требует: письмо уже во входящих. */
@@ -744,6 +787,8 @@ export const {
   useCorrectClaimMutation,
   useDeleteLetterMutation,
   useAssignLetterMutation,
+  useRenameLetterMutation,
+  useTranslateLetterMutation,
   useUpdateProfileMutation,
   useSetAiConsentMutation,
 } = api;

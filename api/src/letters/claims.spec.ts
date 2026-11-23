@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { demoExtract } from '../llm/adapters/demo.adapter.js';
+import {
+  DEMO_TRANSLATE_NOTE,
+  demoExtract,
+  demoTitle,
+  demoTranslate,
+} from '../llm/adapters/demo.adapter.js';
+import { verifiedTitle } from './letters.service.js';
 import { ExtractV2Schema } from '../llm/schemas/extract.schema.js';
 import {
   amountsIn,
@@ -241,5 +247,38 @@ describe('страницы и ввод человека', () => {
     expect(checkUserValue('DEADLINE', '05.12.2026')).not.toBeNull();
     expect(checkUserValue('AMOUNT', '120,50')).not.toBeNull();
     expect(checkUserValue('CASE_NUMBER', 'JC-1')).toBeNull();
+  });
+});
+
+describe('verifiedTitle (поправка 8)', () => {
+  const text = 'Jobcenter Musterstadt\nBetreff: Unterlagen zu Ihrem Antrag\n';
+  it('цитата есть в письме: название берётся', () => {
+    expect(
+      verifiedTitle({ value: ' Jobcenter:  документы ', quote: 'betreff: unterlagen  zu Ihrem Antrag' }, text),
+    ).toBe('Jobcenter: документы');
+  });
+  it('цитаты нет в письме или названия нет: null', () => {
+    expect(verifiedTitle({ value: 'Штраф', quote: 'Bußgeldbescheid' }, text)).toBeNull();
+    expect(verifiedTitle(null, text)).toBeNull();
+  });
+});
+
+describe('demo: перевод и название (поправки 7 и 8)', () => {
+  it('частые фразы переведены, остальное по-немецки, пометка демо-режима', () => {
+    const { text } = demoTranslate('Datum: 11.11.2026\nBitte antworten Sie bis zum 30.11.2026.\nIrgendwas anderes');
+    expect(text.split('\n')).toEqual([
+      DEMO_TRANSLATE_NOTE,
+      '',
+      'Дата: 11.11.2026',
+      'Пожалуйста, ответьте до 30.11.2026.',
+      'Irgendwas anderes',
+    ]);
+  });
+  it('название по Betreff, без Betreff — null', () => {
+    expect(demoTitle('Bürgeramt Beispielhausen\nBetreff: Meldebescheinigung')).toEqual({
+      value: 'Bürgeramt: Meldebescheinigung',
+      quote: 'Betreff: Meldebescheinigung',
+    });
+    expect(demoTitle('Jobcenter Musterstadt')).toBeNull();
   });
 });

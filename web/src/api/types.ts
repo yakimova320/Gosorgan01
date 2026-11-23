@@ -97,7 +97,16 @@ export interface CaseSummary {
   stage: CaseStage;
   nextDeadline: string | null;
   counts: { letters: number; unconfirmed: number };
+  /** Поправка 14 (23.11): шаги дела, считает сервер. Нет (примерные данные): полоска по статусу. */
+  progress?: CaseProgress;
   updatedAt: string;
+}
+
+export interface CaseProgress {
+  done: number;
+  total: number;
+  percent: number;
+  steps: { key: 'CHECK' | 'DEADLINES' | 'REPLY'; label: string; done: boolean }[];
 }
 
 export type DraftKind = 'CLARIFICATION' | 'DOCUMENTS' | 'EXTENSION' | 'STATUS_REQUEST';
@@ -198,6 +207,8 @@ export interface LetterDetail {
     pages: { n: number; readable: boolean; chars: number }[];
     files: { n: number; mime: string; bytes: number }[];
     createdAt: string;
+    /** Поправка 8: название письма (подсказка модели по цитате или от человека) */
+    title?: string | null;
   };
   claims: LetterClaim[];
   deadlines: LetterDeadline[];
@@ -223,7 +234,7 @@ export interface ApiTimelineItem {
 
 export interface ApiCaseDetail extends CaseSummary {
   status?: 'OPEN' | 'CLOSED';
-  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN'; authority: string | null; unconfirmed: number }[];
+  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN'; title?: string | null; authority: string | null; unconfirmed: number }[];
   claims: LetterClaim[];
   deadlines: LetterDeadline[];
   drafts: { id: string; kind: string; status: string; stale: boolean; createdAt: string }[];
@@ -247,6 +258,14 @@ export interface ExplanationStatement {
   text: string;
   claimIds: string[];
   unconfirmed: boolean;
+}
+
+/** Ответ POST /letters/:id/translate (поправка 7): машинный перевод, не официальный */
+export interface ApiTranslation {
+  lang: 'ru';
+  text: string;
+  machine: true;
+  cached: boolean;
 }
 
 /** Ответ POST /letters/:id/explain */

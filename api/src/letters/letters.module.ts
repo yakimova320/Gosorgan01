@@ -5,11 +5,13 @@ import { LetterUploadInterceptor } from '../documents/upload.interceptor.js';
 import { ExplainService } from './explain.service.js';
 import { LettersController } from './letters.controller.js';
 import { LettersService } from './letters.service.js';
+import { TranslateService } from './translate.service.js';
 
 @Module({
   controllers: [LettersController],
   providers: [
     ExplainService,
+    TranslateService,
     LettersService,
     DocumentsService,
     StorageService,

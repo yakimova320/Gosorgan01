@@ -3,31 +3,16 @@ import { Link } from 'react-router';
 
 /**
  * K10 (#135): подсказка о хранении в браузере (§ 25 TDDDG). Ja!sno хранит только технически необходимое
- * (токен входа и эту отметку), без рекламы, аналитики и трекинга — согласие не нужно, достаточно информации.
+ * (только токен входа), без рекламы, аналитики и трекинга — согласие не нужно, достаточно информации.
  * Появится аналитика или внешние сервисы в браузере → нужен настоящий баннер согласия
  * («Принять» и «Отклонить» одинаково заметные, до согласия ничего не загружать).
  */
-export const STORAGE_NOTICE_KEY = 'jasno.storageNotice';
-
-function readSeen(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_NOTICE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
 export function StorageNotice() {
-  const [seen, setSeen] = useState(readSeen);
+  // Поправка 1 (23.11): подсказка видна при каждом запуске сайта. «Понятно» скрывает её до перезагрузки,
+  // в браузере ничего не запоминается.
+  const [seen, setSeen] = useState(false);
   if (seen) return null;
-  const close = () => {
-    try {
-      localStorage.setItem(STORAGE_NOTICE_KEY, '1');
-    } catch {
-      // приватный режим: подсказка просто скроется до перезагрузки
-    }
-    setSeen(true);
-  };
+  const close = () => setSeen(true);
   return (
     <div className="storage-notice" role="region" aria-label="Cookies и хранение в браузере" data-testid="storage-notice">
       <div className="storage-notice__text">

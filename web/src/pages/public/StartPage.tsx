@@ -171,8 +171,8 @@ export function StartPage() {
 
       <section className="stack" style={{ paddingTop: 12 }}>
         <div className="row-between">
-          <h2>Важно знать</h2>
-          <Link to="/wissen" className="link">
+          <h2>Блог</h2>
+          <Link to="/blog" className="link">
             Все темы
           </Link>
         </div>
@@ -182,7 +182,7 @@ export function StartPage() {
             return (
               <Link
                 key={t.id}
-                to={`/wissen?topic=${t.id}`}
+                to={`/blog?topic=${t.id}`}
                 className="card stack-s"
                 style={{ borderRadius: 22 }}
               >

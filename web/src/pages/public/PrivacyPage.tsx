@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { PageHeader } from '../../components/ui';
 import { AI_CONSENT_DETAILS, AI_CONSENT_LABEL, AI_CONSENT_LABEL_DE } from '../../lib/consent';
+import { OPERATOR } from '../../lib/legal';
 
 /**
  * K11 (#134): страница Datenschutz. Черновик команды для тестовой версии: юридически не проверен,
@@ -16,7 +17,10 @@ export function PrivacyPage() {
 
       <section className="card stack-s">
         <h2>Кто отвечает (Verantwortlicher)</h2>
-        <p>Команда проекта Ja!sno. Контакт для вопросов о данных появится вместе с Impressum.</p>
+        <OperatorBlock />
+        <p className="small text-2">
+          Данные в квадратных скобках — заглушки. <Link to="/impressum" className="link">Impressum</Link>
+        </p>
       </section>
 
       <section className="card stack-s">
@@ -49,7 +53,7 @@ export function PrivacyPage() {
         <h2>Cookies и хранение в браузере</h2>
         <p>
           Ja!sno не использует рекламу, аналитику и трекинг. В браузере хранится только то, что нужно для работы: токен
-          входа и отметка, что вы прочитали подсказку о хранении. Это технически необходимо (§ 25 Abs. 2 TDDDG), согласие
+          входа. Подсказка о хранении ничего не запоминает и показывается при каждом запуске. Это технически необходимо (§ 25 Abs. 2 TDDDG), согласие
           для этого не требуется.
         </p>
       </section>
@@ -61,7 +65,7 @@ export function PrivacyPage() {
           <li>
             «Удалить аккаунт» в профиле удаляет всё: аккаунт, письма, файлы, дела и журнал обращений к модели.
           </li>
-          <li>Аккаунт без входа дольше 90 дней удаляется автоматически.</li>
+          <li>Аккаунт без входа дольше 360 дней удаляется автоматически.</li>
         </ul>
       </section>
 
@@ -73,6 +77,47 @@ export function PrivacyPage() {
         </p>
         <Link to="/app/profile" className="link">
           Профиль: согласие на анализ ИИ и удаление аккаунта
+        </Link>
+      </section>
+    </>
+  );
+}
+
+function OperatorBlock() {
+  return (
+    <address className="stack-s" style={{ fontStyle: 'normal' }} data-testid="operator">
+      <span>{OPERATOR.name}</span>
+      <span>{OPERATOR.street}</span>
+      <span>{OPERATOR.city}</span>
+      <span>E-Mail: {OPERATOR.email}</span>
+      <span>Телефон: {OPERATOR.phone}</span>
+    </address>
+  );
+}
+
+/** Поправка 2 (23.11): Impressum. Черновик с заглушками, данные вписывает команда, проверяет юрист. */
+export function ImpressumPage() {
+  return (
+    <>
+      <PageHeader title="Impressum" subtitle="Кто отвечает за Ja!sno. Тестовая версия." />
+      <div className="alert alert--warn" role="note">
+        Черновик для тестовой версии. Данные в квадратных скобках ещё не заполнены, текст не проверен юристом.
+      </div>
+      <section className="card stack-s" lang="de">
+        <h2>Angaben gemäß § 5 DDG</h2>
+        <OperatorBlock />
+      </section>
+      <section className="card stack-s" lang="de">
+        <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+        <p>
+          {OPERATOR.name}, {OPERATOR.street}, {OPERATOR.city}
+        </p>
+      </section>
+      <section className="card stack-s">
+        <h2>Важно</h2>
+        <p>Ja!sno объясняет письма простыми словами и не заменяет юридическую консультацию.</p>
+        <Link to="/datenschutz" className="link">
+          Datenschutz
         </Link>
       </section>
     </>

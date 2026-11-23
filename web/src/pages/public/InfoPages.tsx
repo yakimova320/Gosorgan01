@@ -44,6 +44,20 @@ export function FaqPage() {
 }
 
 function CardView({ card }: { card: Card }) {
+  if (card.draft) {
+    return (
+      <article className="card stack-s" style={{ gap: 8 }} data-testid="card-draft">
+        <h3>{card.title}</h3>
+        <p className="muted">Раздел готовится. Текст пишет команда.</p>
+        {card.german.length > 0 && (
+          <p className="small">
+            <span className="muted">По-немецки: </span>
+            {card.german.join(', ')}
+          </p>
+        )}
+      </article>
+    );
+  }
   return (
     <article className="card stack-s" style={{ gap: 8 }}>
       <h3>{card.title}</h3>
@@ -88,7 +102,7 @@ export function WissenPage() {
 
   return (
     <>
-      <PageHeader title="Важно знать" subtitle="Короткие проверенные советы о том, что новоприбывшие часто упускают. Это не юридическая консультация." />
+      <PageHeader title="Блог" subtitle="Короткие проверенные советы о жизни в Германии: что новоприбывшие часто упускают. Это не юридическая консультация." />
       <div className="field">
         <label htmlFor="w-search" className="visually-hidden">
           Поиск по советам

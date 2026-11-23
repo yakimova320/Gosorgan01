@@ -55,3 +55,46 @@ export function caseStage(input: StageInput, today: string): StageResult {
   if (input.lastDraftSent) return { stage: 'WAITING', nextDeadline: null };
   return { stage: 'OPEN', nextDeadline: null };
 }
+
+/**
+ * Поправка 14 (23.11): прогресс дела по трём шагам вместо постоянной полоски по статусу.
+ * Проверить факты (нет непроверенных), выполнить сроки (нет открытых подтверждённых сроков),
+ * отправить ответ (последний черновик отправлен). Завершённое дело: все шаги сделаны.
+ */
+export function caseProgress(input: {
+  closed: boolean;
+  hasClaims: boolean;
+  unconfirmed: number;
+  openDeadlines: number;
+  replySent: boolean;
+}): {
+  done: number;
+  total: number;
+  percent: number;
+  steps: { key: 'CHECK' | 'DEADLINES' | 'REPLY'; label: string; done: boolean }[];
+} {
+  const steps = [
+    {
+      key: 'CHECK' as const,
+      label: 'Факты проверены',
+      done: input.closed || (input.hasClaims && input.unconfirmed === 0),
+    },
+    {
+      key: 'DEADLINES' as const,
+      label: 'Сроки выполнены',
+      done: input.closed || input.openDeadlines === 0,
+    },
+    {
+      key: 'REPLY' as const,
+      label: 'Ответ отправлен',
+      done: input.closed || input.replySent,
+    },
+  ];
+  const done = steps.filter((s) => s.done).length;
+  return {
+    done,
+    total: steps.length,
+    percent: Math.round((done / steps.length) * 100),
+    steps,
+  };
+}

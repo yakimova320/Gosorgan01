@@ -155,6 +155,20 @@ export function ProfilePage() {
               Где получить консультацию
             </Link>
           </p>
+          {/* Поправка 3 (23.11): из кабинета можно вернуться на публичную главную (блог, FAQ, Impressum, Datenschutz) */}
+          <p className="muted">
+            <Link to="/" className="link" data-testid="to-home">
+              На главную Ja!sno
+            </Link>
+            {' · '}
+            <Link to="/blog" className="link">Блог</Link>
+            {' · '}
+            <Link to="/faq" className="link">Частые вопросы</Link>
+            {' · '}
+            <Link to="/impressum" className="link">Impressum</Link>
+            {' · '}
+            <Link to="/datenschutz" className="link">Datenschutz</Link>
+          </p>
         </section>
 
         <section className="stack">

@@ -96,7 +96,7 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
       {letters.map((l) => (
         <Link key={l.id} to={`/app/letters/${l.id}/check`} className="card row-between" data-testid="inbox-letter">
           <div className="stack-s">
-            <strong>{l.authority ?? 'Письмо'}</strong>
+            <strong>{l.title || l.authority || 'Письмо'}</strong>
             <span className="small text-2">
               {formatDate(l.createdAt.slice(0, 10))}
               {l.caseNumber ? ` · ${l.caseNumber}` : ''}

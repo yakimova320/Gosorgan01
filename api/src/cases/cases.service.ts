@@ -15,7 +15,7 @@ import type {
   TraceItem,
   UpdateCaseInput,
 } from './cases.dto.js';
-import { caseStage } from './stage.js';
+import { caseProgress, caseStage } from './stage.js';
 
 export const HISTORY_PAGE = 30;
 
@@ -114,6 +114,7 @@ export class CasesService {
         id: l.id,
         createdAt: l.createdAt.toISOString(),
         sourceType: l.sourceType,
+        title: l.title,
         authority: l.claims.find((c) => c.kind === 'AUTHORITY')?.value ?? null,
         unconfirmed: l.claims.filter((c) => c.status === 'UNCONFIRMED').length,
       })),
@@ -291,6 +292,15 @@ function toSummary(c: CaseRow, today: string): CaseSummary {
       letters: c._count.letters,
       unconfirmed: c.claims.filter((cl) => cl.status === 'UNCONFIRMED').length,
     },
+    progress: caseProgress({
+      closed: c.status === 'CLOSED',
+      hasClaims: c.claims.length > 0,
+      unconfirmed: c.claims.filter((cl) => cl.status === 'UNCONFIRMED').length,
+      openDeadlines: c.deadlines.filter(
+        (d) => d.claim.status === 'CONFIRMED' && d.doneAt === null,
+      ).length,
+      replySent: c.drafts[0]?.status === 'SENT',
+    }),
     updatedAt: c.updatedAt.toISOString(),
   };
 }

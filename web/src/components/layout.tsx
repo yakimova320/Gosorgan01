@@ -45,9 +45,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <main className="page page--public">{children}</main>
       <footer className="footer">
         <Link to="/faq">Частые вопросы</Link>
-        <Link to="/wissen">Важно знать</Link>
+        <Link to="/blog">Блог</Link>
         <Link to="/datenschutz">Datenschutz</Link>
-        <span>Impressum (готовится)</span>
+        <Link to="/impressum">Impressum</Link>
         <span style={{ flexBasis: '100%', lineHeight: 1.5 }}>
           Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.
         </span>
@@ -60,9 +60,8 @@ const MAIN_NAV = [
   { to: '/app', label: 'Кабинет', icon: 'home', exact: true },
   { to: '/app/cases', label: 'Мои дела', icon: 'folder', exact: false },
   { to: '/app/history', label: 'История', icon: 'history', exact: false },
-  { to: '/app/ask', label: 'Спросить', icon: 'chat', exact: false },
   { to: '/app/write', label: 'Написать письмо', icon: 'pen', exact: false },
-  { to: '/wissen', label: 'Важно знать', icon: 'book', exact: false },
+  { to: '/blog', label: 'Блог', icon: 'book', exact: false },
   { to: '/app/profile', label: 'Профиль', icon: 'user', exact: false },
 ] as const;
 
@@ -70,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <nav className="side-nav" aria-label="Главное меню">
-        <Link to="/app" style={{ padding: '0 12px 12px' }} aria-label="Ja!sno, кабинет">
+        <Link to="/" style={{ padding: '0 12px 12px' }} aria-label="Ja!sno, на главную">
           <Logo />
         </Link>
         <Link to="/app/scan" className="btn btn--primary">
@@ -99,9 +98,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Icon name="scan" size={24} color="#FFFFFF" width={2.2} />
           </span>
         </Link>
-        <NavLink to="/app/ask">
-          <Icon name="chat" />
-          Спросить
+        <NavLink to="/blog">
+          <Icon name="book" />
+          Блог
         </NavLink>
         <NavLink to="/app/profile">
           <Icon name="user" />

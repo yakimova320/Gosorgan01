@@ -276,7 +276,7 @@ describe('Приём письма POST /letters (e2e)', () => {
     });
     expect(calls.map((c) => [c.promptName, c.promptVersion])).toEqual([
       ['transcribe', 2],
-      ['extract', 2],
+      ['extract', 3],
     ]);
     expect(calls[0].input.match(/image, \d+ KB/g)).toHaveLength(3);
     // факты со страницы 2 ссылаются на страницу 2

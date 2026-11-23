@@ -2,7 +2,7 @@ import cardsData from '../../../content/important/cards.ru.json';
 import faqRaw from '../../../content/faq.ru.md?raw';
 
 /*
- * FAQ и карточки «Важно знать» берутся из папки content/ в корне репозитория.
+ * FAQ и карточки блога (раньше «Важно знать») берутся из папки content/ в корне репозитория.
  * Их пишут и проверяют люди; здесь только чтение и разбор.
  */
 
@@ -16,6 +16,8 @@ export interface Card {
   sources: { name: string; url: string }[];
   checkedAt: string;
   note?: string;
+  /** Поправка 5 (23.11): тема заведена, текст ещё пишет команда. */
+  draft?: boolean;
 }
 
 export interface Topic {

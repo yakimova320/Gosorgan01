@@ -11,6 +11,8 @@ import {
   useExplanationQuery,
   useLazyHistoryPageQuery,
   useLetterQuery,
+  useRenameLetterMutation,
+  useTranslateLetterMutation,
   useUpdateCaseMutation,
   useSetDeadlineDoneMutation,
   useDeadlineIcsMutation,
@@ -213,7 +215,7 @@ export function CasePage({ id }: { id: string }) {
               <div key={l.id} className="card stack-s" data-testid="case-letter">
                 <div className="row-between">
                   <span style={{ fontWeight: 600 }}>
-                    {l.authority ?? 'Письмо'} · {formatDate(l.createdAt.slice(0, 10))}
+                    {l.title || l.authority || 'Письмо'} · {formatDate(l.createdAt.slice(0, 10))}
                   </span>
                   {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
                 </div>
@@ -341,7 +343,12 @@ export function LetterPage({ id }: { id: string }) {
 
   return (
     <>
-      <PageHeader title="Письмо" subtitle="Объяснение по фактам письма. Перепроверьте сроки по оригиналу." back={back} />
+      <PageHeader
+        title={letter.data.letter.title || 'Письмо'}
+        subtitle="Объяснение по фактам письма. Перепроверьте сроки по оригиналу."
+        back={back}
+      />
+      <LetterTitleEditor letterId={id} title={letter.data.letter.title ?? null} />
       <LetterOriginals letterId={id} files={letter.data.letter.files} />
       <div className="desktop-2col stack">
         <section className="stack">
@@ -457,9 +464,114 @@ export function LetterPage({ id }: { id: string }) {
               {letter.data.letter.text}
             </pre>
           </details>
+          <LetterTranslation letterId={id} text={letter.data.letter.text} />
         </section>
       </div>
     </>
+  );
+}
+
+/** Поправка 8 (23.11): название письма предлагает модель по цитате, человек может изменить. */
+function LetterTitleEditor({ letterId, title }: { letterId: string; title: string | null }) {
+  const [rename, renaming] = useRenameLetterMutation();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(title ?? '');
+  const [problem, setProblem] = useState<string | null>(null);
+  if (!editing) {
+    return (
+      <div className="row wrap" style={{ gap: 8 }}>
+        {title && <span className="small text-2">Название предложил Ja!sno по строке письма. Его можно изменить.</span>}
+        <button
+          type="button"
+          className="btn btn--ghost btn--small"
+          onClick={() => {
+            setValue(title ?? '');
+            setProblem(null);
+            setEditing(true);
+          }}
+        >
+          <Icon name="pen" size={16} /> {title ? 'Изменить название' : 'Дать название'}
+        </button>
+      </div>
+    );
+  }
+  const save = async () => {
+    const next = value.trim();
+    if (!next) {
+      setProblem('Введите название');
+      return;
+    }
+    const r = await rename({ id: letterId, title: next });
+    if ('error' in r) setProblem(errorText(r.error));
+    else setEditing(false);
+  };
+  return (
+    <form
+      className="card stack-s"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
+      }}
+    >
+      <div className="field">
+        <label htmlFor="letter-title">Название письма</label>
+        <input
+          id="letter-title"
+          className="input"
+          value={value}
+          maxLength={120}
+          onChange={(e) => setValue(e.target.value)}
+          aria-invalid={problem ? true : undefined}
+        />
+        {problem && <span className="field-error">{problem}</span>}
+      </div>
+      <div className="row wrap">
+        <button type="submit" className="btn btn--primary btn--small" disabled={renaming.isLoading}>
+          Сохранить
+        </button>
+        <button type="button" className="btn btn--ghost btn--small" onClick={() => setEditing(false)}>
+          Отмена
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/** Поправка 7 (23.11): машинный перевод всего письма на русский, только по кнопке. */
+function LetterTranslation({ letterId, text }: { letterId: string; text: string }) {
+  const [translate, state] = useTranslateLetterMutation();
+  return (
+    <div className="card stack-s" data-testid="translation">
+      <span className="eyebrow">Перевод на русский</span>
+      {!state.data && (
+        <>
+          <p className="small text-2">
+            Весь текст письма по-русски. Это машинный перевод, он не официальный: для ведомства важен немецкий оригинал.
+          </p>
+          <button
+            type="button"
+            className="btn btn--secondary btn--small"
+            style={{ alignSelf: 'flex-start' }}
+            disabled={state.isLoading || isDailyLimit(state.error)}
+            onClick={() => void translate({ id: letterId, text })}
+          >
+            {state.isLoading ? 'Переводим…' : state.isError ? 'Попробовать ещё раз' : 'Перевести письмо'}
+          </button>
+        </>
+      )}
+      {state.isLoading && <Loading text="Ja!sno переводит письмо…" />}
+      {state.isError && <ErrorAlert error={state.error} />}
+      {state.data && (
+        <>
+          <span className="status status--check" data-testid="translation-note">
+            Машинный перевод, не официальный
+          </span>
+          <pre lang="ru" className="small" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
+            {state.data.text}
+          </pre>
+        </>
+      )}
+    </div>
   );
 }
 

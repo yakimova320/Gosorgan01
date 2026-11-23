@@ -42,7 +42,7 @@ import {
   NotFoundPage,
   WissenPage,
 } from '../pages/public/InfoPages';
-import { PrivacyPage } from '../pages/public/PrivacyPage';
+import { ImpressumPage, PrivacyPage } from '../pages/public/PrivacyPage';
 import { StartPage } from '../pages/public/StartPage';
 import { FlowProvider } from './flow';
 import { createStore, useSession } from '../store';
@@ -68,9 +68,12 @@ export const ROUTES: Route[] = [
   { path: '/forgot', area: 'public', render: () => <ForgotPage /> },
   { path: '/reset', area: 'public', render: () => <ResetPage /> },
   { path: '/faq', area: 'public', render: () => <FaqPage /> },
+  { path: '/blog', area: 'public', render: () => <WissenPage /> },
+  // старый адрес раздела «Важно знать» продолжает работать (поправка 4, 23.11)
   { path: '/wissen', area: 'public', render: () => <WissenPage /> },
   { path: '/beratung', area: 'public', render: () => <BeratungPage /> },
   { path: '/datenschutz', area: 'public', render: () => <PrivacyPage /> },
+  { path: '/impressum', area: 'public', render: () => <ImpressumPage /> },
 
   { path: '/app', area: 'cabinet', render: () => <CabinetPage /> },
   { path: '/app/cases', area: 'cabinet', render: () => <CasesPage /> },

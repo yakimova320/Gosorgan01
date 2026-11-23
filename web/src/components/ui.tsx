@@ -91,9 +91,29 @@ export function CaseRow({ c, index = 0 }: { c: CaseSummary; index?: number }) {
         <span className="muted" style={{ fontSize: 12 }}>
           {subtitle}
         </span>
-        <div className="progress">
-          <span style={{ width: `${s.progress}%`, background: s.bar }} />
-        </div>
+        {c.progress ? (
+          // Поправка 14 (23.11): настоящий прогресс по шагам дела вместо постоянной полоски по статусу
+          <div className="stack-s" style={{ gap: 3 }} data-testid="case-progress">
+            <div
+              className="progress"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={c.progress.percent}
+              aria-label={`Сделано ${c.progress.done} из ${c.progress.total} шагов`}
+              title={c.progress.steps.map((st) => `${st.done ? '✓' : '○'} ${st.label}`).join('\n')}
+            >
+              <span style={{ width: `${c.progress.percent}%`, background: s.bar }} />
+            </div>
+            <span className="muted" style={{ fontSize: 11 }}>
+              {c.progress.done} из {c.progress.total} · {c.progress.percent} %
+            </span>
+          </div>
+        ) : (
+          <div className="progress">
+            <span style={{ width: `${s.progress}%`, background: s.bar }} />
+          </div>
+        )}
       </div>
     </Link>
   );
