@@ -165,7 +165,7 @@ docker compose up -d
 
 Supabase здесь — только PostgreSQL в облаке. Prisma, миграции и код те же. Файлы писем остаются в `STORAGE_DIR` на сервере; Supabase Storage — отдельная задача.
 
-> **Статус.** 23.11.2026 миграции применены к проекту Ja!sno в Supabase (через Docker, шаг 5): 16 таблиц в схеме `jasno`, в `public` таблиц нет, соединение проверено со строгой проверкой сертификата. **Сервер и сайт с Supabase ещё не проверены.**
+> **Статус.** 23.11.2026 на проекте Ja!sno в Supabase (eu-west-1, Session pooler, Data API выключен): миграции применены через Docker (шаг 5) — 8 миграций, 16 таблиц в схеме `jasno`, в `public` таблиц нет. Сервер на Mac подключается со строгой проверкой сертификата; основной путь через API в режиме demo (регистрация → письмо 01 → факты → дело → объяснение → черновик) прошёл за 5,6 с, удаление аккаунта убрало все строки кабинета. **Не проверены:** сайт в браузере с Supabase, приложение в Docker с Supabase.
 
 ### Бесплатный тариф: что важно
 
@@ -208,6 +208,8 @@ Supabase здесь — только PostgreSQL в облаке. Prisma, миг�
    DATABASE_URL="$(grep '^DATABASE_URL=' api/.env | cut -d= -f2- | sed -E 's#sslcert=[^&]*#sslcert=/certs/supabase-ca.crt#')" docker run --rm -e DATABASE_URL -v "$PWD/api/certs":/certs:ro --entrypoint node_modules/.bin/prisma -w /app/api jasno-app:local migrate deploy
    ```
 
+   Если корневой `.env` уже настроен для Docker с Supabase (`JASNO_DATABASE_URL`, раздел ниже), то же самое короче: `docker compose -f docker-compose.yml -f docker-compose.supabase.yml run --rm app jasno migrate`.
+
    На Linux (сервер, CI) достаточно `pnpm --filter jasno-api db:deploy`. Сервер Ja!sno и `pnpm db:seed` работают через драйвер pg (OpenSSL) и на Mac проверяют сертификат без этой проблемы.
 
    В выводе: все миграции применены. В Dashboard → Table Editor → схема `jasno` — таблицы `Cabinet`, `Case`, `Letter` и другие.
@@ -232,20 +234,6 @@ docker compose -f docker-compose.yml -f docker-compose.supabase.yml up -d --buil
 ```
 
 Сервис `db` не нужен и не запускается. Сертификат из `api/certs/` виден в контейнере по тому же относительному пути. Миграции применяются при запуске, как обычно.
-
-### Миграции с Mac: ошибка P1011
-
-Проверено 23.11.2026: таблицы в Supabase созданы (8 миграций, 16 таблиц в схеме `jasno`), сервер Ja!sno подключается со строгой проверкой сертификата.
-
-Но `prisma migrate` **на Mac** со `sslaccept=strict` отвечает `P1011: Error opening a TLS connection: The certificate was not trusted`. Причина в macOS, не в Supabase и не в коде: сертификат пулера Supabase выдан на 5 лет, а macOS для собственных корневых сертификатов (Supabase Root 2021 CA) принимает серверные сертификаты не дольше 825 дней. Prisma CLI проверяет сертификат через macOS. Сервер (Node, OpenSSL) и Linux, в том числе Docker, это ограничение не касается.
-
-Новые миграции на Supabase поэтому запускать **через Docker** (Linux, проверка сертификата остаётся):
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.supabase.yml run --rm app jasno migrate
-```
-
-Запасной вариант — разово для одной команды, осознанно: в адресе `sslaccept=accept_invalid_certs` вместо `strict`. Соединение шифруется, но сертификат не проверяется. В `api/.env` оставить `strict`.
 
 ### Резервная копия базы Supabase
 
