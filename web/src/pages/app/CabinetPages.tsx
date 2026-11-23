@@ -98,6 +98,7 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
           <div className="stack-s">
             <strong>{l.title || l.authority || 'Письмо'}</strong>
             <span className="small text-2">
+              {l.title && l.authority ? `${l.authority} · ` : ''}
               {formatDate(l.createdAt.slice(0, 10))}
               {l.caseNumber ? ` · ${l.caseNumber}` : ''}
             </span>
