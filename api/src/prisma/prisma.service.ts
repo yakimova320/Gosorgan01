@@ -13,10 +13,10 @@ import { parseDatabaseUrl } from './database-url.js';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   constructor(@Inject(APP_CONFIG) config: Pick<Env, 'DATABASE_URL'>) {
-    // относительный sslcert — от api/prisma, как у Prisma CLI (DB01-S)
+    // относительный sslcert — от папки api, как у Prisma CLI (проверено 23.11 с Supabase)
     const { connectionString, schema, ssl, max } = parseDatabaseUrl(
       config.DATABASE_URL,
-      resolve(import.meta.dirname, '..', '..', 'prisma'),
+      resolve(import.meta.dirname, '..', '..'),
     );
     super({
       adapter: new PrismaPg(

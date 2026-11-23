@@ -23,7 +23,7 @@ export interface ParsedDatabaseUrl {
 
 export function parseDatabaseUrl(
   url: string,
-  /** папка, от которой считается относительный sslcert: как у Prisma CLI — папка schema.prisma */
+  /** папка, от которой считается относительный sslcert: как у Prisma CLI — папка api (prisma.config.ts) */
   baseDir = process.cwd(),
 ): ParsedDatabaseUrl {
   const parsed = new URL(url);

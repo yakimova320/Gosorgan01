@@ -165,7 +165,7 @@ docker compose up -d
 
 Supabase здесь — только PostgreSQL в облаке. Prisma, миграции и код те же. Файлы писем остаются в `STORAGE_DIR` на сервере; Supabase Storage — отдельная задача.
 
-> **Статус.** Код и инструкция готовы, проверены на локальной базе. **Подключение к настоящему проекту Supabase не проверено**: его делает человек со своим паролем.
+> **Статус.** 23.11.2026 миграции применены к проекту Ja!sno в Supabase (через Docker, шаг 5): 16 таблиц в схеме `jasno`, в `public` таблиц нет, соединение проверено со строгой проверкой сертификата. **Сервер и сайт с Supabase ещё не проверены.**
 
 ### Бесплатный тариф: что важно
 
@@ -186,19 +186,29 @@ Supabase здесь — только PostgreSQL в облаке. Prisma, миг�
 4. **Адрес в `api/.env`** (Connect → Session pooler; пароль в адресе: спецзнаки кодируются, `$` → `%24`, `@` → `%40`, без квадратных скобок):
 
    ```
-   DATABASE_URL=postgresql://postgres.<id проекта>:<пароль>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?schema=jasno&sslmode=require&sslcert=../certs/supabase-ca.crt&sslaccept=strict&connection_limit=5
+   DATABASE_URL=postgresql://postgres.<id проекта>:<пароль>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?schema=jasno&sslmode=require&sslcert=certs/supabase-ca.crt&sslaccept=strict&connection_limit=5
    TEST_DATABASE_URL=postgresql://jasno:jasno@localhost:5432/jasno
    ```
 
    - `schema=jasno` — своя схема, не `public`.
-   - `sslcert` — путь от папки `api/prisma` (так считает Prisma); сервер Ja!sno считает так же. `sslaccept=strict` — сертификат сервера проверяется.
+   - `sslcert` — путь от папки `api` (так считает Prisma CLI); сервер Ja!sno считает так же. Можно и полный путь. `sslaccept=strict` — сертификат сервера проверяется.
    - `connection_limit=5` — у бесплатного пулера мало соединений.
    - `TEST_DATABASE_URL` обязателен: тесты и `pnpm eval` создают и удаляют схемы и **отказываются работать** с нелокальной базой.
-5. **Таблицы из миграций:**
+5. **Таблицы из миграций.**
+
+   **На Mac `pnpm --filter jasno-api db:deploy` с Supabase не работает** (как и `db:studio`, `db:migrate`): ошибка `P1011 ... The certificate was not trusted`. Причина — macOS: у сертификата пулера Supabase срок 5 лет и нет пометки «для сервера» (Extended Key Usage), а macOS такие сертификаты от собственных центров не принимает; Prisma CLI на Mac проверяет сертификат средствами macOS. Отключать проверку (`sslaccept=accept_invalid_certs`) не нужно: миграции запускаются в Linux-контейнере, там сертификат проверяется через OpenSSL и проходит.
+
+   Из корня проекта, Docker Desktop запущен (пароль на экран не выводится):
 
    ```bash
-   pnpm --filter jasno-api db:deploy
+   docker compose build app
    ```
+
+   ```bash
+   DATABASE_URL="$(grep '^DATABASE_URL=' api/.env | cut -d= -f2- | sed -E 's#sslcert=[^&]*#sslcert=/certs/supabase-ca.crt#')" docker run --rm -e DATABASE_URL -v "$PWD/api/certs":/certs:ro --entrypoint node_modules/.bin/prisma -w /app/api jasno-app:local migrate deploy
+   ```
+
+   На Linux (сервер, CI) достаточно `pnpm --filter jasno-api db:deploy`. Сервер Ja!sno и `pnpm db:seed` работают через драйвер pg (OpenSSL) и на Mac проверяют сертификат без этой проблемы.
 
    В выводе: все миграции применены. В Dashboard → Table Editor → схема `jasno` — таблицы `Cabinet`, `Case`, `Letter` и другие.
 6. **Демо-кабинет** (по желанию, `DEMO_PASSWORD` в `api/.env`):
