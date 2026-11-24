@@ -152,7 +152,7 @@ export class LettersService {
           await removeAll();
           throw e;
         }
-      });
+      }, { timeout: this.storage.uploadTxTimeoutMs }); // ST01: запись в бакет дольше, чем на диск
     } catch (e) {
       await removeAll(); // сбой фиксации транзакции
       throw e;

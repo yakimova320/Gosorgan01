@@ -141,6 +141,7 @@ export async function runEval(options: {
         ...options.env,
         DATABASE_URL: sandbox.databaseUrl,
         STORAGE_DIR: sandbox.storageDir,
+        STORAGE_MODE: 'local', // ST01: eval никогда не пишет в бакет
         RATE_LIMIT_IP: 'false',
         LLM_DAILY_OPS_PER_CABINET: '0',
         MAIL_MODE: 'file',

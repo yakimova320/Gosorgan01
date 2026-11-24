@@ -163,7 +163,7 @@ docker compose up -d
 
 ## 4. База в Supabase (DB01-S, Issue #139)
 
-Supabase здесь — только PostgreSQL в облаке. Prisma, миграции и код те же. Файлы писем остаются в `STORAGE_DIR` на сервере; Supabase Storage — отдельная задача.
+Supabase здесь — PostgreSQL в облаке и, по желанию, бакет для оригиналов писем (Supabase Storage, раздел 5). Prisma, миграции и код те же.
 
 > **Статус.** 23.11.2026 на проекте Ja!sno в Supabase (eu-west-1, Session pooler, Data API выключен): миграции применены через Docker (шаг 5) — 8 миграций, 16 таблиц в схеме `jasno`, в `public` таблиц нет. Сервер на Mac подключается со строгой проверкой сертификата; основной путь через API в режиме demo (регистрация → письмо 01 → факты → дело → объяснение → черновик) прошёл за 5,6 с, удаление аккаунта убрало все строки кабинета. **Не проверены:** сайт в браузере с Supabase, приложение в Docker с Supabase.
 
@@ -248,3 +248,52 @@ docker run --rm -v "$PWD/api/certs":/certs:ro -v "$PWD/backup":/backup postgres:
 ### Вернуться на локальную базу
 
 В `api/.env` снова `DATABASE_URL=postgresql://jasno:jasno@localhost:5432/jasno`, `pnpm db:up`. Данные в Supabase остаются, локальная база своя.
+
+## 5. Оригиналы писем в Supabase Storage (ST01)
+
+По умолчанию (`STORAGE_MODE=local`) оригиналы писем (PDF и фото) лежат в `STORAGE_DIR/letters/<кабинет>/`. С `STORAGE_MODE=s3` они лежат в закрытом бакете Supabase Storage, ключи объектов те же: `letters/<кабинет>/<случайный ключ>.<pdf|jpg|png>`. Корзина удаления аккаунта — `trash/<задание>/letters/` в том же бакете.
+
+- Бакет закрытый. Ссылок на бакет на сайте и в ответах API нет: оригинал отдаёт только API после проверки владельца (B11).
+- Письма сброса пароля (`mail-outbox`) остаются в папке `STORAGE_DIR` на сервере.
+- Тесты, e2e и `pnpm eval` всегда работают с папкой, даже если в `api/.env` стоит `s3`.
+- Пока команда не решила иначе (шлюз пилота): только демо- и тестовые письма.
+
+### Шаги (делает человек)
+
+1. **Бакет.** Dashboard → Storage → *New bucket*, **Public выключен**.
+2. **S3-ключи.** Dashboard → Storage → *S3 Configuration* (или Project Settings → Storage): включить *S3 protocol connection*, скопировать **Endpoint** и **Region**, нажать *New access key*. Секрет показывается один раз. Ключи дают полный доступ ко всем бакетам проекта: только в `api/.env`, не в Issue, чат, коммит. Если ключ где-то опубликован — удалить его там же и создать новый.
+3. **Строки в `api/.env`:**
+
+   ```
+   STORAGE_MODE=s3
+   S3_ENDPOINT=https://<id проекта>.storage.supabase.co/storage/v1/s3
+   S3_REGION=eu-west-1
+   S3_BUCKET=<имя бакета>
+   S3_ACCESS_KEY_ID=<Access key ID>
+   S3_SECRET_ACCESS_KEY=<Secret access key>
+   ```
+
+   Без любой из строк при `STORAGE_MODE=s3` сервер не стартует и пишет, какой строки нет.
+4. **Перенести уже загруженные файлы** из папки в бакет (локальные файлы не удаляются, повторный запуск пропускает уже загруженные):
+
+   ```bash
+   pnpm --filter jasno-api storage:upload-local            # только показ: сколько файлов
+   pnpm --filter jasno-api storage:upload-local --confirm  # загрузить
+   ```
+
+   Переносить нужно для той базы, в которой эти письма записаны: ключи файлов берутся из базы.
+5. **Проверка:** `pnpm dev:api`, на сайте загрузить письмо 01 из `fixtures/letters` → в Dashboard → Storage → бакет → `letters/<кабинет>/` появился файл; оригинал открывается на сайте; «Удалить дело» и удаление аккаунта убирают файл из бакета.
+
+### Docker с бакетом
+
+Ключи `S3_*` контейнер берёт из `api/.env`. Режим включается явно, как модель: в корневом `.env` `JASNO_STORAGE_MODE=s3`, затем
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.supabase.yml up -d --build app
+```
+
+Том `gosorgan01_jasno-storage` остаётся нужен для писем сброса пароля.
+
+### Вернуться на папку
+
+`STORAGE_MODE=local` в `api/.env`. Файлы, загруженные в бакет за это время, в папке не появятся.

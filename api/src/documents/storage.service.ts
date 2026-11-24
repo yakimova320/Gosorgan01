@@ -13,6 +13,7 @@ import {
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
+import { S3LetterStore, type S3Config } from './s3-letter-store.js';
 
 /** Папка api: и из src/documents, и из dist/documents на два уровня выше. */
 const API_DIR = resolve(import.meta.dirname, '..', '..');
@@ -22,6 +23,8 @@ const API_DIR = resolve(import.meta.dirname, '..', '..');
  * Имя исходного файла не сохраняется. Папка не раздаётся статически: файлы отдаёт только код с проверкой владельца (B11).
  * Папка кабинета нужна для полного удаления аккаунта (A01): при удалении она переносится
  * в корзину STORAGE_DIR/trash/<id задания>/letters и удаляется только после удаления строк базы.
+ * ST01: при STORAGE_MODE=s3 оригиналы и корзина лежат в бакете с теми же ключами
+ * (letters/<cabinetId>/..., trash/<id задания>/letters/...). Письма сброса пароля всегда в папке.
  */
 const SAFE_ID = /^[a-zA-Z0-9_-]+$/;
 
@@ -33,11 +36,27 @@ export class StorageService {
   private readonly logger = new Logger('Storage');
   readonly root: string;
   readonly ops = { ...fileOps };
+  /** ST01: бакет для оригиналов писем. null: оригиналы в папке. */
+  readonly remote: S3LetterStore | null;
 
-  constructor(@Inject(APP_CONFIG) config: Pick<Env, 'STORAGE_DIR'>) {
+  constructor(
+    @Inject(APP_CONFIG)
+    config: Pick<Env, 'STORAGE_DIR'> &
+      Partial<Pick<Env, 'STORAGE_MODE'> & S3Config>,
+  ) {
     this.root = isAbsolute(config.STORAGE_DIR)
       ? config.STORAGE_DIR
       : resolve(API_DIR, config.STORAGE_DIR);
+    this.remote =
+      config.STORAGE_MODE === 's3' ? S3LetterStore.fromConfig(config) : null;
+  }
+
+  /**
+   * Время транзакции загрузки письма: файлы пишутся внутри неё (A01).
+   * Бакет медленнее диска, поэтому больше стандартных 5 секунд Prisma.
+   */
+  get uploadTxTimeoutMs(): number {
+    return this.remote ? 60_000 : 5_000;
   }
 
   /** Ключ файла: letters/<cabinetId>/<32 hex>.<ext>. Наружу (в ответ API) не отдаётся. */
@@ -47,6 +66,15 @@ export class StorageService {
   }
 
   async write(key: string, data: Buffer): Promise<void> {
+    if (this.remote) {
+      try {
+        await this.remote.put(key, data);
+      } catch (e) {
+        await this.remove(key);
+        throw e;
+      }
+      return;
+    }
     const path = this.pathOf(key);
     await mkdir(dirname(path), { recursive: true });
     try {
@@ -59,6 +87,7 @@ export class StorageService {
 
   /** B11: оригинал письма. Нет файла: null (ответ API 404), путь в лог не пишется. */
   async read(key: string): Promise<Buffer | null> {
+    if (this.remote) return this.remote.get(key);
     try {
       return await readFile(this.pathOf(key));
     } catch {
@@ -69,6 +98,7 @@ export class StorageService {
   /** Удаление, которое не ломает операцию: отсутствующий файл не ошибка, путь в лог не пишется. */
   async remove(key: string): Promise<void> {
     try {
+      if (this.remote) return await this.remote.delete(key);
       await rm(this.pathOf(key), { force: true });
     } catch (e) {
       this.logger.error(`не удалось удалить файл письма: ${(e as Error).name}`);
@@ -77,6 +107,12 @@ export class StorageService {
 
   async removeCabinet(cabinetId: string): Promise<void> {
     if (!/^[a-zA-Z0-9_-]+$/.test(cabinetId)) return;
+    if (this.remote) {
+      await this.remote
+        .deletePrefix(`letters/${cabinetId}/`)
+        .catch(() => this.logger.error('не удалось удалить файлы кабинета'));
+      return;
+    }
     await rm(resolve(this.root, 'letters', cabinetId), {
       recursive: true,
       force: true,
@@ -120,6 +156,11 @@ export class StorageService {
 
   /** Папка писем кабинета → корзина задания. Новые файлы в обеих папках сливаются. */
   async moveCabinetToTrash(cabinetId: string, jobId: string): Promise<void> {
+    if (this.remote)
+      return this.remote.movePrefix(
+        this.cabinetPrefix(cabinetId),
+        this.trashLettersPrefix(jobId),
+      );
     await this.moveDir(this.cabinetDir(cabinetId), this.trashLetters(jobId));
   }
 
@@ -128,12 +169,25 @@ export class StorageService {
     cabinetId: string,
     jobId: string,
   ): Promise<void> {
+    if (this.remote) {
+      await this.remote.movePrefix(
+        this.trashLettersPrefix(jobId),
+        this.cabinetPrefix(cabinetId),
+      );
+      await this.remote.deletePrefix(this.trashPrefix(jobId));
+      return;
+    }
     await this.moveDir(this.trashLetters(jobId), this.cabinetDir(cabinetId));
     await this.ops.rm(this.trashDir(jobId), { recursive: true, force: true });
   }
 
   /** Окончательная очистка: корзина и (на всякий случай) папка кабинета. Ошибка пробрасывается. */
   async purgeErasure(cabinetId: string, jobId: string): Promise<void> {
+    if (this.remote) {
+      await this.remote.deletePrefix(this.trashPrefix(jobId));
+      await this.remote.deletePrefix(this.cabinetPrefix(cabinetId));
+      return;
+    }
     await this.ops.rm(this.trashDir(jobId), { recursive: true, force: true });
     await this.ops.rm(this.cabinetDir(cabinetId), {
       recursive: true,
@@ -156,6 +210,21 @@ export class StorageService {
   trashDir(jobId: string): string {
     if (!SAFE_ID.test(jobId)) throw new Error('bad jobId');
     return resolve(this.root, 'trash', jobId);
+  }
+
+  // ST01: те же места в бакете (префиксы ключей)
+  cabinetPrefix(cabinetId: string): string {
+    if (!SAFE_ID.test(cabinetId)) throw new Error('bad cabinetId');
+    return `letters/${cabinetId}/`;
+  }
+
+  trashPrefix(jobId: string): string {
+    if (!SAFE_ID.test(jobId)) throw new Error('bad jobId');
+    return `trash/${jobId}/`;
+  }
+
+  private trashLettersPrefix(jobId: string): string {
+    return `${this.trashPrefix(jobId)}letters/`;
   }
 
   private trashLetters(jobId: string): string {
