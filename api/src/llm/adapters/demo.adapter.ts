@@ -30,6 +30,7 @@ export class DemoAdapter implements LlmAdapter {
         : base;
     },
     translate: (v) => demoTranslate(v.letterText ?? ''),
+    chat: (v) => demoChat(v.question ?? '', v.faq ?? ''),
     explain: (v) => demoExplain(v.facts ?? '[]'),
     transcribe: (_v, request) =>
       request.promptVersion === 2
@@ -368,4 +369,55 @@ export function demoTitle(
   const short = authority?.split(/\s+/)[0];
   const value = (short ? `${short}: ${subject}` : subject).slice(0, 60);
   return { value, quote: betreff };
+}
+
+/**
+ * Демо-чат (24.11): без модели Ja!sno ищет самый похожий вопрос в FAQ и отвечает его текстом.
+ * Не нашёл — честно говорит, что в демо-режиме отвечает только по частым вопросам.
+ */
+export const DEMO_CHAT_FALLBACK =
+  'В демо-режиме Ja!sno отвечает только по частым вопросам, а на этот вопрос в FAQ ответа нет. ' +
+  'С настоящей моделью Ja!sno ответит подробнее. Если вопрос о вашем письме, откройте его в кабинете: ' +
+  'там объяснение по фактам с цитатами и сроки.';
+
+const STOP = new Set(
+  'как что где когда если меня мне можно нужно надо есть это эти этот такое какие какой какая почему зачем сколько через чтобы ли или для при про над под без от до'.split(
+    ' ',
+  ),
+);
+
+function words(text: string): string[] {
+  return (text.toLowerCase().match(/[a-zäöüßа-яё]{3,}/gi) ?? [])
+    .filter((w) => !STOP.has(w))
+    .map((w) => w.slice(0, 5)); // грубая основа слова: «письма», «письмо» → «письм»
+}
+
+export function demoChat(question: string, faq: string): { answer: string } {
+  const entries = faq
+    .split(/^### /m)
+    .slice(1)
+    .map((block) => {
+      const [title, ...rest] = block.split('\n');
+      const body = rest
+        .join('\n')
+        .split(/^## /m)[0]
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .trim();
+      return { title: title.trim(), body };
+    })
+    .filter((e) => e.body);
+  const q = new Set(words(question));
+  let best: { title: string; body: string } | null = null;
+  let bestScore = 0;
+  for (const e of entries) {
+    const inTitle = words(e.title).filter((w) => q.has(w)).length;
+    const inBody = new Set(words(e.body).filter((w) => q.has(w))).size;
+    const score = inTitle * 3 + inBody;
+    if (score > bestScore) {
+      best = e;
+      bestScore = score;
+    }
+  }
+  if (!best || bestScore < 3) return { answer: DEMO_CHAT_FALLBACK };
+  return { answer: `Похожий вопрос есть в FAQ: «${best.title}»\n\n${best.body}` };
 }

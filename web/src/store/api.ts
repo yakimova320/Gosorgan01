@@ -22,6 +22,7 @@ import {
   mockTranslate,
   mockUpload,
 } from '../mocks/letters';
+import { mockChat } from '../mocks/chat';
 import { DATA_MODE } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import type {
@@ -29,6 +30,8 @@ import type {
   ApiDraft,
   ApiExplanation,
   ApiTranslation,
+  ChatReply,
+  ChatView,
   CreateDraftArgs,
   DraftQuestions,
   SentVia,
@@ -95,7 +98,7 @@ export interface InboxLetter {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: apiBaseQuery,
-  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter', 'Draft'],
+  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter', 'Draft', 'Chat'],
   endpoints: (b) => ({
     health: b.query<Health, void>({
       queryFn: (_a, _api, _x, base) =>
@@ -392,6 +395,55 @@ export const api = createApi({
         'Letters',
         'Cabinet',
       ],
+    }),
+
+    /** Чат-помощник (24.11): история разговора. */
+    chat: b.query<ChatView, void>({
+      queryFn: (_a, _api, _x, base) =>
+        isMock
+          ? ok(mockChat.view())
+          : (base({ path: '/chat' }) as Promise<Result<ChatView>>),
+      providesTags: ['Chat'],
+    }),
+
+    /** Вопрос Ja!sno. Ответ сразу добавляется в историю без повторного запроса. */
+    askChat: b.mutation<ChatReply, string>({
+      queryFn: async (text, _api, _x, base) => {
+        if (isMock) {
+          await wait(700);
+          return ok(mockChat.ask(text));
+        }
+        return base({
+          method: 'POST',
+          path: '/chat',
+          body: { text },
+          timeoutMs: UPLOAD_TIMEOUT_MS,
+        }) as Promise<Result<ChatReply>>;
+      },
+      async onQueryStarted(_text, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            api.util.updateQueryData('chat', undefined, (draft) => {
+              draft.messages.push(data.question, data.answer);
+            }),
+          );
+        } catch {
+          // ошибка показывается на странице чата
+        }
+      },
+    }),
+
+    /** «Очистить разговор». */
+    clearChat: b.mutation<void, void>({
+      queryFn: (_a, _api, _x, base) => {
+        if (isMock) {
+          mockChat.clear();
+          return ok(undefined);
+        }
+        return base({ method: 'DELETE', path: '/chat' }) as Promise<Result<void>>;
+      },
+      invalidatesTags: ['Chat'],
     }),
 
     /** Поправка 8 (23.11): переименовать письмо. */
@@ -792,6 +844,9 @@ export const {
   useDeleteLetterMutation,
   useAssignLetterMutation,
   useRenameLetterMutation,
+  useChatQuery,
+  useAskChatMutation,
+  useClearChatMutation,
   useTranslateLetterMutation,
   useUpdateProfileMutation,
   useSetAiConsentMutation,

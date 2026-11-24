@@ -22,7 +22,8 @@ import {
 } from '../pages/app/AnswerPages';
 import { CabinetPage, CasesPage } from '../pages/app/CabinetPages';
 import { CasePage, HistoryPage, LetterPage } from '../pages/app/CasePages';
-import { AskPage, ProfilePage } from '../pages/app/MorePages';
+import { ProfilePage } from '../pages/app/MorePages';
+import { AskPage } from '../pages/app/ChatPage';
 import { WritePage, WriteTemplatePage } from '../pages/app/WritePages';
 import {
   LetterCheckPage,

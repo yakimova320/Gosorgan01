@@ -56,7 +56,11 @@ export class LlmLimitsService {
   async reserve(op: LlmOperationHandle): Promise<void> {
     if (op.id || !op.cabinetId) return;
     const cabinetId = op.cabinetId;
-    const limit = this.config.LLM_DAILY_OPS_PER_CABINET;
+    // чат считается отдельно: разговор не съедает лимит писем и объяснений
+    const chat = op.kind === 'CHAT';
+    const limit = chat
+      ? this.config.LLM_DAILY_CHAT_PER_CABINET
+      : this.config.LLM_DAILY_OPS_PER_CABINET;
     const now = this.now();
     op.id = await this.db.$transaction(async (tx) => {
       if (!(await lockActiveCabinet(tx, cabinetId))) {
@@ -65,7 +69,11 @@ export class LlmLimitsService {
       }
       if (limit > 0) {
         const recent = await tx.llmOperation.findMany({
-          where: { cabinetId, createdAt: { gt: new Date(now.getTime() - DAY_MS) } },
+          where: {
+            cabinetId,
+            createdAt: { gt: new Date(now.getTime() - DAY_MS) },
+            kind: chat ? 'CHAT' : { not: 'CHAT' },
+          },
           orderBy: { createdAt: 'asc' },
           select: { createdAt: true },
           take: limit,
@@ -76,8 +84,10 @@ export class LlmLimitsService {
           const retryAfterSec = Math.max(1, Math.ceil(waitMs / 1000));
           throw new ApiError(
             'RATE_LIMITED',
-            { reason: 'LLM_DAILY_OPS', limit, retryAfterSec },
-            `Лимит: не больше ${limit} писем и объяснений за 24 часа. Следующее будет доступно через ${waitText(waitMs)}`,
+            { reason: chat ? 'LLM_DAILY_CHAT' : 'LLM_DAILY_OPS', limit, retryAfterSec },
+            chat
+              ? `Лимит: не больше ${limit} вопросов в чат за 24 часа. Следующий можно задать через ${waitText(waitMs)}`
+              : `Лимит: не больше ${limit} писем и объяснений за 24 часа. Следующее будет доступно через ${waitText(waitMs)}`,
           );
         }
       }

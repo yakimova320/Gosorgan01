@@ -73,8 +73,12 @@ describe('Сайт из API (e2e, B13)', () => {
   });
 
   it('список страниц не пересекается с путями API', () => {
-    for (const api of ['/auth/login', '/cases', '/letters/x', '/cabinet', '/history', '/drafts/x', '/health', '/docs'])
+    for (const api of ['/auth/login', '/cases', '/letters/x', '/cabinet', '/history', '/drafts/x', '/health', '/docs', '/chat'])
       expect(isWebPage(api)).toBe(false);
+  });
+
+  it('страницы блога, Impressum и Datenschutz — страницы сайта (24.11)', () => {
+    for (const page of ['/blog', '/impressum', '/datenschutz', '/app/ask']) expect(isWebPage(page)).toBe(true);
   });
 
   it('WEB_DIST_DIR без index.html: сервер не стартует с понятной ошибкой', async () => {

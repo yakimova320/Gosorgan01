@@ -39,6 +39,8 @@ export interface LlmCallOptions<S extends z.ZodType> {
    * общий предел MAX_ATTEMPTS и один резерв лимита. Без неё вызов — отдельная операция.
    */
   operation?: LlmOperationHandle;
+  /** Другая модель для этого вызова (чат-помощник). Нет — модель адаптера. В demo не важна. */
+  model?: string;
 }
 
 export interface LlmCallResult<T> {
@@ -137,7 +139,7 @@ export class LlmService {
         promptName: prompt.name,
         promptVersion: prompt.version,
         provider: this.adapter.provider,
-        model: this.adapter.model,
+        model: options.model ?? this.adapter.model,
         input,
         // Выход тоже маскируется: ответ на фото содержит исходные личные данные.
         output:
@@ -176,6 +178,7 @@ export class LlmService {
           user: user + retryNote,
           variables,
           images,
+          ...(options.model ? { model: options.model } : {}),
         });
         text = res.text;
         tokensIn += res.tokensIn ?? 0;

@@ -20,32 +20,9 @@ import {
 } from '../../store/api';
 import { signedOut } from '../../store/session';
 import { Icon } from '../../components/Icon';
-import { Illustration } from '../../components/Watercolor';
-import { DemoNote, ErrorAlert, Loading, PageHeader } from '../../components/ui';
+import { ErrorAlert, Loading, PageHeader } from '../../components/ui';
 
 /** «Спросить»: чат-помощник (C01–C03, после демо). Пока экран-оболочка. */
-export function AskPage() {
-  return (
-    <>
-      <PageHeader title="Спросить" subtitle="Помощник отвечает на вопросы о Ja!sno и подсказывает, где что найти. Письма он не разбирает." />
-      <div className="card card--teal">
-        <Illustration name="talk" height={160} blob="#BFE0DB" />
-      </div>
-      <div className="stack" aria-live="polite">
-        <div className="chat-bubble chat-bubble--me">Где моё письмо от Jobcenter?</div>
-        <div className="chat-bubble chat-bubble--bot">Оно в деле «Jobcenter: выписки со счёта». Там же объяснение и черновик ответа.</div>
-      </div>
-      <DemoNote>Пример разговора. Чат-помощник подключается после демо (задачи C01–C03)</DemoNote>
-      <div className="row">
-        <input className="input" placeholder="Ваш вопрос…" disabled aria-label="Ваш вопрос" />
-        <button type="button" className="btn btn--primary btn--small" disabled aria-label="Отправить">
-          <Icon name="send" size={18} color="#FFFFFF" />
-        </button>
-      </div>
-    </>
-  );
-}
-
 export function ProfilePage() {
   const dispatch = useAppDispatch();
   const signOut = () => dispatch(signedOut());

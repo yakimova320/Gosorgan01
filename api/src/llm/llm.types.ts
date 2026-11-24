@@ -13,6 +13,8 @@ export interface AdapterRequest {
   /** Уже замаскированные переменные: адаптер demo ищет в них данные письма. */
   variables: Record<string, string>;
   images: LlmImage[];
+  /** Другая модель для этого вызова (чат-помощник: LLM_MODEL_ASSISTANT). Нет — модель адаптера. */
+  model?: string;
 }
 
 export interface AdapterResponse {

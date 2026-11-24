@@ -743,6 +743,26 @@ details.faq .faq-body {
   border-bottom-left-radius: 4px;
   box-shadow: var(--shadow-card);
 }
+.chat-log {
+  gap: 10px;
+}
+.chat-disclaimer {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--c-text-2);
+  border-top: 1px solid var(--c-line);
+  padding-top: 6px;
+}
+.chat-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.chat-form textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 48px;
+}
 .spinner {
   width: 28px;
   height: 28px;

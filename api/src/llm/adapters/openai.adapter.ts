@@ -61,7 +61,7 @@ export class OpenAiAdapter implements LlmAdapter {
             Authorization: `Bearer ${this.options.apiKey}`,
           },
           body: JSON.stringify({
-            model: this.model,
+            model: request.model ?? this.model,
             messages: [
               { role: 'system', content: request.system },
               { role: 'user', content: user },

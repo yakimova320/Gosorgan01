@@ -119,6 +119,7 @@ model Cabinet {
   passwordResetTokens PasswordResetToken[]
   passwordResetMails  PasswordResetMail[]
   llmOperations       LlmOperation[]
+  chatMessages        ChatMessage[]
   cases               Case[]
   letters             Letter[]
 }
@@ -276,6 +277,24 @@ model Event {
   @@index([caseId])
 }
 
+/// Чат-помощник (24.11): свободный разговор кабинета с Ja!sno, без привязки к письму.
+/// Удаляется вместе с кабинетом или кнопкой «Очистить разговор».
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  cabinetId String
+  cabinet   Cabinet  @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([cabinetId, createdAt])
+}
+
 model Message {
   id        String      @id @default(cuid())
   caseId    String
@@ -343,6 +362,7 @@ enum LlmOperationKind {
   UPLOAD
   EXPLAIN
   TRANSLATE
+  CHAT
   OTHER
 }
 

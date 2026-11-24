@@ -16,7 +16,8 @@ import { join, resolve } from 'node:path';
 /** Адреса страниц сайта. Пути API (/auth, /cases, /letters, ...) сюда не попадают. */
 const WEB_PAGES: readonly RegExp[] = [
   /^\/$/,
-  /^\/(login|register|forgot|reset|faq|wissen|beratung)\/?$/,
+  // 24.11: blog, impressum, datenschutz тоже страницы сайта (обновление страницы в Docker не даёт 404)
+  /^\/(login|register|forgot|reset|faq|wissen|blog|beratung|impressum|datenschutz)\/?$/,
   /^\/app(\/[^.]*)?$/,
 ];
 
