@@ -11,7 +11,9 @@
  */
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
+import { parseEnv } from '../config/env.schema.js';
 import { loadEnvFiles } from '../config/load-env-files.js';
+import { StorageService } from '../documents/storage.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   describeTarget,
@@ -49,6 +51,11 @@ const storageSetting = process.env.STORAGE_DIR ?? './storage';
 const storageDir = isAbsolute(storageSetting)
   ? storageSetting
   : resolve(apiDir, storageSetting);
+// ST01: при STORAGE_MODE=s3 файлы писем в бакете; адрес и ключи из api/.env проверяются как у сервера.
+const storage =
+  process.env.STORAGE_MODE === 's3'
+    ? new StorageService(parseEnv(process.env))
+    : new StorageService({ STORAGE_DIR: storageDir });
 const target = describeTarget(databaseUrl, storageDir);
 const selector: Selector = all ? { all: true } : { emails };
 
@@ -57,6 +64,8 @@ console.log(`  база:       ${targetId(target)}`);
 console.log(
   `  хранилище:  ${storageDir}${existsSync(storageDir) ? '' : ' (папки нет)'}`,
 );
+if (storage.remote)
+  console.log(`  файлы писем: бакет ${storage.remote.bucket} (S3)`);
 console.log(`  кабинеты:   ${all ? 'все' : emails.join(', ')}`);
 
 const db = new PrismaService({ DATABASE_URL: databaseUrl });
@@ -85,6 +94,7 @@ try {
       db,
       storageDir,
       plan,
+      storage,
     );
     console.log(
       `\nУдалено кабинетов: ${deleted.length}. Повторный запуск должен показать 0.`,

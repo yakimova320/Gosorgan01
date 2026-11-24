@@ -41,6 +41,8 @@ services:
       PORT: '3000'
       DATABASE_URL: postgresql://${POSTGRES_USER:-jasno}:${POSTGRES_PASSWORD:-jasno}@db:5432/${POSTGRES_DB:-jasno}
       STORAGE_DIR: /data/storage
+      # ST01: оригиналы писем в бакете (Supabase Storage) только явно: JASNO_STORAGE_MODE=s3, ключи S3_* из api/.env.
+      STORAGE_MODE: ${JASNO_STORAGE_MODE:-local}
       WEB_DIST_DIR: /app/web/dist
       APP_PUBLIC_URL: ${JASNO_PUBLIC_URL:-http://localhost:8080}
       CORS_ORIGIN: ${JASNO_PUBLIC_URL:-http://localhost:8080}

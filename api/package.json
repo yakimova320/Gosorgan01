@@ -22,9 +22,11 @@
     "llm:check:extract": "tsc -p tsconfig.build.json && node dist/scripts/extract-check.js",
     "llm:check:explain": "tsc -p tsconfig.build.json && node dist/scripts/explain-check.js",
     "db:wipe-accounts": "tsc -p tsconfig.build.json && node dist/scripts/wipe-accounts.js",
-    "eval": "tsc -p tsconfig.build.json && node dist/scripts/eval.js"
+    "eval": "tsc -p tsconfig.build.json && node dist/scripts/eval.js",
+    "storage:upload-local": "tsc -p tsconfig.build.json && node dist/scripts/storage-upload-local.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1175.0",
     "@jasno/shared": "workspace:*",
     "@nestjs/common": "^12.4.2",
     "@nestjs/core": "^12.4.2",

@@ -66,6 +66,17 @@ export const envSchema = z
     LLM_TIMEOUT_MS: int(60000),
 
     STORAGE_DIR: z.string().min(1).default('./storage'),
+    // ST01: где лежат оригиналы писем. local: папка STORAGE_DIR/letters. s3: бакет (Supabase Storage).
+    // Письма сброса пароля (mail-outbox) всегда в папке STORAGE_DIR.
+    STORAGE_MODE: z.enum(['local', 's3']).default('local'),
+    S3_ENDPOINT: z.url().optional(),
+    S3_REGION: z.string().optional(),
+    S3_BUCKET: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9._-]*$/, 'S3_BUCKET: имя бакета, без / и пробелов')
+      .optional(),
+    S3_ACCESS_KEY_ID: z.string().optional(),
+    S3_SECRET_ACCESS_KEY: z.string().optional(),
     // B13: папка собранного сайта (web/dist). Задана — API отдаёт и сайт (Docker). Пусто — только API.
     WEB_DIST_DIR: z.string().optional(),
     SESSION_TTL_DAYS: int(30),
@@ -103,6 +114,23 @@ export const envSchema = z
             code: 'custom',
             path: [key],
             message: `нужно при LLM_MODE=openai`,
+          });
+        }
+      }
+    }
+    if (env.STORAGE_MODE === 's3') {
+      for (const key of [
+        'S3_ENDPOINT',
+        'S3_REGION',
+        'S3_BUCKET',
+        'S3_ACCESS_KEY_ID',
+        'S3_SECRET_ACCESS_KEY',
+      ] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: 'нужно при STORAGE_MODE=s3',
           });
         }
       }
