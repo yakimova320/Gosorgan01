@@ -87,6 +87,8 @@ const MAIN_NAV = [
   { to: '/app', label: 'Кабинет', icon: 'doc', exact: true },
   { to: '/app/cases', label: 'Мои дела', icon: 'folder', exact: false },
   { to: '/app/history', label: 'История', icon: 'history', exact: false },
+  // чат-помощник (24.11)
+  { to: '/app/ask', label: 'Спросить Ja!sno', icon: 'chat', exact: false },
   { to: '/app/write', label: 'Написать письмо', icon: 'pen', exact: false },
   { to: '/blog', label: 'Блог', icon: 'book', exact: false },
   { to: '/app/profile', label: 'Профиль', icon: 'user', exact: false },
@@ -116,9 +118,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/" aria-label="Ja!sno, на главную">
             <Logo />
           </Link>
-          <Link to="/" className="btn btn--ghost btn--small" data-testid="home-link">
-            <Icon name="home" size={18} /> Главная
-          </Link>
+          <div className="row" style={{ gap: 4 }}>
+            <Link to="/app/ask" className="btn btn--ghost btn--small" data-testid="ask-link">
+              <Icon name="chat" size={18} /> Спросить
+            </Link>
+            <Link to="/" className="btn btn--ghost btn--small" data-testid="home-link">
+              <Icon name="home" size={18} /> Главная
+            </Link>
+          </div>
         </header>
         <main className="page">{children}</main>
         <div className="app-footer">

@@ -84,6 +84,10 @@ export const envSchema = z
 
     // B18: операций с моделью (загрузка письма, объяснение) на кабинет за скользящие 24 часа. 0 — без лимита.
     LLM_DAILY_OPS_PER_CABINET: z.coerce.number().int().min(0).default(30),
+    // Чат-помощник (24.11): сообщений в чат на кабинет за скользящие 24 часа, отдельно от писем. 0 — без лимита.
+    LLM_DAILY_CHAT_PER_CABINET: z.coerce.number().int().min(0).default(50),
+    // Папка с текстами команды (FAQ для чат-помощника). По умолчанию content/ рядом с папкой api.
+    CONTENT_DIR: z.string().optional(),
     // B18: мягкий общий порог токенов за 24 часа (все кабинеты). 0 — выключен. Не гарантия расходов.
     LLM_DAILY_TOKEN_BUDGET: z.coerce.number().int().min(0).default(0),
 

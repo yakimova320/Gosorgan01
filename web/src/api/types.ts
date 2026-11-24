@@ -264,6 +264,23 @@ export interface ExplanationStatement {
   unconfirmed: boolean;
 }
 
+/** Чат-помощник (24.11): GET /chat, POST /chat */
+export interface ChatMessage {
+  id: string;
+  role: 'USER' | 'ASSISTANT';
+  text: string;
+  createdAt: string;
+}
+export interface ChatView {
+  disclaimer: string;
+  messages: ChatMessage[];
+}
+export interface ChatReply {
+  disclaimer: string;
+  question: ChatMessage;
+  answer: ChatMessage;
+}
+
 /** Ответ POST /letters/:id/translate (поправка 7): машинный перевод, не официальный */
 export interface ApiTranslation {
   lang: 'ru';

@@ -35,6 +35,8 @@ COPY --from=build /src/api/dist /app/api/dist
 COPY --from=build /src/web/dist /app/web/dist
 # синтетические письма для LLM_MODE=demo (адаптер demo ищет их от api/dist)
 COPY --from=build /src/fixtures/letters /app/fixtures/letters
+# чат-помощник читает FAQ (content/faq.ru.md); WORKDIR /app/api → ../content
+COPY --from=build /src/content /app/content
 COPY docker/entrypoint.sh /usr/local/bin/jasno-entrypoint
 COPY docker/jasno.sh /usr/local/bin/jasno
 RUN chmod 0755 /usr/local/bin/jasno-entrypoint /usr/local/bin/jasno \
