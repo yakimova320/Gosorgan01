@@ -36,6 +36,7 @@ import type {
   DraftQuestions,
   SentVia,
   Cabinet,
+  CalendarSettings,
   CaseDetail,
   CaseSummary,
   Health,
@@ -64,6 +65,8 @@ const wait = (ms = 350): Promise<void> =>
   new Promise<void>((r) => setTimeout(r, ms));
 const ok = <T>(data: T): Result<T> => ({ data });
 const isMock = DATA_MODE === 'mock';
+/** K12: настройки календаря в режиме mock (в памяти страницы). */
+let mockCalendar: CalendarSettings = { feedPath: null, reminderEmail: true };
 /**
  * Загрузка фото: распознавание и извлечение фактов могут идти больше минуты.
  * Сервер делает до 3 попыток по LLM_TIMEOUT_MS (60 с): сайт ждёт чуть дольше сервера, иначе сдаётся
@@ -98,7 +101,7 @@ export interface InboxLetter {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: apiBaseQuery,
-  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter', 'Draft', 'Chat'],
+  tagTypes: ['Cabinet', 'Case', 'History', 'Letters', 'Letter', 'Draft', 'Chat', 'Calendar'],
   endpoints: (b) => ({
     health: b.query<Health, void>({
       queryFn: (_a, _api, _x, base) =>
@@ -272,6 +275,70 @@ export const api = createApi({
         }) as Promise<Result<Cabinet>>;
       },
       invalidatesTags: ['Cabinet'],
+    }),
+
+    // ---------- Календарь и напоминания (K12) ----------
+
+    calendarSettings: b.query<CalendarSettings, void>({
+      queryFn: (_a, _api, _x, base) =>
+        isMock
+          ? ok(mockCalendar)
+          : (base({ path: '/cabinet/calendar' }) as Promise<Result<CalendarSettings>>),
+      providesTags: ['Calendar'],
+    }),
+
+    /** Создать ссылку на календарь или заменить её новой: старая перестаёт работать. */
+    resetCalendarLink: b.mutation<CalendarSettings, void>({
+      queryFn: async (_a, _api, _x, base) => {
+        if (isMock) {
+          await wait();
+          mockCalendar = { ...mockCalendar, feedPath: `/calendar/mock${Date.now()}.ics` };
+          return ok(mockCalendar);
+        }
+        return base({ method: 'POST', path: '/cabinet/calendar/token' }) as Promise<Result<CalendarSettings>>;
+      },
+      invalidatesTags: ['Calendar'],
+    }),
+
+    removeCalendarLink: b.mutation<CalendarSettings, void>({
+      queryFn: async (_a, _api, _x, base) => {
+        if (isMock) {
+          await wait();
+          mockCalendar = { ...mockCalendar, feedPath: null };
+          return ok(mockCalendar);
+        }
+        return base({ method: 'DELETE', path: '/cabinet/calendar/token' }) as Promise<Result<CalendarSettings>>;
+      },
+      invalidatesTags: ['Calendar'],
+    }),
+
+    setReminderEmail: b.mutation<CalendarSettings, boolean>({
+      queryFn: async (reminderEmail, _api, _x, base) => {
+        if (isMock) {
+          await wait();
+          mockCalendar = { ...mockCalendar, reminderEmail };
+          return ok(mockCalendar);
+        }
+        return base({
+          method: 'PATCH',
+          path: '/cabinet/calendar',
+          body: { reminderEmail },
+        }) as Promise<Result<CalendarSettings>>;
+      },
+      // галочка меняется сразу; при ошибке возвращается прежнее значение
+      async onQueryStarted(reminderEmail, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          api.util.updateQueryData('calendarSettings', undefined, (draft) => {
+            draft.reminderEmail = reminderEmail;
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
+      invalidatesTags: ['Calendar'],
     }),
 
     // ---------- Письма и факты (B05, B06) ----------
@@ -857,4 +924,8 @@ export const {
   useTranslateLetterMutation,
   useUpdateProfileMutation,
   useSetAiConsentMutation,
+  useCalendarSettingsQuery,
+  useResetCalendarLinkMutation,
+  useRemoveCalendarLinkMutation,
+  useSetReminderEmailMutation,
 } = api;

@@ -24,7 +24,8 @@ export function registerResetMailCleaner(
 @Module({
   imports: [LettersModule, ErasureModule],
   providers: [MailTransport, ResetMailOutbox],
-  exports: [ResetMailOutbox],
+  // K12: MailTransport нужен и напоминаниям о сроках (CalendarModule)
+  exports: [ResetMailOutbox, MailTransport],
 })
 export class MailModule implements OnModuleInit {
   constructor(

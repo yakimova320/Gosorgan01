@@ -2,14 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/api-error.js';
 import { toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { DEADLINE_CHECK_NOTE, deadlineSummary } from './deadline-text.js';
 import { buildIcs } from './ics.js';
-
-const KIND_RU: Record<string, string> = {
-  REPLY: 'ответить',
-  DOCUMENTS: 'прислать документы',
-  OBJECTION: 'возражение',
-  FOLLOW_UP: 'напоминание',
-};
 
 export interface DeadlineState {
   id: string;
@@ -85,15 +79,13 @@ export class DeadlinesService {
     const d = await this.own(cabinetId, id);
     if (d.claim.status !== 'CONFIRMED')
       throw new ApiError('DEADLINE_NOT_CONFIRMED');
-    const authority = d.letter.claims[0]?.value;
-    const what = KIND_RU[d.kind] ?? 'срок';
     return buildIcs({
       id: d.id,
       date: toIsoDate(d.date),
-      summary: `Срок: ${what}${authority ? ` — ${authority}` : ''}`,
+      summary: deadlineSummary(d.kind, d.letter.claims[0]?.value),
       description: [
         d.case?.title ? `Дело: ${d.case.title}` : null,
-        'Срок из письма, подтверждённый в Ja!sno. Проверьте дату по оригиналу письма.',
+        DEADLINE_CHECK_NOTE,
       ]
         .filter(Boolean)
         .join('\n'),

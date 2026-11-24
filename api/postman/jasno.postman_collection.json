@@ -4983,6 +4983,359 @@
           ]
         }
       ]
+    },
+    {
+      "name": "12 Календарь и напоминания (K12)",
+      "description": "Подписка на календарь сроков (/calendar/<токен>.ics, без входа) и напоминание по e-mail за 3 дня. Запускать после входа (sessionToken). Само напоминание проверяет e2e-тест api/test/calendar.e2e-spec.ts с подменой времени.",
+      "item": [
+        {
+          "name": "GET /cabinet/calendar",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('поля', () => { const b = pm.response.json(); pm.expect(b).to.have.property('feedPath'); pm.expect(b.reminderEmail).to.be.a('boolean'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cabinet/calendar/token: создать ссылку",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar",
+                "token"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('адрес /calendar/<токен>.ics', () => pm.expect(b.feedPath).to.match(/^\\/calendar\\/[A-Za-z0-9_-]{43}\\.ics$/));",
+                  "pm.collectionVariables.set('calendarPath', b.feedPath);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /calendar/<токен>.ics: лента без входа",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{calendarPath}}",
+              "host": [
+                "{{baseUrl}}{{calendarPath}}"
+              ],
+              "path": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('text/calendar', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/calendar'));",
+                  "pm.test('календарь', () => pm.expect(pm.response.text()).to.include('BEGIN:VCALENDAR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /cabinet/calendar/token: новая ссылка",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar",
+                "token"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('ссылка другая', () => pm.expect(b.feedPath).to.not.eql(pm.collectionVariables.get('calendarPath')));",
+                  "pm.collectionVariables.set('calendarOldPath', pm.collectionVariables.get('calendarPath'));",
+                  "pm.collectionVariables.set('calendarPath', b.feedPath);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET старая ссылка: 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{calendarOldPath}}",
+              "host": [
+                "{{baseUrl}}{{calendarOldPath}}"
+              ],
+              "path": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));",
+                  "pm.test('код NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet/calendar: выключить письма",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reminderEmail\": false}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('выключено', () => pm.expect(pm.response.json().reminderEmail).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet/calendar: неверное значение → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reminderEmail\": \"ja\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet/calendar: включить письма",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reminderEmail\": true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('включено', () => pm.expect(pm.response.json().reminderEmail).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /cabinet/calendar/token: отключить",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet/calendar/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet",
+                "calendar",
+                "token"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('ссылки нет', () => pm.expect(pm.response.json().feedPath).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET отключённая ссылка: 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{calendarPath}}",
+              "host": [
+                "{{baseUrl}}{{calendarPath}}"
+              ],
+              "path": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -5032,6 +5385,14 @@
     },
     {
       "key": "outDeadline",
+      "value": ""
+    },
+    {
+      "key": "calendarPath",
+      "value": ""
+    },
+    {
+      "key": "calendarOldPath",
       "value": ""
     }
   ]

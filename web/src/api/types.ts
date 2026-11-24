@@ -22,6 +22,12 @@ export interface Profile {
   numbers?: { label: string; value: string }[];
 }
 
+/** K12: GET /cabinet/calendar. feedPath: /calendar/<токен>.ics или null. */
+export interface CalendarSettings {
+  feedPath: string | null;
+  reminderEmail: boolean;
+}
+
 export interface Cabinet {
   email: string;
   language: string;

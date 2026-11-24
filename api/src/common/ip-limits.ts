@@ -16,6 +16,8 @@ export const IP_LIMITS = {
   /** «Забыли пароль?» (A03, без изменений) */
   forgot: { limit: 10, ttl: HOUR },
   uploadLetter: { limit: 30, ttl: HOUR },
+  /** K12: лента календаря без входа; клиенты календаря обновляют её несколько раз в час */
+  calendarFeed: { limit: 120, ttl: HOUR },
 } as const;
 
 /** Лимит маршрута по IP. Вместе с @UseGuards(ThrottlerGuard). */
