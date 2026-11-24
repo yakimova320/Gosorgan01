@@ -1,8 +1,8 @@
-import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import pg from 'pg';
 import { assertLocalDatabase } from '../src/prisma/database-url.js';
+import { migrateDeploy } from '../src/prisma/migrate-deploy.js';
 
 const API_DIR = resolve(import.meta.dirname, '..');
 
@@ -32,11 +32,7 @@ export function createTestDatabase(): {
   url.searchParams.set('schema', schema);
 
   sweepStaleSchemas(base.toString(), 'test_');
-  execFileSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
-    cwd: API_DIR,
-    env: { ...process.env, DATABASE_URL: url.toString() },
-    stdio: 'pipe',
-  });
+  migrateDeploy(API_DIR, url.toString());
 
   return {
     url: url.toString(),

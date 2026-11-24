@@ -52,7 +52,8 @@ test('hash-режим (window.__JASNO_HASH__)', async ({ page }) => {
 
 test('офлайн-сборка открывается как файл', async ({ page }) => {
   const webDir = resolve(import.meta.dirname, '..');
-  execFileSync('pnpm', ['exec', 'vite', 'build', '--mode', 'offline'], {
+  // vite через node, а не `pnpm exec`: на Windows Node без оболочки не находит pnpm (ENOENT)
+  execFileSync(process.execPath, [resolve(webDir, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--mode', 'offline'], {
     cwd: webDir,
     stdio: 'pipe',
   });

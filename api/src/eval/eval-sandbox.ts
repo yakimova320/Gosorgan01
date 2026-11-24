@@ -1,10 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import pg from 'pg';
 import { assertLocalDatabase } from '../prisma/database-url.js';
+import { migrateDeploy } from '../prisma/migrate-deploy.js';
 
 const API_DIR = resolve(import.meta.dirname, '..', '..');
 const PREFIX = 'eval_';
@@ -61,11 +61,7 @@ export async function createSandbox(baseUrl: string): Promise<EvalSandbox> {
   };
 
   try {
-    execFileSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
-      cwd: API_DIR,
-      env: { ...process.env, DATABASE_URL: url.toString() },
-      stdio: 'pipe',
-    });
+    migrateDeploy(API_DIR, url.toString());
   } catch (e) {
     await cleanup();
     throw e;
