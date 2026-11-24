@@ -22,7 +22,8 @@ export function schemaUrl(schema) {
 }
 
 export function migrate(schema) {
-  execFileSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
+  // Prisma CLI через node, а не `pnpm exec`: на Windows Node без оболочки не находит pnpm (ENOENT)
+  execFileSync(process.execPath, [resolve(API_DIR, 'node_modules', 'prisma', 'build', 'index.js'), 'migrate', 'deploy'], {
     cwd: API_DIR,
     env: { ...process.env, DATABASE_URL: schemaUrl(schema) },
     stdio: 'pipe',
