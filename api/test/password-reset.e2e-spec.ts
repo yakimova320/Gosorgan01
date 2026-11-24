@@ -148,8 +148,11 @@ describe('Восстановление пароля (e2e, A03)', () => {
     const eml = readFileSync(join(mailDir(u.cabinetId), file), 'utf8');
     expect(eml).toContain(`To: ${u.email}`);
     expect(eml).toMatch(/Subject: /);
-    expect(statSync(join(mailDir(u.cabinetId), file)).mode & 0o777).toBe(0o600);
-    expect(statSync(mailDir(u.cabinetId)).mode & 0o777).toBe(0o700);
+    // Права доступа Unix (0600 и 0700) на Windows не действуют: там Node всегда показывает 0666/0777
+    if (process.platform !== 'win32') {
+      expect(statSync(join(mailDir(u.cabinetId), file)).mode & 0o777).toBe(0o600);
+      expect(statSync(mailDir(u.cabinetId)).mode & 0o777).toBe(0o700);
+    }
     // в базе только хэш
     expect(await db.passwordResetToken.count({ where: { tokenHash: token } })).toBe(0);
 
