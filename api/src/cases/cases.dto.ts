@@ -42,6 +42,8 @@ export interface CaseDetail extends CaseSummary {
     sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
     title: string | null;
     authority: string | null;
+    /** Поправка 24.11: дата письма из факта LETTER_DATE (YYYY-MM-DD); confirmed — факт подтверждён */
+    letterDate: { date: string; confirmed: boolean } | null;
     unconfirmed: number;
   }[];
   claims: ClaimView[];

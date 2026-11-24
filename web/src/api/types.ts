@@ -238,7 +238,16 @@ export interface ApiTimelineItem {
 
 export interface ApiCaseDetail extends CaseSummary {
   status?: 'OPEN' | 'CLOSED';
-  letters: { id: string; createdAt: string; sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN'; title?: string | null; authority: string | null; unconfirmed: number }[];
+  letters: {
+    id: string;
+    createdAt: string;
+    sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
+    title?: string | null;
+    authority: string | null;
+    /** Поправка 24.11: дата письма (факт LETTER_DATE), не дата загрузки. Нет в примерных данных. */
+    letterDate?: { date: string; confirmed: boolean } | null;
+    unconfirmed: number;
+  }[];
   claims: LetterClaim[];
   deadlines: LetterDeadline[];
   drafts: { id: string; kind: string; status: string; stale: boolean; createdAt: string }[];

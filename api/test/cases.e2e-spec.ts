@@ -102,6 +102,64 @@ describe('Дела (e2e, B07)', () => {
     });
   });
 
+  it('поправка 24.11: у письма в деле дата письма (LETTER_DATE), подтверждение меняет confirmed', async () => {
+    const up = await upload('01_jobcenter_request.pdf');
+    const date = byKind(up.claims, 'LETTER_DATE');
+    expect(date.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const res = await http()
+      .post(`/letters/${up.letter.id}/assign`)
+      .set(auth())
+      .send({ newCase: {} })
+      .expect(200);
+    const letterOf = async () =>
+      (
+        await http().get(`/cases/${res.body.caseId}`).set(auth()).expect(200)
+      ).body.letters.find((l: { id: string }) => l.id === up.letter.id);
+    expect((await letterOf()).letterDate).toEqual({
+      date: date.value,
+      confirmed: false,
+    });
+    await http()
+      .post(`/letters/${up.letter.id}/claims/confirm`)
+      .set(auth())
+      .send({ confirm: [date.id], reject: [] })
+      .expect(200);
+    expect((await letterOf()).letterDate).toEqual({
+      date: date.value,
+      confirmed: true,
+    });
+  });
+
+  it('поправка 24.11: удаление одного письма из дела — дело и другое письмо остаются, файла нет', async () => {
+    const first = await upload('01_jobcenter_request.pdf');
+    const res = await http()
+      .post(`/letters/${first.letter.id}/assign`)
+      .set(auth())
+      .send({ newCase: {} })
+      .expect(200);
+    const caseId = res.body.caseId as string;
+    const second = await upload('01_jobcenter_request.pdf');
+    await http()
+      .post(`/letters/${second.letter.id}/assign`)
+      .set(auth())
+      .send({ caseId })
+      .expect(200);
+    const row = await db.letter.findUniqueOrThrow({
+      where: { id: second.letter.id },
+    });
+    const fileKey = (row.files as { fileKey: string }[])[0].fileKey;
+    expect(existsSync(join(storageDir, fileKey))).toBe(true);
+
+    await http().delete(`/letters/${second.letter.id}`).set(auth(other)).expect(404);
+    await http().delete(`/letters/${second.letter.id}`).set(auth()).expect(204);
+
+    const kase = await http().get(`/cases/${caseId}`).set(auth()).expect(200);
+    expect(kase.body.letters.map((l: { id: string }) => l.id)).toEqual([
+      first.letter.id,
+    ]);
+    expect(existsSync(join(storageDir, fileKey))).toBe(false);
+  });
+
   it('новое дело из подтверждённых фактов; письмо, факты и сроки в деле; stage по сроку', async () => {
     const up = await upload('01_jobcenter_request.pdf');
     const claims = up.claims;
