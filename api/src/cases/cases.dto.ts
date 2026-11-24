@@ -13,7 +13,16 @@ export interface CaseSummary {
   /** YYYY-MM-DD: ближайший просроченный, иначе ближайший будущий подтверждённый срок */
   nextDeadline: string | null;
   counts: { letters: number; unconfirmed: number };
+  /** Поправка 14 (23.11): сколько шагов дела сделано, например «2 из 3 · 67 %» */
+  progress: CaseProgress;
   updatedAt: string;
+}
+
+export interface CaseProgress {
+  done: number;
+  total: number;
+  percent: number;
+  steps: { key: 'CHECK' | 'DEADLINES' | 'REPLY'; label: string; done: boolean }[];
 }
 
 export interface TimelineItem {
@@ -31,6 +40,7 @@ export interface CaseDetail extends CaseSummary {
     id: string;
     createdAt: string;
     sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
+    title: string | null;
     authority: string | null;
     unconfirmed: number;
   }[];

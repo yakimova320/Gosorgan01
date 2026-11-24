@@ -1,5 +1,5 @@
 import { apiError, type ApiError } from '../api/errors';
-import type { LetterClaim, LetterDetail, UploadResponse } from '../api/types';
+import type { ApiTranslation, LetterClaim, LetterDetail, UploadResponse } from '../api/types';
 import { mockUploadLetter } from './data';
 
 /*
@@ -26,6 +26,7 @@ export function mockUpload(): UploadResponse {
       pages: l.pages,
       files: [{ n: 1, mime: 'application/pdf', bytes: 2210 }],
       createdAt: l.createdAt,
+      title: 'Jobcenter: документы к заявлению',
     },
     claims,
     deadlines: l.deadlines.map((d) => ({
@@ -127,4 +128,23 @@ export function mockAssign(
   if (!l) return apiError('NOT_FOUND', 404);
   letters.delete(id); // во входящих больше нет; дела в mock — примерные данные
   return { caseId, changed: true };
+}
+
+/** Поправка 8: новое название письма (только письма, загруженные в этой вкладке). */
+export function mockRename(id: string, title: string): LetterDetail | ApiError {
+  const l = letters.get(id);
+  if (!l) return apiError('NOT_FOUND', 404);
+  const next = { ...l, letter: { ...l.letter, title } };
+  letters.set(id, next);
+  return next;
+}
+
+/** Поправка 7: в примерных данных настоящего перевода нет, это сказано в первой строке. */
+export function mockTranslate(text: string): ApiTranslation {
+  return {
+    lang: 'ru',
+    machine: true,
+    cached: false,
+    text: `Примерные данные: настоящего перевода нет. Так будет выглядеть перевод письма.\n\n${text}`,
+  };
 }

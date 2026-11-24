@@ -87,7 +87,15 @@ export function TextField({
   autoComplete,
   type = 'text',
   autoCapitalize,
-}: FieldProps & { autoComplete?: string; type?: 'text' | 'date'; autoCapitalize?: 'off' | 'characters' }) {
+  inputMode,
+  maxLength,
+}: FieldProps & {
+  autoComplete?: string;
+  type?: 'text' | 'date';
+  autoCapitalize?: 'off' | 'characters';
+  inputMode?: 'numeric' | 'text';
+  maxLength?: number;
+}) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
@@ -97,6 +105,8 @@ export function TextField({
         type={type}
         autoComplete={autoComplete}
         autoCapitalize={autoCapitalize}
+        inputMode={inputMode}
+        maxLength={maxLength}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, error, hint)}
         {...registration}

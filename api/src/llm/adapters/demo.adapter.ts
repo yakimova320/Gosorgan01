@@ -22,7 +22,14 @@ export class DemoAdapter implements LlmAdapter {
     string,
     (variables: Record<string, string>, request: AdapterRequest) => unknown
   > = {
-    extract: (v) => demoExtract(v.letterText ?? ''),
+    extract: (v, request) => {
+      const base = demoExtract(v.letterText ?? '');
+      // extract.v3 (поправка 8): и название письма по строке Betreff
+      return (request.promptVersion ?? 0) >= 3
+        ? { ...base, title: demoTitle(v.letterText ?? '') }
+        : base;
+    },
+    translate: (v) => demoTranslate(v.letterText ?? ''),
     explain: (v) => demoExplain(v.facts ?? '[]'),
     transcribe: (_v, request) =>
       request.promptVersion === 2
@@ -305,4 +312,60 @@ export function demoRequestRu(value: string): string | null {
   const month = /september/i.test(value) ? ' за сентябрь' : '';
   const again = /erneut/i.test(value) ? ' ещё раз' : '';
   return `${verb}${again}: ${docs.join(' и ')}${month}.`;
+}
+
+/**
+ * Демо-перевод (поправка 7): без модели настоящего перевода нет. Частые фразы писем заменяются
+ * по словарю, остальные строки остаются по-немецки. Первая строка честно говорит об этом.
+ */
+const DEMO_PHRASES: [RegExp, string][] = [
+  [/^Sehr geehrte[rs]?\b.*,$/i, 'Уважаемый(ая) получатель,'],
+  [/^Mit freundlichen Grüßen$/i, 'С уважением,'],
+  [/^Ihre Sachbearbeitung$/i, 'Ваш отдел обработки'],
+  [/^Betreff:\s*Unterlagen zu Ihrem Antrag$/i, 'Тема: документы к вашему заявлению'],
+  [/^Datum:/i, 'Дата:'],
+  [/^Aktenzeichen:/i, 'Номер дела (Aktenzeichen):'],
+  [/^An:/i, 'Кому:'],
+  [/^Bitte reichen Sie die Kontoauszüge für September ein\.$/i, 'Пожалуйста, пришлите выписки со счёта за сентябрь.'],
+  [/^Bitte reichen Sie die Einkommensnachweise ein\.$/i, 'Пожалуйста, пришлите справки о доходах.'],
+  [/^Bitte legen Sie den Mietvertrag vor\.$/i, 'Пожалуйста, предъявите договор аренды.'],
+  [/^Bitte bestätigen Sie Ihre Anschrift\.$/i, 'Пожалуйста, подтвердите ваш адрес.'],
+  [/^Bitte antworten Sie bis zum (\d{1,2}\.\d{1,2}\.\d{4})\.$/i, 'Пожалуйста, ответьте до $1.'],
+  [/^Bei Rückfragen nennen Sie bitte das oben angegebene Aktenzeichen\.$/i, 'При вопросах называйте, пожалуйста, номер дела, указанный выше.'],
+  [/^Diese Mitteilung betrifft ausschließlich die genannten Unterlagen\.$/i, 'Это сообщение касается только названных документов.'],
+];
+
+export const DEMO_TRANSLATE_NOTE =
+  'Демо-режим: настоящего перевода нет. Переведены только частые фразы, остальное оставлено по-немецки.';
+
+export function demoTranslate(text: string): { text: string } {
+  const lines = text.split('\n').map((line) => {
+    const t = line.trim();
+    for (const [re, ru] of DEMO_PHRASES) {
+      if (!re.test(t)) continue;
+      // «Datum: 11.11.2026» → «Дата: 11.11.2026»: значение после двоеточия остаётся как в письме
+      if (ru.endsWith(':')) return `${ru}${t.slice(t.indexOf(':') + 1)}`;
+      return t.replace(re, ru);
+    }
+    return line;
+  });
+  return { text: `${DEMO_TRANSLATE_NOTE}\n\n${lines.join('\n')}` };
+}
+
+/** Название для extract.v3 в demo: ведомство и тема из строки Betreff, цитата — сама строка Betreff. */
+export function demoTitle(
+  text: string,
+): { value: string; quote: string } | null {
+  const lines = text.split('\n').map((l) => l.trim());
+  const betreff = lines.find((l) => /^Betreff:/i.test(l));
+  if (!betreff) return null;
+  const authority = lines.find(
+    (l) => AUTHORITY.test(l) && !/^(An|Betreff)\b/.test(l),
+  );
+  const subject = /Unterlagen zu Ihrem Antrag/i.test(betreff)
+    ? 'документы к заявлению'
+    : betreff.replace(/^Betreff:\s*/i, '');
+  const short = authority?.split(/\s+/)[0];
+  const value = (short ? `${short}: ${subject}` : subject).slice(0, 60);
+  return { value, quote: betreff };
 }

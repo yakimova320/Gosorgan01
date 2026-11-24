@@ -32,8 +32,8 @@ test('query-параметры, неизвестный адрес и кнопк�
   await page.goto('/nichts-hier');
   await expect(page.getByText('Такой страницы нет')).toBeVisible();
   await page.goto('/faq');
-  await page.getByRole('link', { name: 'Важно знать' }).first().click();
-  await expect(page).toHaveURL(/\/wissen$/);
+  await page.getByRole('link', { name: 'Блог' }).first().click();
+  await expect(page).toHaveURL(/\/blog$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/faq$/);
 });
@@ -65,8 +65,8 @@ test('офлайн-сборка открывается как файл', async (
   ).toBeVisible();
   // офлайн-сборка работает на примерных данных: это видно сразу (правка 18-11)
   await expect(page.getByTestId('mock-banner')).toContainText('ничего не сохраняется');
-  await page.getByRole('link', { name: 'Важно знать' }).first().click();
-  await expect(page).toHaveURL(/#\/wissen$/);
+  await page.getByRole('link', { name: 'Блог' }).first().click();
+  await expect(page).toHaveURL(/#\/blog$/);
   await page.goto(`${url}#/app`);
   await expect(page).toHaveURL(/#\/login$/);
 });

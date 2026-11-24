@@ -3,6 +3,7 @@ import { Link, Navigate, useBeforeUnload, useBlocker, useLocation, useNavigate }
 import { errorCode, errorText, isApiError, isDailyLimit } from '../../api/errors';
 import type { CaseSuggestion, LetterClaim, LetterDetail } from '../../api/types';
 import { MAX_PAGES, useFlow } from '../../app/flow';
+import { shrinkAll } from '../../lib/shrinkImage';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { AiConsentCard } from '../../components/consent';
@@ -282,6 +283,17 @@ export function ScanReadingPage() {
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const started = useRef<string | null>(null);
+  // Поправка 9 (23.11): видно, сколько секунд идёт чтение, и его можно отменить
+  const [seconds, setSeconds] = useState(0);
+  const request = useRef<{ abort: () => void } | null>(null);
+  const [cancelled, setCancelled] = useState(false);
+
+  useEffect(() => {
+    if (error || cancelled) return;
+    setSeconds(0);
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [attempt, error, cancelled]);
 
   useEffect(() => {
     if (pages.length === 0) return;
@@ -289,9 +301,17 @@ export function ScanReadingPage() {
     if (started.current === key) return; // защита от двойной отправки
     started.current = key;
     setError(null);
-    uploadLetter(putUploadFiles(pages.map((p) => p.file)))
-      .unwrap()
+    setCancelled(false);
+    void (async () => {
+      // большие фото уменьшаются в браузере перед отправкой
+      const files = await shrinkAll(pages.map((p) => p.file));
+      if (started.current !== key) return; // отменили, пока готовили файлы
+      const sent = uploadLetter(putUploadFiles(files));
+      request.current = sent;
+      return sent.unwrap();
+    })()
       .then(async (r) => {
+        if (!r) return;
         // Сначала переход (сразу, flushSync), потом очистка файла: иначе страница чтения сама уйдёт на начало.
         await navigate(`/app/letters/${r.letter.id}/check`, {
           replace: true,
@@ -300,8 +320,25 @@ export function ScanReadingPage() {
         });
         clearFiles();
       })
-      .catch(setError);
+      .catch((e: unknown) => {
+        if (errorCode(e) === 'CANCELLED') return; // «Отменить»: экран уже ушёл к снимкам
+        setError(e);
+      })
+      .finally(() => {
+        request.current = null;
+      });
   }, [attempt, pages, uploadLetter, clearFiles, navigate]);
+
+  const cancel = () => {
+    setCancelled(true);
+    started.current = null;
+    request.current?.abort();
+    // снимки остаются выбранными: можно убрать лишние или отправить ещё раз
+    void navigate('/app/scan/pages', {
+      replace: true,
+      state: { note: 'Чтение отменено. Если письмо успело сохраниться, оно появится во входящих в кабинете.' },
+    });
+  };
 
   if (pages.length === 0 && !error) return <Navigate to="/app/scan" replace />;
   const problem = error ? uploadProblem(error) : null;
@@ -323,6 +360,12 @@ export function ScanReadingPage() {
           <>
             <div className="spinner" role="status" aria-label="Идёт чтение" />
             <p className="text-2">Читаем текст и ищем факты с цитатами. Обычно это до минуты.</p>
+            <p className="small text-2" data-testid="reading-seconds" aria-live="off">
+              Прошло {seconds} с{seconds >= 90 ? '. Долго: возможно, слабая связь или большое письмо.' : ''}
+            </p>
+            <button type="button" className="btn btn--secondary btn--small" onClick={cancel} data-testid="reading-cancel">
+              Отменить
+            </button>
           </>
         )}
         {problem === 'file' && (
@@ -728,6 +771,7 @@ export function LetterCheckPage({ id }: { id: string }) {
         ))}
         <AssignBlock
           letterId={id}
+          suggestedTitle={q.data?.letter.title ?? null}
           suggestions={fromUpload?.suggestions ?? []}
           pending={pending}
           onSave={save}
@@ -765,6 +809,7 @@ export function LetterCheckPage({ id }: { id: string }) {
  */
 function AssignBlock({
   letterId,
+  suggestedTitle,
   suggestions,
   pending,
   onSave,
@@ -772,6 +817,8 @@ function AssignBlock({
   onError,
 }: {
   letterId: string;
+  /** Поправка 8: название письма от Ja!sno, им заполняется название нового дела */
+  suggestedTitle: string | null;
   suggestions: CaseSuggestion[];
   pending: number;
   onSave: () => Promise<boolean>;
@@ -787,7 +834,7 @@ function AssignBlock({
     ...open.filter((c) => !suggestions.some((s) => s.caseId === c.id)).map((c) => ({ id: c.id, title: c.title, note: c.caseNumber ?? '' })),
   ];
   const [choice, setChoice] = useState<string>(suggestions[0]?.caseId ?? 'new');
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(suggestedTitle ?? '');
   const [askPending, setAskPending] = useState(false);
 
   async function assign() {
@@ -823,7 +870,7 @@ function AssignBlock({
       </label>
       {choice === 'new' && (
         <div className="field">
-          <label htmlFor="new-case-title">Название (необязательно)</label>
+          <label htmlFor="new-case-title">Название дела (можно изменить)</label>
           <input
             id="new-case-title"
             className="input"

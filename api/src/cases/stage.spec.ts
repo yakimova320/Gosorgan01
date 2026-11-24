@@ -1,5 +1,5 @@
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
-import { caseStage, type StageInput } from './stage.js';
+import { caseProgress, caseStage, type StageInput } from './stage.js';
 
 const TODAY = '2026-11-20';
 const base: StageInput = {
@@ -101,5 +101,34 @@ describe('stage дела', () => {
     expect(toIsoDate(berlinToday(new Date('2026-11-19T22:30:00Z')))).toBe(
       '2026-11-19',
     );
+  });
+});
+
+describe('caseProgress (поправка 14)', () => {
+  const base = {
+    closed: false,
+    hasClaims: true,
+    unconfirmed: 0,
+    openDeadlines: 1,
+    replySent: false,
+  };
+  it('факты проверены, срок открыт, ответа нет: 1 из 3 · 33 %', () => {
+    const p = caseProgress(base);
+    expect([p.done, p.total, p.percent]).toEqual([1, 3, 33]);
+  });
+  it('факты проверены, сроков нет, ответ отправлен: 3 из 3', () => {
+    const p = caseProgress({ ...base, openDeadlines: 0, replySent: true });
+    expect([p.done, p.percent]).toEqual([3, 100]);
+  });
+  it('есть непроверенные факты: шаг проверки не сделан', () => {
+    const p = caseProgress({ ...base, unconfirmed: 2, openDeadlines: 0 });
+    expect(p.steps.map((s) => s.done)).toEqual([false, true, false]);
+    expect(p.percent).toBe(33);
+  });
+  it('без фактов проверять нечего, но шаг не засчитан', () => {
+    expect(caseProgress({ ...base, hasClaims: false }).steps[0].done).toBe(false);
+  });
+  it('завершённое дело: 100 %', () => {
+    expect(caseProgress({ ...base, closed: true, unconfirmed: 3 }).percent).toBe(100);
   });
 });

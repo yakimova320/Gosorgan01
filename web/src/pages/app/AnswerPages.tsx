@@ -98,7 +98,7 @@ export function AnswerGoalPage({ caseId }: { caseId: string }) {
             <label key={l.id} className="checkbox">
               <input type="radio" name="letter" checked={letter === l.id} onChange={() => setChosen(l.id)} />
               <span>
-                {l.authority ?? 'Письмо'} · {formatDate(l.createdAt.slice(0, 10))}
+                {l.title || l.authority || 'Письмо'} · {formatDate(l.createdAt.slice(0, 10))}
               </span>
             </label>
           ))}

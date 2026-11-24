@@ -110,7 +110,10 @@ test('профиль: изменение сохраняется, обязате�
   await expect(last).toHaveValue('Muster');
 
   await last.fill('Müller-Lüdenscheidt');
-  await page.getByLabel('Адрес проживания').fill('Neue Str. 2, 20095 Hamburg');
+  // поправка 6: адрес по частям
+  await page.getByLabel('Улица и номер дома').fill('Neue Str. 2');
+  await page.getByLabel('Индекс').fill('20095');
+  await page.getByLabel('Город').fill('Hamburg');
   await page.getByRole('button', { name: 'Сохранить' }).click();
   await expect(
     page.getByRole('status').filter({ hasText: 'Сохранено' }),
@@ -120,9 +123,13 @@ test('профиль: изменение сохраняется, обязате�
   await expect(page.getByLabel('Фамилия', { exact: true })).toHaveValue(
     'Müller-Lüdenscheidt',
   );
-  await expect(page.getByLabel('Адрес проживания')).toHaveValue(
-    'Neue Str. 2, 20095 Hamburg',
-  );
+  await expect(page.getByLabel('Улица и номер дома')).toHaveValue('Neue Str. 2');
+  await expect(page.getByLabel('Индекс')).toHaveValue('20095');
+  await expect(page.getByLabel('Город')).toHaveValue('Hamburg');
+  const saved = await request.get(`${API_URL}/cabinet`, {
+    headers: { Authorization: `Bearer ${a.token}` },
+  });
+  expect((await saved.json()).profile.address).toBe('Neue Str. 2, 20095 Hamburg');
   await expect(page.getByLabel('Имя', { exact: true })).toHaveValue(
     a.firstName,
   );

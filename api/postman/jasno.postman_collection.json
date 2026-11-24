@@ -4824,6 +4824,165 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Поправки 23.11: перевод и название письма",
+      "description": "Поправка 7: машинный перевод письма (не официальный). Поправка 8: название письма, предлагает модель по цитате (extract.v3), человек может изменить. Запускать после загрузки письма (letterId).",
+      "item": [
+        {
+          "name": "POST /letters/:id/translate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/translate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "translate"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('перевод по-русски, машинный', () => { const b = pm.response.json(); pm.expect(b.lang).to.eql('ru'); pm.expect(b.machine).to.eql(true); pm.expect(b.text).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/translate: повтор из кэша",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/translate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "translate"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('из кэша', () => pm.expect(pm.response.json().cached).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /letters/:id: новое название",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"Jobcenter: выписки за сентябрь\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('название сохранено', () => pm.expect(pm.response.json().letter.title).to.eql('Jobcenter: выписки за сентябрь'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /letters/:id: пустое название",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

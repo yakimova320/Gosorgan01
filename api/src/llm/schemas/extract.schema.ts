@@ -36,3 +36,19 @@ export const ExtractV2Schema = ExtractSchema.extend({
   relativeDeadlines: z.array(item(z.string().min(1))).max(10),
 });
 export type ExtractV2Result = z.infer<typeof ExtractV2Schema>;
+
+/**
+ * Ответ extract.v3 (поправка 8, 23.11): как v2 и предложенное название письма по-русски.
+ * Название — подсказка для человека: код проверяет цитату и длину, без цитаты из письма название не берётся.
+ */
+export const ExtractV3Schema = ExtractV2Schema.extend({
+  title: z
+    .object({
+      value: z.string().trim().min(1).max(80),
+      quote: z.string().min(1),
+    })
+    .nullable()
+    // модель пропустила поле: письмо без названия, сайт покажет ведомство и дату
+    .default(null),
+});
+export type ExtractV3Result = z.infer<typeof ExtractV3Schema>;

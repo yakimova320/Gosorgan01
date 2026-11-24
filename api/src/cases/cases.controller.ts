@@ -49,6 +49,16 @@ const SUMMARY: CaseSummary = {
   stage: 'DOCUMENTS',
   nextDeadline: '2026-11-30',
   counts: { letters: 1, unconfirmed: 2 },
+  progress: {
+    done: 0,
+    total: 3,
+    percent: 0,
+    steps: [
+      { key: 'CHECK', label: 'Факты проверены', done: false },
+      { key: 'DEADLINES', label: 'Сроки выполнены', done: false },
+      { key: 'REPLY', label: 'Ответ отправлен', done: false },
+    ],
+  },
   updatedAt: '2026-11-17T10:00:00.000Z',
 };
 

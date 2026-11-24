@@ -6,7 +6,11 @@ import { ApiError } from '../common/api-error.js';
 import { AccountErasureService } from '../erasure/account-erasure.service.js';
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AI_CONSENT_VERSION } from '@jasno/shared';
+import {
+  AddressPartsSchema,
+  AI_CONSENT_VERSION,
+  composeAddress,
+} from '@jasno/shared';
 import { hasAiConsent } from './ai-consent.js';
 import {
   ProfileSchema,
@@ -125,10 +129,26 @@ export class CabinetService {
         where: { id: cabinetId },
         select: { profile: true },
       });
-      const merged = {
+      const merged: Record<string, unknown> = {
         ...((current.profile as Record<string, unknown> | null) ?? {}),
         ...input.profile,
       };
+      // Поправка 6: адрес по частям. Пришла хоть одна часть — нужны все три, строка address
+      // собирается из них. Пришла только строка — старые части убираются, чтобы не расходились.
+      const parts = ['street', 'postalCode', 'city'] as const;
+      if (parts.some((k) => input.profile?.[k] !== undefined)) {
+        const missing = parts.filter((k) => typeof merged[k] !== 'string');
+        if (missing.length > 0)
+          throw new ApiError('VALIDATION_FAILED', {
+            fields: Object.fromEntries(
+              missing.map((k) => [`profile.${k}`, 'Заполните адрес полностью']),
+            ),
+          });
+        const p = AddressPartsSchema.safeParse(merged);
+        if (p.success) merged.address = composeAddress(p.data);
+      } else if (input.profile.address !== undefined) {
+        for (const k of parts) delete merged[k];
+      }
       const checked = ProfileSchema.safeParse(merged);
       if (!checked.success) {
         const fields = Object.fromEntries(
@@ -140,6 +160,9 @@ export class CabinetService {
         throw new ApiError('VALIDATION_FAILED', { fields });
       }
       data.profile = checked.data;
+      // Поправка 9: имя и фамилия отдельными столбцами, чтобы их было видно в таблице Supabase
+      data.firstName = checked.data.firstName;
+      data.lastName = checked.data.lastName;
       const before = (current.profile ?? {}) as Partial<Profile>;
       senderChanged =
         (['firstName', 'lastName', 'address'] as const).some(

@@ -1,12 +1,14 @@
 {
   "source": "Документ «Ja!sno: карточки «Важно знать»», версия от 15.11.2026 (rev 16). Тексты пишут и проверяют люди, код их не меняет.",
   "topics": [
+    { "id": "children", "title": "Всё о детях" },
     { "id": "housing", "title": "Жильё" },
     { "id": "insurance", "title": "Страховки" },
     { "id": "health", "title": "Здоровье" },
     { "id": "taxes", "title": "Налоги" },
     { "id": "letters", "title": "Письма и сроки" },
-    { "id": "contracts", "title": "Договоры" }
+    { "id": "contracts", "title": "Договоры" },
+    { "id": "german", "title": "Немецкий язык" }
   ],
   "cards": [
     {
@@ -283,6 +285,94 @@
         { "name": "ÖKO-TEST", "url": "https://www.oekotest.de/geld-versicherungen/Faire-Verbrauchervertraege-Neues-Gesetz-kuerzt-Vertragslaufzeiten-und-Kuendigungsfristen-_11951_1.html" }
       ],
       "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "children-pregnancy",
+      "topic": "children",
+      "title": "Беременность и рождение ребёнка",
+      "text": "Раздел готовит команда.",
+      "german": ["Mutterpass", "Geburtsurkunde"],
+      "keywords": ["беременность", "роды", "рождение"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-register",
+      "topic": "children",
+      "title": "Заявить о ребёнке: пособия и документы",
+      "text": "Раздел готовит команда.",
+      "german": ["Kindergeld", "Elterngeld"],
+      "keywords": ["пособие на ребёнка", "заявить о ребёнке"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-kita",
+      "topic": "children",
+      "title": "Детский сад",
+      "text": "Раздел готовит команда.",
+      "german": ["Kita", "Kita-Gutschein"],
+      "keywords": ["детский сад", "ясли"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-doctor",
+      "topic": "children",
+      "title": "Детский врач",
+      "text": "Раздел готовит команда.",
+      "german": ["Kinderarzt", "U-Untersuchungen"],
+      "keywords": ["педиатр", "прививки", "осмотр"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-school",
+      "topic": "children",
+      "title": "Дети и школа",
+      "text": "Раздел готовит команда.",
+      "german": ["Schulpflicht", "Grundschule"],
+      "keywords": ["школа", "записать в школу"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-german",
+      "topic": "children",
+      "title": "Дополнительные уроки немецкого для детей",
+      "text": "Раздел готовит команда.",
+      "german": ["Deutsch als Zweitsprache", "Willkommensklasse"],
+      "keywords": ["немецкий для детей", "класс интеграции"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-students",
+      "topic": "children",
+      "title": "Абитуриенты и студенты",
+      "text": "Раздел готовит команда.",
+      "german": ["Abitur", "BAföG", "Studium"],
+      "keywords": ["университет", "студент", "абитуриент"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "german-teacher",
+      "topic": "german",
+      "title": "Где найти преподавателя немецкого",
+      "text": "Раздел готовит команда.",
+      "german": ["Integrationskurs", "Volkshochschule"],
+      "keywords": ["курсы немецкого", "учитель немецкого", "преподаватель"],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
     }
   ]
 }

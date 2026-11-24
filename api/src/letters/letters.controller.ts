@@ -7,6 +7,7 @@ import {
   HttpCode,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
   StreamableFile,
@@ -50,10 +51,14 @@ import {
   type CorrectClaimInput,
   type InboxItem,
   type LetterDetail,
+  RenameLetterSchema,
+  type RenameLetterInput,
+  type TranslationView,
   type UploadLetterResponse,
 } from './letters.dto.js';
 import { ExplainService, type ExplainResponse } from './explain.service.js';
 import { LettersService } from './letters.service.js';
+import { TranslateService } from './translate.service.js';
 import { z } from 'zod';
 
 const err = (code: string, message: string, details?: unknown) => ({
@@ -63,6 +68,7 @@ const err = (code: string, message: string, details?: unknown) => ({
 const EXAMPLE: UploadLetterResponse = {
   letter: {
     id: '7f1c2e9a-3b4d-4c5e-8f60-1a2b3c4d5e6f',
+    title: 'Jobcenter: документы к заявлению',
     caseId: null,
     sourceType: 'PDF_TEXT',
     text: 'Jobcenter Musterstadt\n…\nBitte reichen Sie bis zum 30.11.2026 Kontoauszüge ein.',
@@ -106,6 +112,7 @@ export class LettersController {
   constructor(
     @Inject(LettersService) private readonly letters: LettersService,
     @Inject(ExplainService) private readonly explainer: ExplainService,
+    @Inject(TranslateService) private readonly translator: TranslateService,
   ) {}
 
   @Post()
@@ -440,5 +447,54 @@ export class LettersController {
     query: { lang: 'ru' },
   ): Promise<ExplainResponse> {
     return this.explainer.explain(auth.cabinetId, id, query.lang);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Переименовать письмо',
+    description:
+      'Поправка 8: название при загрузке предлагает модель по цитате письма (extract.v3), человек может его изменить.',
+  })
+  @ApiBody({ schema: { example: { title: 'Jobcenter: выписки за сентябрь' } } })
+  @ApiOkResponse({ description: 'Письмо с фактами и сроками, как GET /letters/:id' })
+  @ApiNotFoundResponse(NOT_FOUND)
+  rename(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') id: string,
+    @Body(new ZodPipe(RenameLetterSchema)) body: RenameLetterInput,
+  ): Promise<LetterDetail> {
+    return this.letters.rename(auth.cabinetId, id, body);
+  }
+
+  @Post(':id/translate')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Машинный перевод письма на русский',
+    description:
+      'Поправка 7: весь текст письма по-русски, перевод не официальный (machine: true). ' +
+      'Кэш по тексту письма, языку и версии промпта; повтор из кэша модель не вызывает и лимит не тратит. ' +
+      'Нужно согласие на анализ ИИ.',
+  })
+  @ApiQuery({ name: 'lang', required: false, enum: ['ru'] })
+  @ApiOkResponse({
+    schema: {
+      example: {
+        lang: 'ru',
+        text: 'Jobcenter Musterstadt\n...\nПожалуйста, ответьте до 30.11.2026.',
+        machine: true,
+        cached: false,
+      },
+    },
+  })
+  @ApiNotFoundResponse(NOT_FOUND)
+  translate(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') id: string,
+    @Query(
+      new ZodPipe(z.object({ lang: z.enum(['ru']).default('ru') }).strict()),
+    )
+    query: { lang: 'ru' },
+  ): Promise<TranslationView> {
+    return this.translator.translate(auth.cabinetId, id, query.lang);
   }
 }

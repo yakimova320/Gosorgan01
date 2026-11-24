@@ -1,5 +1,7 @@
 import {
-  AddressSchema,
+  CitySchema,
+  PostalCodeSchema,
+  StreetSchema,
   ChangePasswordSchema,
   FirstNameSchema,
   LastNameSchema,
@@ -70,6 +72,9 @@ export const DeleteAccountFormSchema = DeleteAccountSchema;
 export const ProfileFormSchema = z.object({
   firstName: FirstNameSchema,
   lastName: LastNameSchema,
-  address: AddressSchema,
+  // поправка 6: адрес по частям, строку для писем собирает сервер
+  street: StreetSchema,
+  postalCode: PostalCodeSchema,
+  city: CitySchema,
   numbers: z.array(ProfileNumberSchema).max(PROFILE_NUMBERS_MAX),
 });

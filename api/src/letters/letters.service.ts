@@ -7,7 +7,7 @@ import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { StorageService } from '../documents/storage.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { LlmService } from '../llm/llm.service.js';
-import { ExtractV2Schema } from '../llm/schemas/extract.schema.js';
+import { ExtractV3Schema } from '../llm/schemas/extract.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { assertAiConsent } from '../cabinet/ai-consent.js';
 import { buildClaims, checkUserValue, claimText } from './claims.builder.js';
@@ -20,6 +20,7 @@ import type {
   InboxItem,
   LetterDetail,
   LetterView,
+  RenameLetterInput,
   UploadLetterResponse,
 } from './letters.dto.js';
 
@@ -72,9 +73,9 @@ export class LettersService {
 
     const { data: extracted } = await this.llm.callWithTrace({
       prompt: 'extract',
-      version: 2,
+      version: 3,
       variables: { letterText: doc.text },
-      schema: ExtractV2Schema,
+      schema: ExtractV3Schema,
       context,
       operation,
     });
@@ -110,6 +111,8 @@ export class LettersService {
               cabinetId,
               sourceType: doc.sourceType,
               rawText: doc.text,
+              // поправка 8: название — подсказка модели, только если её цитата есть в письме
+              title: verifiedTitle(extracted.title, doc.text),
               pages: doc.pages,
               files: files.map(({ n, fileKey, mime, bytes }) => ({
                 n,
@@ -199,6 +202,7 @@ export class LettersService {
       id: l.id,
       createdAt: l.createdAt.toISOString(),
       sourceType: l.sourceType,
+      title: l.title,
       authority: l.claims.find((c) => c.kind === 'AUTHORITY')?.value ?? null,
       caseNumber: l.claims.find((c) => c.kind === 'CASE_NUMBER')?.value ?? null,
       unconfirmed: l.claims.filter((c) => c.status === 'UNCONFIRMED').length,
@@ -553,6 +557,22 @@ export class LettersService {
     });
   }
 
+  // ---------- Название ----------
+
+  /** Поправка 8 (23.11): человек меняет название письма. Чужое письмо: 404. */
+  async rename(
+    cabinetId: string,
+    letterId: string,
+    input: RenameLetterInput,
+  ): Promise<LetterDetail> {
+    const res = await this.db.letter.updateMany({
+      where: { id: letterId, cabinetId },
+      data: { title: input.title },
+    });
+    if (res.count !== 1) throw new ApiError('NOT_FOUND');
+    return this.detail(cabinetId, letterId);
+  }
+
   // ---------- Общее ----------
 
   private async ownLetter(tx: Tx, cabinetId: string, letterId: string) {
@@ -632,8 +652,24 @@ export function toClaimView(c: {
   };
 }
 
+/**
+ * Поправка 8: название от модели берётся, только если его цитата стоит в тексте письма
+ * (пробелы и регистр не важны: текст фото распознан моделью).
+ */
+export function verifiedTitle(
+  title: { value: string; quote: string } | null,
+  text: string,
+): string | null {
+  if (!title) return null;
+  const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+  if (!norm(text).includes(norm(title.quote))) return null;
+  const value = title.value.replace(/\s+/g, ' ').trim();
+  return value ? value.slice(0, 80) : null;
+}
+
 function toLetterView(row: {
   id: string;
+  title: string | null;
   caseId: string | null;
   sourceType: string;
   rawText: string;
@@ -646,6 +682,7 @@ function toLetterView(row: {
   const files = (row.files as StoredFile[]) ?? [];
   return {
     id: row.id,
+    title: row.title,
     caseId: row.caseId,
     sourceType: row.sourceType as LetterView['sourceType'],
     text: row.rawText,

@@ -103,7 +103,7 @@ describe('LlmCall в базе', () => {
       cabinetId: 'cab-1',
       letterId: 'let-1',
       promptName: 'extract',
-      promptVersion: 2,
+      promptVersion: 3, // последняя версия extract (поправка 8)
       provider: 'demo',
       ok: true,
       attempts: 1,

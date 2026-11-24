@@ -97,7 +97,11 @@ model Cabinet {
   passwordHash        String
   passwordChangedAt   DateTime? // ТЗ v4: после смены пароля старые сессии недействительны
   language            String               @default("ru")
-  profile             Json? // { firstName, lastName, address, numbers: [{label, value}] }
+  profile             Json? // { firstName, lastName, address, street?, postalCode?, city?, numbers: [{label, value}] }
+  // Поправка 9 (23.11): копия имени и фамилии из profile отдельными столбцами — их видно в таблице Supabase.
+  // Источник правды — profile; столбцы обновляются при регистрации и изменении профиля.
+  firstName           String?
+  lastName            String?
   consentAt           DateTime
   // K11 (#134): отдельное согласие на анализ текста письма ИИ (DSGVO). null — не дано или отозвано.
   // Версия — версия текста согласия (AI_CONSENT_VERSION в packages/shared); старая версия = нет согласия.
@@ -207,6 +211,8 @@ model Letter {
   pages       Json // [{ n, readable, chars }]
   files       Json // ТЗ v4: оригиналы [{ n, fileKey, mime, bytes }] в порядке страниц (B11: до 10 фото или один PDF), fileKey случайный, без имени файла
   explanation Json? // кэш объяснения; сбрасывается при любом изменении фактов письма
+  title       String? // поправка 8 (23.11): название письма; предлагает модель по цитате (extract.v3), человек может изменить
+  translation Json? // поправка 7 (23.11): кэш машинного перевода на русский { lang, promptVersion, textHash, text }
   createdAt   DateTime   @default(now())
   claims      Claim[]
   deadlines   Deadline[]
@@ -336,6 +342,7 @@ model LlmCall {
 enum LlmOperationKind {
   UPLOAD
   EXPLAIN
+  TRANSLATE
   OTHER
 }
 

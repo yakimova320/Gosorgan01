@@ -7,12 +7,7 @@ import { Illustration } from '../../components/Watercolor';
 import { CaseRow, ErrorAlert, Loading, NextStepCard, PageHeader } from '../../components/ui';
 import { formatDate } from '../../lib/dates';
 
-function greeting(): string {
-  const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: 'numeric', hour12: false }).format(new Date()));
-  if (h < 11) return 'Доброе утро';
-  if (h < 18) return 'Добрый день';
-  return 'Добрый вечер';
-}
+import { greeting } from '../../lib/greeting';
 
 export function CabinetPage() {
   const cabinet = useCabinetQuery();
@@ -96,8 +91,9 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
       {letters.map((l) => (
         <Link key={l.id} to={`/app/letters/${l.id}/check`} className="card row-between" data-testid="inbox-letter">
           <div className="stack-s">
-            <strong>{l.authority ?? 'Письмо'}</strong>
+            <strong>{l.title || l.authority || 'Письмо'}</strong>
             <span className="small text-2">
+              {l.title && l.authority ? `${l.authority} · ` : ''}
               {formatDate(l.createdAt.slice(0, 10))}
               {l.caseNumber ? ` · ${l.caseNumber}` : ''}
             </span>

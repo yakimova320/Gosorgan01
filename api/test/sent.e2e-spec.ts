@@ -304,7 +304,7 @@ describe('Ответ и отправка (e2e, B12)', () => {
     await letter01(true, oldToken);
     const old = await db.cabinet.findUniqueOrThrow({ where: { email: 'alt@example.org' } });
     expect(files(join(storageDir, 'letters', old.id)).length).toBeGreaterThan(0);
-    const longAgo = new Date(Date.now() - 91 * DAY_MS);
+    const longAgo = new Date(Date.now() - 361 * DAY_MS);
     await db.cabinet.update({ where: { id: old.id }, data: { lastSeenAt: longAgo } });
 
     await register('demo-alt@example.org');
@@ -315,7 +315,7 @@ describe('Ответ и отправка (e2e, B12)', () => {
     const recent = await register('neu@example.org');
     await db.cabinet.update({
       where: { email: 'neu@example.org' },
-      data: { lastSeenAt: new Date(Date.now() - 89 * DAY_MS) },
+      data: { lastSeenAt: new Date(Date.now() - 359 * DAY_MS) },
     });
     // просроченная сессия другого (активного) кабинета
     const activeCabinet = await db.cabinet.findUniqueOrThrow({ where: { email: 'sent@example.org' } });

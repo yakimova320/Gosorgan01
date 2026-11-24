@@ -3,6 +3,8 @@ import { z } from 'zod';
 /** Письмо в ответе API. Без путей и ключей хранения файлов. */
 export interface LetterView {
   id: string;
+  /** Поправка 8: название письма (подсказка модели по цитате или от человека); null — нет */
+  title: string | null;
   caseId: string | null;
   sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
   text: string;
@@ -56,6 +58,7 @@ export interface InboxItem {
   id: string;
   createdAt: string;
   sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
+  title: string | null;
   authority: string | null;
   caseNumber: string | null;
   unconfirmed: number;
@@ -109,3 +112,18 @@ export const AssignLetterSchema = z.union([
     .strict(),
 ]);
 export type AssignLetterInput = z.infer<typeof AssignLetterSchema>;
+
+/** Поправка 8 (23.11): новое название письма. */
+export const RenameLetterSchema = z
+  .object({ title: z.string().trim().min(1).max(120) })
+  .strict();
+export type RenameLetterInput = z.infer<typeof RenameLetterSchema>;
+
+/** Поправка 7 (23.11): машинный перевод письма. */
+export interface TranslationView {
+  lang: 'ru';
+  text: string;
+  /** Всегда true: перевод машинный и не официальный */
+  machine: true;
+  cached: boolean;
+}
