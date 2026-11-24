@@ -120,7 +120,8 @@ test('основной путь: от регистрации до скопиро
   await expect(
     page.getByRole('status').filter({ hasText: 'Скопировано' }),
   ).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+  // буфер обмена Windows хранит переводы строк как \r\n: сравниваем текст, не вид переводов строк
+  expect((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n')).toBe(
     german,
   );
 
