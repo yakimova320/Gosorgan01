@@ -277,6 +277,61 @@ test('история: больше 30 событий без пропусков �
   await expect(page).toHaveURL(/\/app\/cases\/[^/]+$/);
 });
 
+test('поправка 24.11: у письма дата письма, а не загрузки; одно письмо удаляется, дело остаётся', async ({
+  page,
+  request,
+}) => {
+  const u = await createUser(request, 'del1', `Anna${letters()}`);
+  const h = { Authorization: `Bearer ${u.token}` };
+  const { caseId, claims } = await letterInCase(
+    request,
+    u.token,
+    '01_jobcenter_request.pdf',
+    false,
+  );
+  const date = claims.find((c) => c.kind === 'LETTER_DATE') as Claim & {
+    value: string;
+  };
+  const [y, m, d] = date.value.split('-');
+  const second = await letterInCase(request, u.token, '06_multiple_deadlines.pdf', false);
+  await request.post(`${API_URL}/letters/${second.letterId}/assign`, {
+    headers: h,
+    data: { caseId },
+  });
+  // дата первого письма подтверждена, второго — нет
+  const firstId = (
+    (await (
+      await request.get(`${API_URL}/cases/${caseId}`, { headers: h })
+    ).json()) as { letters: { id: string }[] }
+  ).letters.find((l) => l.id !== second.letterId)!.id;
+  await request.post(`${API_URL}/letters/${firstId}/claims/confirm`, {
+    headers: h,
+    data: { confirm: [date.id], reject: [] },
+  });
+  await signedIn(page, u.token);
+  await page.goto(`/app/cases/${caseId}`);
+
+  const cards = page.getByTestId('case-letter');
+  await expect(cards).toHaveCount(2);
+  const dates = cards.getByTestId('letter-date');
+  await expect(dates.filter({ hasText: /^от \d\d\.\d\d\.\d{4}$/ })).toHaveText(`от ${d}.${m}.${y}`);
+  await expect(dates.filter({ hasText: 'не подтверждена' })).toHaveCount(1);
+
+  const other = cards.filter({ hasText: 'дата не подтверждена' });
+  await other.getByRole('button', { name: 'Удалить письмо' }).click();
+  await other.getByRole('button', { name: 'Отмена' }).click();
+  await expect(cards).toHaveCount(2);
+  await other.getByRole('button', { name: 'Удалить письмо' }).click();
+  await other.getByRole('button', { name: 'Удалить письмо безвозвратно' }).click();
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first().getByTestId('letter-date')).toContainText(`${d}.${m}.${y}`);
+  await page.reload();
+  await expect(cards).toHaveCount(1);
+  expect(
+    (await request.get(`${API_URL}/letters/${second.letterId}`, { headers: h })).status(),
+  ).toBe(404);
+});
+
 test('дело: завершить, открыть снова, удалить; чужое дело и письмо не показываются', async ({
   page,
   request,

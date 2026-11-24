@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { errorCode, errorText, isDailyLimit } from '../../api/errors';
-import type { ApiHistoryItem, CaseStage, HistoryGroup, LetterClaim, LetterDeadline } from '../../api/types';
+import type { ApiCaseDetail, ApiHistoryItem, CaseStage, HistoryGroup, LetterClaim, LetterDeadline } from '../../api/types';
 import { Icon } from '../../components/Icon';
 import { ErrorAlert, Loading, PageHeader, StageChip } from '../../components/ui';
 import { daysUntil, deadlineText, formatDate, formatDateTime, todayBerlin } from '../../lib/dates';
 import {
   useCaseDetailQuery,
   useDeleteCaseMutation,
+  useDeleteLetterMutation,
   useExplanationQuery,
   useLazyHistoryPageQuery,
   useLetterQuery,
@@ -122,6 +123,72 @@ function DeadlineActions({ caseId, d }: { caseId: string; d: { id: string; date:
   );
 }
 
+/** Поправка 24.11: дата письма (факт LETTER_DATE), а не дата загрузки. */
+export function letterDateText(d: { date: string; confirmed: boolean } | null | undefined): string {
+  if (!d) return 'дата письма не найдена';
+  return d.confirmed ? `от ${formatDate(d.date)}` : `от ${formatDate(d.date)}, дата не подтверждена`;
+}
+
+/** Письмо в карточке дела. Поправка 24.11: каждое письмо можно удалить (с подтверждением). */
+function CaseLetterCard({ letter: l }: { letter: ApiCaseDetail['letters'][number] }) {
+  const [deleteLetter, deleting] = useDeleteLetterMutation();
+  const [askDelete, setAskDelete] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const name = l.title || l.authority || 'Письмо';
+
+  async function remove() {
+    setError(null);
+    try {
+      await deleteLetter(l.id).unwrap();
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  return (
+    <div className="card stack-s" data-testid="case-letter">
+      <div className="row-between">
+        <span className="stack-s" style={{ gap: 2 }}>
+          <span style={{ fontWeight: 600 }}>{name}</span>
+          {l.letterDate !== undefined && (
+            <span className="small text-2" data-testid="letter-date">
+              {letterDateText(l.letterDate)}
+            </span>
+          )}
+        </span>
+        {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
+      </div>
+      <div className="row wrap">
+        <Link to={`/app/letters/${l.id}`} className="btn btn--secondary btn--small">
+          Объяснение
+        </Link>
+        <Link to={`/app/letters/${l.id}/check`} className="btn btn--ghost btn--small">
+          Проверить факты
+        </Link>
+        {!askDelete && (
+          <button type="button" className="btn btn--ghost btn--small" onClick={() => setAskDelete(true)}>
+            <Icon name="trash" size={16} /> Удалить письмо
+          </button>
+        )}
+      </div>
+      {askDelete && (
+        <div className="alert alert--error stack-s" role="alertdialog" aria-label={`Удалить письмо «${name}»`}>
+          <span>Удалятся письмо, его факты, сроки и файлы. Дело и другие письма останутся. Восстановить нельзя.</span>
+          <div className="row wrap">
+            <button type="button" className="btn btn--danger btn--small" disabled={deleting.isLoading} onClick={() => void remove()}>
+              Удалить письмо безвозвратно
+            </button>
+            <button type="button" className="btn btn--ghost btn--small" onClick={() => setAskDelete(false)}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+      <ErrorAlert error={error} />
+    </div>
+  );
+}
+
 // ---------- Дело ----------
 
 export function CasePage({ id }: { id: string }) {
@@ -212,22 +279,7 @@ export function CasePage({ id }: { id: string }) {
               <p className="muted">{cs.origin === 'OUTGOING' ? 'Писем от ведомства пока нет.' : 'В деле пока нет писем.'}</p>
             )}
             {cs.letters.map((l) => (
-              <div key={l.id} className="card stack-s" data-testid="case-letter">
-                <div className="row-between">
-                  <span style={{ fontWeight: 600 }}>
-                    {l.title || l.authority || 'Письмо'} · {formatDate(l.createdAt.slice(0, 10))}
-                  </span>
-                  {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
-                </div>
-                <div className="row wrap">
-                  <Link to={`/app/letters/${l.id}`} className="btn btn--secondary btn--small">
-                    Объяснение
-                  </Link>
-                  <Link to={`/app/letters/${l.id}/check`} className="btn btn--ghost btn--small">
-                    Проверить факты
-                  </Link>
-                </div>
-              </div>
+              <CaseLetterCard key={l.id} letter={l} />
             ))}
           </div>
           <div className="row wrap">

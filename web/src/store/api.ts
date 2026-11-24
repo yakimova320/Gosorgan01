@@ -523,7 +523,14 @@ export const api = createApi({
           path: `/letters/${encodeURIComponent(id)}`,
         }) as Promise<Result<void>>;
       },
-      invalidatesTags: ['Letters', 'Cabinet'],
+      // поправка 24.11: письмо удаляется и из карточки дела
+      invalidatesTags: (_r, _e, id) => [
+        'Letters',
+        'Cabinet',
+        'History',
+        'Case',
+        { type: 'Letter', id },
+      ],
     }),
 
     // ---------- Дела (B07) ----------

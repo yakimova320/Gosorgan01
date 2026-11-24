@@ -43,6 +43,24 @@ const caseInclude = {
 
 type CaseRow = Prisma.CaseGetPayload<{ include: typeof caseInclude }>;
 
+/**
+ * Поправка 24.11: дата самого письма (факт LETTER_DATE), а не дата загрузки.
+ * Подтверждённый факт главнее неподтверждённого; отклонённый не показывается. Нет даты: null.
+ */
+export function letterDateOf(
+  claims: { kind: string; value: string; status: string }[],
+): { date: string; confirmed: boolean } | null {
+  const dates = claims.filter(
+    (c) => c.kind === 'LETTER_DATE' && /^\d{4}-\d{2}-\d{2}$/.test(c.value),
+  );
+  const found =
+    dates.find((c) => c.status === 'CONFIRMED') ??
+    dates.find((c) => c.status === 'UNCONFIRMED');
+  return found
+    ? { date: found.value, confirmed: found.status === 'CONFIRMED' }
+    : null;
+}
+
 /** Дела (B07): список, карточка, история, журнал модели. Статус считается при чтении. */
 @Injectable()
 export class CasesService {
@@ -116,6 +134,7 @@ export class CasesService {
         sourceType: l.sourceType,
         title: l.title,
         authority: l.claims.find((c) => c.kind === 'AUTHORITY')?.value ?? null,
+        letterDate: letterDateOf(l.claims),
         unconfirmed: l.claims.filter((c) => c.status === 'UNCONFIRMED').length,
       })),
       claims: claims.map(toClaimView),
