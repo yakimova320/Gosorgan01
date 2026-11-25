@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AiConsentSection } from '../../components/consent';
+import { CalendarSection } from '../../components/calendar';
 import { PASSWORD_MIN_CHARS, PROFILE_NUMBERS_MAX, splitAddress } from '@jasno/shared';
 import { useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -139,6 +140,7 @@ export function ProfilePage() {
             <Icon name="lock" size={20} /> Данные и безопасность
           </h2>
           {cabinet.data && <AiConsentSection given={cabinet.data.aiConsent.given} at={cabinet.data.aiConsent.at} />}
+          <CalendarSection />
           <form className="card stack" onSubmit={changePassword} noValidate>
             <h3>Сменить пароль</h3>
             <PasswordField

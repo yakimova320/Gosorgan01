@@ -91,6 +91,8 @@ export const envSchema = z
     SMTP_PASS: z.string().optional(),
     SMTP_SECURE: bool.optional(),
     RESET_TOKEN_TTL_MIN: int(60),
+    // K12: фоновые напоминания о сроках по e-mail (раз в 15 минут, с 8 до 21 по Берлину). false — выключены.
+    REMINDERS_ENABLED: bool.default(true),
     SUPPORT_EMAIL: z.string().optional(),
 
     // B18: операций с моделью (загрузка письма, объяснение) на кабинет за скользящие 24 часа. 0 — без лимита.

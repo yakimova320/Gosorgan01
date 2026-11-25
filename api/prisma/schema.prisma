@@ -115,6 +115,11 @@ model Cabinet {
   // B19: демо-кабинет из pnpm db:seed. Только такой кабинет seed может пересоздать;
   // обычный аккаунт с тем же e-mail не трогается. Через API не меняется.
   demo                Boolean              @default(false)
+  // K12: личная ссылка-подписка на календарь сроков (/calendar/<токен>.ics). null — подписки нет.
+  // Хранится открыто: профиль показывает ссылку снова. Сброс выдаёт новый токен, старый адрес даёт 404.
+  calendarToken       String?              @unique
+  // K12: письмо за remindDaysBefore дней до срока. По умолчанию включено (решение 24.11).
+  reminderEmail       Boolean              @default(true)
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   passwordResetMails  PasswordResetMail[]
@@ -261,6 +266,8 @@ model Deadline {
   kind             DeadlineKind
   doneAt           DateTime?
   remindDaysBefore Int          @default(3)
+  // K12: когда ушло напоминание по e-mail. Одно напоминание на срок, без повторов.
+  reminderSentAt   DateTime?
 
   @@index([letterId])
   @@index([caseId])
