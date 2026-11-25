@@ -5,6 +5,7 @@ import { assertAiConsent } from '../cabinet/ai-consent.js';
 import { ApiError } from '../common/api-error.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
+import { cabinetLanguage, languageVariables, type Language } from '../common/language.js';
 import { LlmService } from '../llm/llm.service.js';
 import { ChatAnswerSchema } from '../llm/schemas/chat.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -31,7 +32,7 @@ const CONTEXT_CHARS = 800;
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger('ChatService');
-  private faqCache: string | null = null;
+  private faqCache = new Map<Language, string>();
 
   constructor(
     @Inject(PrismaService) private readonly db: PrismaService,
@@ -39,32 +40,42 @@ export class ChatService {
     @Inject(APP_CONFIG) private readonly config: Env,
   ) {}
 
-  /** FAQ из content/faq.ru.md (тексты пишет команда). Нет файла — чат работает без FAQ. */
-  private faq(): string {
-    if (this.faqCache !== null) return this.faqCache;
+  /**
+   * FAQ и «Горячие темы» блога из content/ (тексты пишет команда). L07: файлы языка
+   * (faq.uk.md, cards.uk.json), нет файла — русские. Нет и их — чат работает без FAQ.
+   */
+  private faq(lang: Language = 'ru'): string {
+    const hit = this.faqCache.get(lang);
+    if (hit !== undefined) return hit;
     const dir = this.config.CONTENT_DIR ?? resolve(process.cwd(), '..', 'content');
-    try {
-      this.faqCache = readFileSync(resolve(dir, 'faq.ru.md'), 'utf8')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .trim();
-    } catch {
-      this.logger.warn(`FAQ не найден в ${dir}: чат отвечает без него`);
-      this.faqCache = '';
-    }
+    const read = (names: string[]): string | null => {
+      for (const n of names) {
+        try {
+          return readFileSync(resolve(dir, n), 'utf8');
+        } catch {
+          // следующий вариант
+        }
+      }
+      return null;
+    };
+    let text = (read([`faq.${lang}.md`, 'faq.ru.md']) ?? '').replace(/<!--[\s\S]*?-->/g, '').trim();
+    if (!text) this.logger.warn(`FAQ не найден в ${dir}: чат отвечает без него`);
     // KORR 25.11: «Горячие темы» блога тоже в контексте — проверенные короткие тексты с датой проверки
+    const cards = read([`important/cards.${lang}.json`, 'important/cards.ru.json']);
     try {
-      const data = JSON.parse(
-        readFileSync(resolve(dir, 'important', 'cards.ru.json'), 'utf8'),
-      ) as { cards: { topic: string; title: string; text: string; checkedAt: string; draft?: boolean }[] };
+      const data = JSON.parse(cards ?? '{"cards":[]}') as {
+        cards: { topic: string; title: string; text: string; checkedAt: string; draft?: boolean }[];
+      };
       const hot = data.cards.filter((c) => c.topic === 'hot' && !c.draft);
       if (hot.length)
-        this.faqCache += `\n\n## Горячие темы (блог Ja!sno)\n\n${hot
-          .map((c) => `### ${c.title}\n${c.text}\n(проверено ${c.checkedAt})`)
+        text += `\n\n## Hot topics / Горячие темы\n\n${hot
+          .map((c) => `### ${c.title}\n${c.text}\n(${c.checkedAt})`)
           .join('\n\n')}`;
     } catch {
-      this.logger.warn(`карточки блога не найдены в ${dir}: чат отвечает без них`);
+      this.logger.warn(`карточки блога не читаются в ${dir}: чат отвечает без них`);
     }
-    return this.faqCache;
+    this.faqCache.set(lang, text);
+    return text;
   }
 
   async history(cabinetId: string): Promise<ChatView> {
@@ -78,6 +89,7 @@ export class ChatService {
 
   async ask(cabinetId: string, text: string): Promise<ChatReply> {
     await assertAiConsent(this.db, cabinetId);
+    const lang = await cabinetLanguage(this.db, cabinetId);
     const recent = await this.db.chatMessage.findMany({
       where: { cabinetId },
       orderBy: { createdAt: 'desc' },
@@ -95,8 +107,8 @@ export class ChatService {
 
     const result = await this.llm.call({
       prompt: 'chat',
-      version: 1,
-      variables: { faq: this.faq(), history, question: text },
+      version: 2, // L07: chat.v2 — ответ на языке кабинета
+      variables: { faq: this.faq(lang), history, question: text, ...languageVariables(lang) },
       schema: ChatAnswerSchema,
       context: { cabinetId },
       operation: this.llm.operation(cabinetId, 'CHAT'),
@@ -141,8 +153,8 @@ export class ChatService {
       .join('\n\n');
     const result = await this.llm.call({
       prompt: 'chat',
-      version: 1,
-      variables: { faq: this.faq(), history, question: input.text },
+      version: 2,
+      variables: { faq: this.faq(input.language), history, question: input.text, ...languageVariables(input.language) },
       schema: ChatAnswerSchema,
       context: { cabinetId: null },
       operation: this.llm.operation(null, 'CHAT'),

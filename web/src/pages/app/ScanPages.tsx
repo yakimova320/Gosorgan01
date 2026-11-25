@@ -22,7 +22,7 @@ import {
   useUploadLetterMutation,
 } from '../../store/api';
 import { putUploadFiles } from '../../store/uploads';
-import { t, tn } from '../../i18n';
+import { t, tMsg, tn } from '../../i18n';
 
 /*
  * Загрузка письма и проверка фактов (F02, B11). Один PDF или до 10 фото страниц одного письма.
@@ -676,7 +676,7 @@ export function LetterCheckPage({ id }: { id: string }) {
                   <span className="small text-2">{CLAIM_KIND[c.kind] ?? c.kind}</span>
                   <ClaimStatusChip claim={c} />
                 </div>
-                <strong>{c.text}</strong>
+                <strong>{tMsg(c.text)}</strong>
                 {c.relativeDeadline && <span className="small">{t('Точную дату нужно уточнить: она зависит от дня получения письма.')}</span>}
                 {c.quote ? (
                   <blockquote className="small text-2" style={{ margin: 0 }}>

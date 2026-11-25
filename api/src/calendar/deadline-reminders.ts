@@ -8,6 +8,7 @@ import {
 import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
+import { toLanguage } from '../common/language.js';
 import { deadlineLink, deadlineSummary } from '../deadlines/deadline-text.js';
 import { StorageService } from '../documents/storage.service.js';
 import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
@@ -104,7 +105,7 @@ export class DeadlineReminders implements OnApplicationBootstrap, OnApplicationS
         letter: {
           select: {
             ...DEADLINE_FOR_TEXT.letter.select,
-            cabinet: { select: { email: true } },
+            cabinet: { select: { email: true, language: true } },
           },
         },
       },
@@ -119,7 +120,8 @@ export class DeadlineReminders implements OnApplicationBootstrap, OnApplicationS
         appUrl: this.config.APP_PUBLIC_URL,
         date: toIsoDate(d.date),
         daysLeft,
-        summary: deadlineSummary(d.kind, d.letter.claims[0]?.value),
+        summary: deadlineSummary(d.kind, d.letter.claims[0]?.value, toLanguage(d.letter.cabinet.language)),
+        lang: toLanguage(d.letter.cabinet.language),
         caseTitle: d.case?.title ?? null,
         link: deadlineLink(this.config.APP_PUBLIC_URL, d),
       });

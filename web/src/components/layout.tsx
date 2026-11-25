@@ -123,11 +123,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="row" style={{ gap: 4 }}>
             <LanguageSwitcher />
-            <Link to="/app/ask" className="btn btn--ghost btn--small" data-testid="ask-link">
-              <Icon name="chat" size={18} />{' '}{t('Спросить')}
+            <Link to="/app/ask" className="btn btn--ghost btn--small" data-testid="ask-link" aria-label={t('Спросить')}>
+              <Icon name="chat" size={18} /><span className="hide-narrow">{' '}{t('Спросить')}</span>
             </Link>
-            <Link to="/" className="btn btn--ghost btn--small" data-testid="home-link">
-              <Icon name="home" size={18} />{' '}{t('Главная')}
+            <Link to="/" className="btn btn--ghost btn--small" data-testid="home-link" aria-label={t('Главная')}>
+              <Icon name="home" size={18} /><span className="hide-narrow">{' '}{t('Главная')}</span>
             </Link>
           </div>
         </header>

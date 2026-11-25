@@ -4,7 +4,7 @@ import { errorText } from '../api/errors';
 import { useSession } from '../store';
 import { useAskPublicChatMutation } from '../store/api';
 import { Icon } from './Icon';
-import { t } from '../i18n';
+import { getLang, t, tMsg } from '../i18n';
 
 const MAX_CHARS = 1000;
 /** Сколько прошлых реплик уходит на сервер как контекст (сервер принимает до 6). */
@@ -37,7 +37,7 @@ export function PublicChat() {
     const history = lines.slice(-HISTORY).map(({ role, text: t }) => ({ role, text: t }));
     setLines((old) => [...old, { id: Date.now(), role: 'USER', text: q }]);
     try {
-      const r = await ask({ text: q, history }).unwrap();
+      const r = await ask({ text: q, history, language: getLang() }).unwrap();
       setDisclaimer(r.disclaimer);
       setLines((old) => [...old, { id: Date.now() + 1, role: 'ASSISTANT', text: r.answer }]);
     } catch (e) {
@@ -81,7 +81,7 @@ export function PublicChat() {
           ) : (
             <div key={m.id} className="chat-bubble chat-bubble--bot stack-s" data-testid="public-chat-answer">
               <span style={{ whiteSpace: 'pre-wrap' }}>{m.text}</span>
-              <span className="chat-disclaimer">{disclaimer}</span>
+              <span className="chat-disclaimer">{tMsg(disclaimer)}</span>
             </div>
           ),
         )}

@@ -5,6 +5,7 @@
  * и сроки в сравнении с эталоном. Смысл по оригиналу проверяет человек.
  * Ключ модели не выводится. Только синтетические письма из fixtures/letters.
  */
+import { languageVariables } from '../common/language.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { readFileSync } from 'node:fs';
@@ -70,7 +71,7 @@ for (const id of ids) {
     const r = await llm.callWithTrace({
       prompt: 'explain',
       version: EXPLAIN_PROMPT_VERSION,
-      variables: { facts: factsForPrompt(facts), letterText: text },
+      variables: { facts: factsForPrompt(facts), letterText: text, ...languageVariables('ru') },
       schema: ExplainV2Schema,
       check: (x) => checkExplanation(x, facts),
       context: { cabinetId: null },

@@ -19,7 +19,7 @@ import {
   useDeadlineIcsMutation,
 } from '../../store/api';
 import { LetterOriginals } from '../../components/LetterOriginals';
-import { t } from '../../i18n';
+import { getLang, t, tMsg } from '../../i18n';
 
 /*
  * Экраны дела, письма с объяснением и истории (F03) на API B07 и B08.
@@ -299,10 +299,10 @@ export function CasePage({ id }: { id: string }) {
           <ol className="list-reset stack">
             {cs.timeline.map((t) => (
               <li key={t.id} className="card stack-s" style={{ padding: 14 }}>
-                <span style={{ fontWeight: 600 }}>{t.title}</span>
+                <span style={{ fontWeight: 600 }}>{tMsg(t.title)}</span>
                 <span className="muted">
                   {formatDateTime(t.at)}
-                  {t.subtitle ? ` · ${t.subtitle}` : ''}
+                  {t.subtitle ? ` · ${tMsg(t.subtitle)}` : ''}
                 </span>
               </li>
             ))}
@@ -347,7 +347,7 @@ function Sources({ ids, claims }: { ids: string[]; claims: Map<string, LetterCla
       <ul className="list-reset stack-s" style={{ marginTop: 6 }}>
         {found.map((c) => (
           <li key={c.id} className="small">
-            {c.text}
+            {tMsg(c.text)}
             {c.quote ? <span className="text-2"> · «{c.quote}»</span> : <span className="text-2">{' '}{t('· указано вами, цитаты из письма нет')}</span>}
           </li>
         ))}
@@ -422,7 +422,7 @@ export function LetterPage({ id }: { id: string }) {
                   .filter((c) => c.status === 'CONFIRMED')
                   .map((c) => (
                     <li key={c.id} className="card small">
-                      {c.text}
+                      {tMsg(c.text)}
                       {c.quote && <span className="text-2"> · «{c.quote}»</span>}
                     </li>
                   ))}
@@ -452,7 +452,7 @@ export function LetterPage({ id }: { id: string }) {
                   <ul className="list-reset stack-s">
                     {expl.data.requests.map((q) => (
                       <li key={q.claimId} className="stack-s" data-testid="request">
-                        {q.ru && <span lang="ru">{q.ru}</span>}
+                        {q.ru && <span lang={getLang()}>{q.ru}</span>}
                         <span lang="de" className={q.ru ? 'small text-2' : undefined}>
                           {q.ru && <span aria-hidden="true">DE · </span>}
                           {q.de}
@@ -707,10 +707,10 @@ export function HistoryPage() {
               style={{ padding: 14 }}
               data-testid="history-item"
             >
-              <span style={{ fontWeight: 600 }}>{i.title}</span>
+              <span style={{ fontWeight: 600 }}>{tMsg(i.title)}</span>
               <span className="muted">
-                {formatDateTime(i.at)} · <span className="history-case">{i.caseTitle}</span>
-                {i.subtitle ? ` · ${i.subtitle}` : ''}
+                {formatDateTime(i.at)} · <span className="history-case">{tMsg(i.caseTitle)}</span>
+                {i.subtitle ? ` · ${tMsg(i.subtitle)}` : ''}
               </span>
             </Link>
           </li>

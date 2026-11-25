@@ -76,7 +76,7 @@ const call = (
 ) =>
   service.callWithTrace({
     prompt: 'extract',
-    variables: { letterText },
+    variables: { language: 'русский', lang: 'ru', letterText },
     schema: ExtractSchema,
     check,
     context: { cabinetId: 'cab-1', letterId: 'let-1' },
@@ -102,7 +102,7 @@ describe('LlmService: повторы', () => {
       ok: true,
       attempts: 2,
       promptName: 'extract',
-      promptVersion: 3, // последняя версия extract (поправка 8)
+      promptVersion: 4, // последняя версия extract (поправка 8)
       tokensIn: 20,
     });
   });
@@ -316,7 +316,7 @@ describe('LlmService: маскирование', () => {
     const { traces, service } = setup([VALID]);
     await service.callWithTrace({
       prompt: 'extract',
-      variables: { letterText: 'x' },
+      variables: { language: 'русский', lang: 'ru', letterText: 'x' },
       images: [{ mime: 'image/jpeg', data: Buffer.alloc(3000) }],
       schema: ExtractSchema,
       context: { cabinetId: null },
@@ -333,7 +333,7 @@ describe('Адаптер demo', () => {
       promptName: 'extract',
       system: '',
       user: '',
-      variables: { letterText: fixture('01_jobcenter_request.txt') },
+      variables: { language: 'русский', lang: 'ru', letterText: fixture('01_jobcenter_request.txt') },
       images: [],
     });
     const data = ExtractSchema.parse(JSON.parse(res.text));
@@ -358,7 +358,7 @@ describe('Адаптер demo', () => {
       promptName: 'extract',
       system: '',
       user: '',
-      variables: { letterText: fixture('15_relative_deadline.txt') },
+      variables: { language: 'русский', lang: 'ru', letterText: fixture('15_relative_deadline.txt') },
       images: [],
     });
     expect(JSON.parse(res.text).deadlines).toEqual([]);
@@ -459,7 +459,7 @@ describe('Адаптер openai', () => {
 describe('PromptRegistry', () => {
   it('находит последнюю версию extract и делит на System и User', () => {
     const p = new PromptRegistry().get('extract');
-    expect(p.version).toBe(3);
+    expect(p.version).toBe(4);
     expect(p.system).toContain('Отвечай только JSON');
     expect(p.user).toContain('{{letterText}}');
   });

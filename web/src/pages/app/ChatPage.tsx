@@ -4,7 +4,7 @@ import { errorCode } from '../../api/errors';
 import { Icon } from '../../components/Icon';
 import { ErrorAlert, Loading, PageHeader } from '../../components/ui';
 import { useAskChatMutation, useChatQuery, useClearChatMutation } from '../../store/api';
-import { t } from '../../i18n';
+import { t, tMsg } from '../../i18n';
 
 const MAX_CHARS = 1000;
 const EXAMPLES = [
@@ -81,7 +81,7 @@ export function AskPage() {
             <div key={m.id} className="chat-bubble chat-bubble--bot stack-s" data-testid="chat-answer">
               <span style={{ whiteSpace: 'pre-wrap' }}>{m.text}</span>
               <span className="chat-disclaimer" data-testid="chat-disclaimer">
-                {disclaimer}
+                {tMsg(disclaimer)}
               </span>
             </div>
           ),

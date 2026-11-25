@@ -130,13 +130,37 @@ const MSG_PATTERNS: [RegExp, string][] = [
   [/^Пароль: не меньше (\d+) знаков$/, 'Пароль: не меньше {n} знаков'],
   [/^Пожалуйста, объясните, из чего складывается сумма (.+) €\.$/, 'Пожалуйста, объясните, из чего складывается сумма {n} €.'],
 ];
+/**
+ * Тексты, которые сервер собирает кодом по-русски (факты, история, основания черновика):
+ * «Ведомство: Jobcenter», «Срок: до 30.11.2026 (ответить)», «Фактов: 3». Значение остаётся как есть.
+ */
+const RULES: [RegExp, (m: RegExpExecArray, lang: Lang) => string | null][] = [
+  [/^(.+) \(исправлено вами\)$/, (m, l) => `${tMsg(m[1], l)} (${t('исправлено вами', undefined, l)})`],
+  [/^Срок: до (\S+) \((.+)\)$/, (m, l) => t('Срок: до {n} ({k})', { n: m[1], k: t(m[2], undefined, l) }, l)],
+  [/^Срок: до (\S+)$/, (m, l) => t('Срок: до {n}', { n: m[1] }, l)],
+  [/^Срок без точной даты: «(.+)»\. Точную дату нужно уточнить$/, (m, l) => t('Срок без точной даты: «{n}». Точную дату нужно уточнить', { n: m[1] }, l)],
+  [/^Фактов: (\d+)$/, (m, l) => t('Фактов: {n}', { n: m[1] }, l)],
+  [/^(Почтой|Онлайн|По e-mail|Лично|Другим способом) · (.+)$/, (m, l) => `${t(m[1], undefined, l)} · ${m[2]}`],
+  // «Подпись: значение», если подпись есть в словаре
+  [/^([^:]{2,60}): (.+)$/s, (m, l) => (DICTS[l as Exclude<Lang, 'ru'>][m[1]] ? `${DICTS[l as Exclude<Lang, 'ru'>][m[1]]}: ${m[2]}` : null)],
+];
+
 export function tMsg(message: string, lang: Lang = current): string {
   if (lang === 'ru') return message;
+  const exact = DICTS[lang][message];
+  if (exact !== undefined) return exact;
   for (const [re, key] of MSG_PATTERNS) {
     const m = re.exec(message);
     if (m) return t(key, { n: m[1] }, lang);
   }
-  return DICTS[lang][message] ?? message;
+  for (const [re, fn] of RULES) {
+    const m = re.exec(message);
+    if (m) {
+      const r = fn(m, lang);
+      if (r !== null) return r;
+    }
+  }
+  return message;
 }
 
 /** Локаль для дат и чисел. */

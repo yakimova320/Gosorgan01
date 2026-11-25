@@ -28,7 +28,7 @@ function stamp(now: Date): string {
   return now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
 
-export function buildFeed(events: FeedEvent[], now: Date): string {
+export function buildFeed(events: FeedEvent[], now: Date, name = 'Ja!sno — сроки'): string {
   const dtstamp = stamp(now);
   const lines = [
     'BEGIN:VCALENDAR',
@@ -36,7 +36,7 @@ export function buildFeed(events: FeedEvent[], now: Date): string {
     'PRODID:-//Ja!sno//Fristen//RU',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    `X-WR-CALNAME:${icsText('Ja!sno — сроки')}`,
+    `X-WR-CALNAME:${icsText(name)}`,
     'X-WR-TIMEZONE:Europe/Berlin',
     // подсказка клиентам, как часто обновлять (Google решает сам)
     'REFRESH-INTERVAL;VALUE=DURATION:PT6H',

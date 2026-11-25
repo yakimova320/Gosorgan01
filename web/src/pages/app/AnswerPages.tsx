@@ -18,7 +18,7 @@ import {
   useReportSentMutation,
   useTemplatesQuery,
 } from '../../store/api';
-import { t, tMsg } from '../../i18n';
+import { getLang, t, tMsg } from '../../i18n';
 
 /*
  * Ответ ведомству (F04, B12): вид ответа → детали → черновик (копировать, править с проверкой) → «Я отправил(а)».
@@ -329,6 +329,8 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
   const templates = useTemplatesQuery();
   const navigate = useNavigate();
   const [tab, setTab] = useState<'de' | 'ru'>('de');
+  // L07: перевод черновика пока только русский. Для немецкого интерфейса он не нужен.
+  const showRu = getLang() !== 'de';
   const [copy, setCopy] = useState<CopyState>({ kind: 'idle' });
   const [rebuildError, setRebuildError] = useState<unknown>(null);
   const [checking, setChecking] = useState(false);
@@ -414,6 +416,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
         />
       ) : (
       <>
+      {showRu && (
       <div className="row wrap draft-tabs" role="tablist" aria-label={t('Язык черновика')}>
         <button type="button" role="tab" aria-selected={tab === 'de'} className={`btn btn--small ${tab === 'de' ? 'btn--navy' : 'btn--secondary'}`} onClick={() => setTab('de')}>
           {t('Немецкий')}
@@ -422,6 +425,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
           {t('Перевод')}
         </button>
       </div>
+      )}
       <div className="desktop-2col stack draft-panels" data-tab={tab}>
         <section className="card stack-s draft-panel draft-panel--de" aria-label={t('Текст на немецком')}>
           <span className="eyebrow">Auf Deutsch</span>
@@ -429,10 +433,12 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
             {draft.germanText}
           </pre>
         </section>
+        {showRu && (
         <section className="card stack-s draft-panel draft-panel--ru" aria-label={t('Перевод на русский')}>
-          <span className="eyebrow">{t('Перевод')}</span>
-          <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit' }}>{draft.russianText}</pre>
+          <span className="eyebrow">{getLang() === 'ru' ? t('Перевод') : t('Перевод на русский')}</span>
+          <pre lang="ru" style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit' }}>{draft.russianText}</pre>
         </section>
+        )}
       </div>
       </>
       )}
@@ -442,7 +448,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
         <ul className="list-reset stack-s" style={{ marginTop: 8 }}>
           {draft.verification.checklist.map((c) => (
             <li key={c.claimId} className="small">
-              {c.text}
+              {tMsg(c.text)}
               {c.quote && <span className="text-2"> · «{c.quote}»</span>}
             </li>
           ))}

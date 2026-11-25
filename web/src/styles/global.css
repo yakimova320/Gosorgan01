@@ -917,6 +917,12 @@ fieldset.stack-s > legend {
   margin: 0 auto;
   padding: 12px 16px 0;
 }
+/* L07: рядом с выбором языка на узком телефоне кнопки шапки показывают только значок */
+@media (max-width: 479px) {
+  .app-topbar .hide-narrow {
+    display: none;
+  }
+}
 .app-footer {
   padding-bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
 }

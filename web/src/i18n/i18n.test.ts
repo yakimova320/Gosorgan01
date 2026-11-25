@@ -64,4 +64,15 @@ describe('переводы (L07)', () => {
     expect(browserLang(['uk'])).toBe('uk');
     expect(browserLang(['en-US'])).toBe('ru');
   });
+
+  it('тексты сервера: факты, история, основания', () => {
+    expect(tMsg('Ведомство: Jobcenter Musterstadt', 'de')).toBe('Amt: Jobcenter Musterstadt');
+    expect(tMsg('Срок: до 30.11.2026 (прислать документы)', 'uk')).toBe('Строк: до 30.11.2026 (надіслати документи)');
+    expect(tMsg('Срок: до 30.11.2026 (ответить) (исправлено вами)', 'de')).toBe('Frist: bis 30.11.2026 (antworten) (von Ihnen korrigiert)');
+    expect(tMsg('Сумма: 120,50 €', 'de')).toBe('Betrag: 120,50 €');
+    expect(tMsg('Фактов: 3', 'uk')).toBe('Фактів: 3');
+    expect(tMsg('Почтой · 19.11.2026', 'de')).toBe('Per Post · 19.11.2026');
+    expect(tMsg('Дело создано из письма', 'de')).toBe('Vorgang aus dem Brief angelegt');
+    expect(tMsg('Как продлить ВНЖ: подробно?', 'de')).toBe('Как продлить ВНЖ: подробно?');
+  });
 });

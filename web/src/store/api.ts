@@ -520,7 +520,7 @@ export const api = createApi({
     /** KORR 25.11: вопрос с главной без входа. Прошлые реплики присылает сайт, сервер ничего не хранит. */
     askPublicChat: b.mutation<
       PublicChatReply,
-      { text: string; history: { role: 'USER' | 'ASSISTANT'; text: string }[] }
+      { text: string; history: { role: 'USER' | 'ASSISTANT'; text: string }[]; language?: string }
     >({
       queryFn: async (body, _api, _x, base) => {
         if (isMock) {
