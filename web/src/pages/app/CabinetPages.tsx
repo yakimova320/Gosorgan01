@@ -5,6 +5,7 @@ import { useCabinetQuery, useCasesQuery, useLettersQuery, type InboxLetter } fro
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { CaseRow, ErrorAlert, Loading, NextStepCard, PageHeader } from '../../components/ui';
+import { CalendarSection } from '../../components/calendar';
 import { formatDate } from '../../lib/dates';
 
 import { greeting } from '../../lib/greeting';
@@ -33,6 +34,7 @@ export function CabinetPage() {
             <Icon name="scan" size={20} color="#FFFFFF" width={2.2} /> Сфотографировать письмо
           </Link>
         </section>
+        <CalendarSection />
       </>
     );
   }
@@ -77,6 +79,9 @@ export function CabinetPage() {
           <CaseRow key={c.id} c={c} index={i} />
         ))}
       </div>
+
+      {/* KORR 25.11: календарь и напоминания — в кабинете, рядом с делами (раньше в профиле) */}
+      <CalendarSection />
     </>
   );
 }

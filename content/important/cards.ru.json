@@ -1,6 +1,7 @@
 {
   "source": "Документ «Ja!sno: карточки «Важно знать»», версия от 15.11.2026 (rev 16). Тексты пишут и проверяют люди, код их не меняет.",
   "topics": [
+    { "id": "hot", "title": "Горячие темы" },
     { "id": "children", "title": "Всё о детях" },
     { "id": "housing", "title": "Жильё" },
     { "id": "insurance", "title": "Страховки" },
@@ -11,6 +12,154 @@
     { "id": "german", "title": "Немецкий язык" }
   ],
   "cards": [
+    {
+      "id": "hot-24-extension",
+      "topic": "hot",
+      "title": "ВНЖ по § 24 продлён до 4 марта 2027, в ведомство идти не нужно",
+      "text": "Разрешения по § 24, которые действовали 1 февраля 2026, продлены автоматически до 4 марта 2027. Заявление и запись в Ausländerbehörde не нужны. На карте может стоять старая дата, это нормально: работа, пособия и поездки сохраняются. Во многих городах справку о продлении (Bescheinigung) можно получить онлайн.",
+      "german": ["Aufenthaltserlaubnis nach § 24 AufenthG", "Fortgeltung", "Bescheinigung"],
+      "keywords": ["продление", "ВНЖ", "параграф 24", "Ausländerbehörde", "истёк ВНЖ", "Украина"],
+      "sources": [
+        { "name": "Bundesregierung", "url": "https://www.bundesregierung.de/ib-de/ich-moechte-mehr-wissen-ueber/flucht-und-asyl/aufenthaltstitel-verlaengern-sich-erneut-automatisch-um-ein-jahr-bis-zum-4-maerz-2027-2266260" },
+        { "name": "§ 2 UkraineAufenthFGV", "url": "https://www.gesetze-im-internet.de/ukraineaufenthfgv/__2.html" }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-travel-ukraine",
+      "topic": "hot",
+      "title": "Поездка в Украину: сначала предупредите Jobcenter",
+      "text": "С ВНЖ по § 24 и действующим загранпаспортом в Украину ездить можно. Если вы получаете деньги от Jobcenter, отсутствие нужно заранее согласовать: иначе выплаты могут остановить и потребовать вернуть. Если уехать больше чем на 6 месяцев, ВНЖ может прекратиться.",
+      "german": ["Ortsabwesenheit", "Erreichbarkeit", "Nationalpass"],
+      "keywords": ["поездка", "Украина", "отпуск", "выезд", "Jobcenter", "выплаты", "параграф 24"],
+      "sources": [
+        { "name": "Stadt Köln: Reisen ins Ausland", "url": "https://www.stadt-koeln.de/leben-in-koeln/soziales/aufenthalt-flucht-einwanderung/aufenthalt-einreise-reisen-ins-ausland" },
+        { "name": "§ 51 AufenthG", "url": "https://www.gesetze-im-internet.de/aufenthg_2004/__51.html" }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Сроки согласования у каждого Jobcenter свои, спросите своего консультанта."
+    },
+    {
+      "id": "hot-switch-permit",
+      "topic": "hot",
+      "title": "С § 24 на более устойчивый ВНЖ: переход нужно подать самому",
+      "text": "Пока ВНЖ по § 24 действует, можно перейти на другой: для специалистов с признанным образованием (§ 18a, § 18b), Blue Card, учёба или Ausbildung. Нужно выполнить условия нового ВНЖ: подходящая работа, признанный диплом, доход на жизнь. Сам статус не меняется, заявление подают в Ausländerbehörde. Перед этим лучше сходить на консультацию.",
+      "german": ["Wechsel des Aufenthaltstitels", "Fachkraft", "§ 18a AufenthG", "§ 18b AufenthG"],
+      "keywords": ["смена статуса", "параграф 24", "ВНЖ", "рабочая виза", "Fachkraft", "Ausbildung", "учёба"],
+      "sources": [
+        { "name": "IHK Regensburg", "url": "https://www.ihk.de/regensburg/fachthemen/fachkraefte/aktuelles-fachkraeftesicherung/ukrainische-beschaeftigte-7192720" },
+        { "name": "BAGFW: Aufenthaltsverfestigung", "url": "https://www.bagfw.de/fileadmin/user_upload/2025/Aufenthaltsverfestigung_Geflüchtete_Ukraine.pdf" }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-blue-card",
+      "topic": "hot",
+      "title": "Blue Card: зарплата от 50 700 € в год (2026)",
+      "text": "Blue Card дают при высшем образовании (признанном или сопоставимом) и конкретном предложении работы по специальности. Порог зарплаты в 2026 году 50 700 € брутто в год. Для дефицитных профессий и начинающих специалистов он ниже: 45 934,20 €. Порог меняется каждый январь.",
+      "german": ["Blaue Karte EU", "Mangelberuf", "Bruttojahresgehalt"],
+      "keywords": ["Blue Card", "голубая карта", "специалист", "зарплата", "ВНЖ", "работа"],
+      "sources": [
+        { "name": "RT Partner: Mindestgehalt 2026", "url": "https://www.rtpartner.de/immigration/blaue-karte-eu-mindestgehalt-2026/" },
+        { "name": "CMS: Blaue Karte EU", "url": "https://cms.law/de/deu/legal-updates/gefragt-wie-nie-die-blaue-karte-eu-als-schluessel-im-recruiting-internationaler-fachkraefte" }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Проверить в январе 2027."
+    },
+    {
+      "id": "hot-diploma",
+      "topic": "hot",
+      "title": "Подтверждение диплома: начните с Anerkennungs-Finder",
+      "text": "Работать с § 24 можно и без признания диплома. Но для регулируемых профессий признание обязательно: врач, медсестра, учитель и другие. Anerkennungs-Finder покажет, нужно ли оно для вашей профессии, куда подавать и какие документы нужны. Бесплатно консультируют службы сети IQ.",
+      "german": ["Anerkennung", "reglementierter Beruf", "Anerkennungs-Finder", "Zeugnisbewertung (ZAB)"],
+      "keywords": ["диплом", "подтверждение", "признание", "профессия", "врач", "учитель", "медсестра"],
+      "sources": [
+        { "name": "Anerkennung in Deutschland: Geflüchtete", "url": "https://www.anerkennung-in-deutschland.de/gefluechtete" },
+        { "name": "Anerkennung in Deutschland: FAQ", "url": "https://www.anerkennung-in-deutschland.de/html/de/faq.php" }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Порядок для каждой профессии свой, у мужа и жены он может отличаться."
+    },
+    {
+      "id": "hot-grundsicherung",
+      "topic": "hot",
+      "title": "Bürgergeld теперь Grundsicherungsgeld: что изменилось",
+      "text": "С 1 июля 2026 Bürgergeld называется Grundsicherungsgeld, сумма для одного взрослого осталась 563 €. Правила строже: Jobcenter сначала предлагает работу, за отказ выплату могут урезать сильнее, допустимые сбережения меньше. В письмах до конца 2026 может ещё стоять слово «Bürgergeld».",
+      "german": ["Grundsicherungsgeld", "Jobcenter", "Vermittlungsvorrang", "Leistungsminderung"],
+      "keywords": ["Bürgergeld", "пособие", "Jobcenter", "выплаты", "санкции", "Grundsicherung"],
+      "sources": [
+        { "name": "Bundesagentur für Arbeit", "url": "https://www.arbeitsagentur.de/grundsicherung-loest-buergergeld-ab" },
+        { "name": "Bundesregierung", "url": "https://www.bundesregierung.de/breg-de/aktuelles/neue-grundsicherung-2399562" }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-asylblg",
+      "topic": "hot",
+      "title": "Приехали после 1 апреля 2025: следите за законом о выплатах",
+      "text": "Правительство хочет, чтобы украинцы, приехавшие после 1 апреля 2025, получали меньшие выплаты по AsylbLG вместо Jobcenter. По данным на лето 2026 закон ещё не вступил в силу. Если он вступит, ведомство пришлёт письмо, а тех, кто уже получает деньги, переведут не сразу. Пока решения нет, ничего не меняйте сами и проверяйте новости в Jobcenter.",
+      "german": ["Rechtskreiswechsel", "Asylbewerberleistungsgesetz (AsylbLG)", "Leistungsrechtsanpassungsgesetz"],
+      "keywords": ["AsylbLG", "выплаты", "Jobcenter", "Sozialamt", "новые правила", "украинцы"],
+      "sources": [
+        { "name": "Bundestag hib 15/2026", "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1136158" },
+        { "name": "Bundesregierung: Kabinett", "url": "https://www.bundesregierung.de/breg-de/aktuelles/kabinett-rechtskreiswechsel-2382474" }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Закон в работе: перепроверять каждый месяц."
+    },
+    {
+      "id": "hot-housing-jobcenter",
+      "topic": "hot",
+      "title": "Квартира при пособии: согласие Jobcenter до подписи договора",
+      "text": "Если аренду платит Jobcenter, сначала покажите ему предложение квартиры и получите письменное согласие (Zusicherung). Без него оплатят только «приемлемую» аренду, а переезд, залог и мебель могут не оплатить. Какая аренда приемлема, решает каждый город сам.",
+      "german": ["Zusicherung", "Kosten der Unterkunft", "Angemessenheit", "Mietangebot"],
+      "keywords": ["квартира", "аренда", "переезд", "Jobcenter", "залог", "Mietvertrag", "снять квартиру"],
+      "sources": [
+        { "name": "Jobcenter Berlin Mitte", "url": "https://www.berlin.de/jobcenter-mitte/buergergeld/geldleistungen/wohnung-heizung/informationsschreiben_zur_neuanmietung_von_angemessenem_wohnraum.pdf" },
+        { "name": "betanet: Kosten der Unterkunft", "url": "https://www.betanet.de/buergergeld-kosten-unterkunft.html" }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-language",
+      "topic": "hot",
+      "title": "Языковые курсы: где сейчас взять место",
+      "text": "Integrationskurs для § 24 бесплатный, допуск даёт BAMF. С февраля 2026 BAMF почти не даёт добровольных допусков, украинцы с § 24 названы приоритетной группой, но места зависят от бюджета. Если вы получаете пособие, спросите Jobcenter: тех, кого он обязал пройти курс, берут в первую очередь. После B1 есть Berufssprachkurs для работы.",
+      "german": ["Integrationskurs", "Zulassung", "Verpflichtung", "Berufssprachkurs"],
+      "keywords": ["курсы", "немецкий", "язык", "Integrationskurs", "BAMF", "B1", "Jobcenter"],
+      "sources": [
+        { "name": "migrando (13.05.2026)", "url": "https://migrando.de/news/integration/neue-regeln-fuer-freiwillige-integrationskurse-wer-darf-teilnehmen-und-wer-nicht/" },
+        { "name": "Stadt Stuttgart: Deutschkurse", "url": "https://www.stuttgart.de/buergerinnen-und-buerger/migranten/fluechtlinge/ukraine-hilfe/ankommen/deutschkurse.php" }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Правила допуска меняются, проверить на сайте BAMF."
+    },
+    {
+      "id": "hot-kita",
+      "topic": "hot",
+      "title": "Садик: в одной земле бесплатно, в соседней сотни евро",
+      "text": "Плату за садик устанавливают земля и город. Для родителей полностью бесплатно в Берлине и Мекленбурге-Передней Померании. Во многих землях бесплатны часы или годы с 3 лет, например в Гессене 6 часов в день. Кто получает Grundsicherung, Wohngeld или Kinderzuschlag, за садик не платит: подайте заявление в Jugendamt. Садик не обязателен, школа обязательна везде.",
+      "german": ["Kita-Gebühren", "Beitragsfreiheit", "Jugendamt", "Schulpflicht"],
+      "keywords": ["садик", "детский сад", "Kita", "плата", "школа", "дети", "переезд в другую землю"],
+      "sources": [
+        { "name": "Bildungsserver: Kita-Gebühren", "url": "https://www.bildungsserver.de/Kita-Gebuehren-5674-de.html" },
+        { "name": "Regierung MV", "url": "https://www.regierung-mv.de/Landesregierung/bm/Kindertagesfoerderung/Elternbeitragsfreiheit/" }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Правила своей земли проверьте на сайте города."
+    },
+    {
+      "id": "hot-medicine",
+      "topic": "hot",
+      "title": "Врачи: Hausarzt, направление и поиск врача по языку",
+      "text": "С карточкой больничной кассы идите сначала к семейному врачу (Hausarzt). Он лечит и даёт направление (Überweisung) к специалисту. Срочная запись и дежурный врач: 116117, угроза жизни: 112. Врача, который говорит по-русски или по-украински, ищите в поиске врачей 116117 по языку.",
+      "german": ["Hausarzt", "Überweisung", "Gesundheitskarte", "Arztsuche"],
+      "keywords": ["врач", "медицина", "направление", "русскоязычный врач", "украиноязычный врач", "116117", "больничная касса"],
+      "sources": [
+        { "name": "116117", "url": "https://www.116117.de" }
+      ],
+      "checkedAt": "2026-11-25"
+    },
     {
       "id": "housing-anmeldung",
       "topic": "housing",

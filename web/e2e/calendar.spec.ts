@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { API_URL, createUser, letters } from './helpers';
 
 /*
- * K12: профиль, блок «Календарь и напоминания». Настоящий API (demo).
+ * K12: кабинет (KORR 25.11, раньше профиль), блок «Календарь и напоминания». Настоящий API (demo).
  * Ссылка создаётся, лента открывается, новая ссылка заменяет старую, письма можно выключить.
  */
 
@@ -14,7 +14,7 @@ async function signedIn(page: Page, token: string) {
 test('календарь: создать ссылку, лента .ics, новая ссылка, выключить письма', async ({ page, request }) => {
   const u = await createUser(request, 'calendar', `Anna${letters()}`);
   await signedIn(page, u.token);
-  await page.goto('/app/profile');
+  await page.goto('/app');
 
   const block = page.getByTestId('calendar-profile');
   await expect(block.getByRole('heading', { name: 'Календарь и напоминания' })).toBeVisible();

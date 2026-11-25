@@ -677,7 +677,7 @@ export function HistoryPage() {
 
   return (
     <>
-      <PageHeader title="История" subtitle="Все события по вашим делам." />
+      <PageHeader title="История" subtitle="Все события по вашим делам и вопросы в чате с Ja!sno." />
       <div className="row wrap" role="group" aria-label="Фильтр истории">
         {GROUPS.map((g) => (
           <button
@@ -701,7 +701,7 @@ export function HistoryPage() {
           <li key={i.id}>
             {/* Правка 18-11: ссылка — вся карточка события, а не только название дела */}
             <Link
-              to={`/app/cases/${i.caseId}`}
+              to={i.caseId ? `/app/cases/${i.caseId}` : '/app/ask'}
               className="card stack-s history-link"
               style={{ padding: 14 }}
               data-testid="history-item"

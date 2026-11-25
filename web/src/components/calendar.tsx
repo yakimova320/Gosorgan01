@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
 import { API_URL } from '../api/config';
 import { errorText } from '../api/errors';
 import {
@@ -24,7 +25,7 @@ export function googleCalendarUrl(url: string): string {
 }
 
 /**
- * K12: профиль, блок «Календарь и напоминания».
+ * K12: блок «Календарь и напоминания». KORR 25.11: стоит в кабинете (/app#calendar), не в профиле.
  * Ссылка-подписка со всеми действующими сроками и выключатель письма за 3 дня до срока.
  */
 export function CalendarSection() {
@@ -35,7 +36,13 @@ export function CalendarSection() {
   const [copied, setCopied] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
 
+  const { hash } = useLocation();
   const data = settings.data;
+
+  // ссылка из профиля: /app#calendar
+  useEffect(() => {
+    if (hash === '#calendar' && data) document.getElementById('calendar')?.scrollIntoView?.({ block: 'start' });
+  }, [hash, data]);
   const url = data?.feedPath ? feedUrl(data.feedPath) : null;
   const busy = resetState.isLoading || removeState.isLoading;
   const error = settings.error ?? resetState.error ?? removeState.error ?? reminderState.error;
@@ -52,7 +59,7 @@ export function CalendarSection() {
   };
 
   return (
-    <div className="card stack-s" role="group" aria-labelledby="calendar-title" data-testid="calendar-profile">
+    <div id="calendar" className="card stack-s" role="group" aria-labelledby="calendar-title" data-testid="calendar-profile">
       <h3 id="calendar-title">Календарь и напоминания</h3>
       <p className="small text-2">
         Сроки из ваших писем появятся в календаре телефона: Google, iPhone или Outlook. В календаре только дата, вид

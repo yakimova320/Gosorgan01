@@ -261,7 +261,8 @@ export interface ApiCaseDetail extends CaseSummary {
 }
 
 export interface ApiHistoryItem extends ApiTimelineItem {
-  caseId: string;
+  /** null: вопрос в чате с Ja!sno (KORR 25.11), ссылка ведёт в «Спросить» */
+  caseId: string | null;
   caseTitle: string;
 }
 
@@ -290,6 +291,12 @@ export interface ChatView {
   disclaimer: string;
   messages: ChatMessage[];
 }
+/** KORR 25.11: POST /chat/public — чат на главной без входа, ничего не сохраняется */
+export interface PublicChatReply {
+  disclaimer: string;
+  answer: string;
+}
+
 export interface ChatReply {
   disclaimer: string;
   question: ChatMessage;

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { PageHeader } from '../../components/ui';
@@ -59,7 +59,7 @@ function CardView({ card }: { card: Card }) {
     );
   }
   return (
-    <article className="card stack-s" style={{ gap: 8 }}>
+    <article id={card.id} className="card stack-s" style={{ gap: 8, scrollMarginTop: 80 }}>
       <h3>{card.title}</h3>
       <p className="text-2" style={{ fontSize: 15 }}>
         {card.text}
@@ -90,6 +90,13 @@ export function WissenPage() {
   const [search] = useSearchParams();
   const [topic, setTopic] = useState<string>(search.get('topic') ?? TOPICS[0].id);
   const [query, setQuery] = useState('');
+  const { hash } = useLocation();
+
+  // KORR 25.11: ссылка с главной на карточку (/blog?topic=hot#hot-24-extension)
+  useEffect(() => {
+    const id = hash.slice(1);
+    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'start' });
+  }, [hash]);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();

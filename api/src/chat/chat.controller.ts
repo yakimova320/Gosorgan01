@@ -6,7 +6,9 @@ import {
   HttpCode,
   Inject,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -16,12 +18,16 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { AuthContext } from '../auth/auth.service.js';
-import { CurrentAuth } from '../auth/session.guard.js';
+import { CurrentAuth, Public } from '../auth/session.guard.js';
+import { IpLimit } from '../common/ip-limits.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import {
   AskSchema,
   CHAT_DISCLAIMER,
+  PublicAskSchema,
   type AskInput,
+  type PublicAskInput,
+  type PublicChatReply,
   type ChatReply,
   type ChatView,
 } from './chat.dto.js';
@@ -83,5 +89,38 @@ export class ChatController {
   @ApiNoContentResponse()
   async clear(@CurrentAuth() auth: AuthContext): Promise<void> {
     await this.chat.clear(auth.cabinetId);
+  }
+}
+
+/** KORR 25.11: чат на главной для гостей. Тот же помощник, без входа и без сохранения. */
+@ApiTags('Чат-помощник')
+@Controller('chat/public')
+export class PublicChatController {
+  constructor(@Inject(ChatService) private readonly chat: ChatService) {}
+
+  @Public()
+  @Post()
+  @HttpCode(200)
+  @UseGuards(ThrottlerGuard)
+  @IpLimit('publicChat')
+  @ApiOperation({
+    summary: 'Вопрос Ja!sno без входа (главная страница)',
+    description:
+      'Ничего не сохраняется: прошлые реплики (до 6) присылает сайт в history. ' +
+      'Лимит 20 вопросов в час с одного IP (429). Под ответом сайт показывает `disclaimer`.',
+  })
+  @ApiBody({
+    schema: {
+      example: {
+        text: 'Что такое Anmeldung?',
+        history: [],
+      },
+    },
+  })
+  @ApiOkResponse({
+    schema: { example: { disclaimer: CHAT_DISCLAIMER, answer: example.text } },
+  })
+  ask(@Body(new ZodPipe(PublicAskSchema)) body: PublicAskInput): Promise<PublicChatReply> {
+    return this.chat.askPublic(body);
   }
 }

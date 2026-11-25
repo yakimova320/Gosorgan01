@@ -16,6 +16,8 @@ export const IP_LIMITS = {
   /** «Забыли пароль?» (A03, без изменений) */
   forgot: { limit: 10, ttl: HOUR },
   uploadLetter: { limit: 30, ttl: HOUR },
+  /** KORR 25.11: чат на главной без входа (вопросов с одного IP в час) */
+  publicChat: { limit: 20, ttl: HOUR },
   /** K12: лента календаря без входа; клиенты календаря обновляют её несколько раз в час */
   calendarFeed: { limit: 120, ttl: HOUR },
 } as const;

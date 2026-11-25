@@ -18,6 +18,33 @@ export const AskSchema = z
   .strict();
 export type AskInput = z.infer<typeof AskSchema>;
 
+/**
+ * KORR 25.11: чат на главной без входа. Ничего не сохраняется: прошлые реплики присылает сайт
+ * (до 6, каждая до 1000 знаков). Ответ модели — как в кабинете, тот же промпт chat.v1.
+ */
+export const PublicAskSchema = z
+  .object({
+    text: AskSchema.shape.text,
+    history: z
+      .array(
+        z
+          .object({
+            role: z.enum(['USER', 'ASSISTANT']),
+            text: z.string().trim().min(1).max(1000),
+          })
+          .strict(),
+      )
+      .max(6)
+      .default([]),
+  })
+  .strict();
+export type PublicAskInput = z.infer<typeof PublicAskSchema>;
+
+export interface PublicChatReply {
+  disclaimer: string;
+  answer: string;
+}
+
 export interface ChatMessageView {
   id: string;
   role: 'USER' | 'ASSISTANT';
