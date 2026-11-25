@@ -9,6 +9,7 @@ import { CalendarSection } from '../../components/calendar';
 import { formatDate } from '../../lib/dates';
 
 import { greeting } from '../../lib/greeting';
+import { t } from '../../i18n';
 
 export function CabinetPage() {
   const cabinet = useCabinetQuery();
@@ -28,10 +29,10 @@ export function CabinetPage() {
         <PageHeader title={name ? `${greeting()}, ${name}` : greeting()} />
         <section className="card stack" style={{ alignItems: 'center', textAlign: 'center' }}>
           <Illustration name="mailbox" height={180} blob="#FCEFC9" />
-          <h2>Здесь пока тихо</h2>
-          <p className="text-2">Пришло письмо из ведомства? Сфотографируйте его, и Ja!sno объяснит, что в нём.</p>
+          <h2>{t('Здесь пока тихо')}</h2>
+          <p className="text-2">{t('Пришло письмо из ведомства? Сфотографируйте его, и Ja!sno объяснит, что в нём.')}</p>
           <Link to="/app/scan" className="btn btn--primary">
-            <Icon name="scan" size={20} color="#FFFFFF" width={2.2} /> Сфотографировать письмо
+            <Icon name="scan" size={20} color="#FFFFFF" width={2.2} />{' '}{t('Сфотографировать письмо')}
           </Link>
         </section>
         <CalendarSection />
@@ -47,16 +48,16 @@ export function CabinetPage() {
     <>
       <div className="stack-s">
         <span className="muted">{greeting()},</span>
-        <h1>{name ?? 'ваш кабинет'}</h1>
+        <h1>{name ?? t('ваш кабинет')}</h1>
       </div>
       <ErrorAlert error={cabinet.error ?? casesError ?? letters.error} />
 
       <div className="desktop-2col stack">
         <section className="card card--teal row" style={{ borderRadius: 26, padding: '16px 0 0 18px', alignItems: 'flex-end', overflow: 'hidden', minHeight: 150 }}>
           <div className="stack-s" style={{ flex: 1, alignSelf: 'center', paddingBottom: 14 }}>
-            <h3 style={{ fontSize: 20 }}>{needAction === 0 ? 'Всё под контролем' : 'Почти всё под контролем'}</h3>
+            <h3 style={{ fontSize: 20 }}>{needAction === 0 ? t('Всё под контролем') : t('Почти всё под контролем')}</h3>
             <span className="small" style={{ color: '#2F4A52' }}>
-              Дел: {active.length}. {needAction > 0 ? `Нужно сделать: ${needAction}.` : 'Сейчас ничего делать не нужно.'}
+              {t('Дел:')}{' '}{active.length}. {needAction > 0 ? t('Нужно сделать: {v0}.', { v0: needAction }) : t('Сейчас ничего делать не нужно.')}
             </span>
           </div>
           <div style={{ width: 140, flex: '0 0 140px', marginBottom: -20 }}>
@@ -69,9 +70,9 @@ export function CabinetPage() {
       {inbox.length > 0 && <InboxList letters={inbox} />}
 
       <div className="row-between" style={{ paddingTop: 4 }}>
-        <h2 style={{ fontSize: 19 }}>Мои дела</h2>
+        <h2 style={{ fontSize: 19 }}>{t('Мои дела')}</h2>
         <Link to="/app/history" className="link">
-          Вся история
+          {t('Вся история')}
         </Link>
       </div>
       <div className="stack">
@@ -91,19 +92,19 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
   return (
     <section className="stack" aria-labelledby="inbox-title">
       <h2 id="inbox-title" style={{ fontSize: 19 }}>
-        Входящие письма
+        {t('Входящие письма')}
       </h2>
       {letters.map((l) => (
         <Link key={l.id} to={`/app/letters/${l.id}/check`} className="card row-between" data-testid="inbox-letter">
           <div className="stack-s">
-            <strong>{l.title || l.authority || 'Письмо'}</strong>
+            <strong>{l.title || l.authority || t('Письмо')}</strong>
             <span className="small text-2">
               {l.title && l.authority ? `${l.authority} · ` : ''}
               {formatDate(l.createdAt.slice(0, 10))}
               {l.caseNumber ? ` · ${l.caseNumber}` : ''}
             </span>
           </div>
-          {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
+          {l.unconfirmed > 0 && <span className="status status--check">{t('Проверить фактов:')}{' '}{l.unconfirmed}</span>}
         </Link>
       ))}
     </section>
@@ -111,9 +112,9 @@ function InboxList({ letters }: { letters: InboxLetter[] }) {
 }
 
 const FILTERS: { id: 'active' | 'done' | 'all'; label: string }[] = [
-  { id: 'active', label: 'Активные' },
-  { id: 'done', label: 'Завершённые' },
-  { id: 'all', label: 'Все' },
+  { id: 'active', label: t('Активные') },
+  { id: 'done', label: t('Завершённые') },
+  { id: 'all', label: t('Все') },
 ];
 
 export function CasesPage() {
@@ -130,8 +131,8 @@ export function CasesPage() {
 
   return (
     <>
-      <PageHeader title="Мои дела" />
-      <input className="input" type="search" placeholder="Поиск: ведомство, номер дела" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Поиск по делам" />
+      <PageHeader title={t('Мои дела')} />
+      <input className="input" type="search" placeholder={t('Поиск: ведомство, номер дела')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('Поиск по делам')} />
       <div className="tabs" role="tablist">
         {FILTERS.map((f) => (
           <button key={f.id} type="button" role="tab" className="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)}>
@@ -145,7 +146,7 @@ export function CasesPage() {
         {shown.map((c, i) => (
           <CaseRow key={c.id} c={c} index={i} />
         ))}
-        {!cases.isLoading && shown.length === 0 && <p className="muted">Дел не найдено.</p>}
+        {!cases.isLoading && shown.length === 0 && <p className="muted">{t('Дел не найдено.')}</p>}
       </div>
     </>
   );

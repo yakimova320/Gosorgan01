@@ -4,26 +4,27 @@ import { Link, useLocation } from 'react-router';
 import { useSession } from '../../store';
 import { CARDS, TOPICS } from '../../content';
 import { PublicChat } from '../../components/PublicChat';
+import { t } from '../../i18n';
 
 const STEPS = [
   {
     n: 1,
-    title: 'Сфотографируйте письмо',
-    text: 'Прямо в браузере, без приложения. Или загрузите PDF.',
+    title: t('Сфотографируйте письмо'),
+    text: t('Прямо в браузере, без приложения. Или загрузите PDF.'),
     illu: 'scan',
     blob: '#FBE3D6',
   },
   {
     n: 2,
-    title: 'Проверьте и спросите',
-    text: 'Ja!sno объяснит по-русски: о чём письмо, что сделать и до какого числа.',
+    title: t('Проверьте и спросите'),
+    text: t('Ja!sno объяснит по-русски: о чём письмо, что сделать и до какого числа.'),
     illu: 'talk',
     blob: '#DDEFEC',
   },
   {
     n: 3,
-    title: 'Выдохните',
-    text: 'Черновик ответа на немецком готов, срок виден в деле.',
+    title: t('Выдохните'),
+    text: t('Черновик ответа на немецком готов, срок виден в деле.'),
     illu: 'relief',
     blob: '#FCEFC9',
   },
@@ -59,34 +60,32 @@ export function StartPage() {
           data-testid="account-deleted"
         >
           {deleted === 'pending'
-            ? 'Удаление аккаунта продолжается. Повторять запрос не нужно'
-            : 'Аккаунт и все данные удалены'}
+            ? t('Удаление аккаунта продолжается. Повторять запрос не нужно')
+            : t('Аккаунт и все данные удалены')}
         </div>
       )}
       <section className="card card--hero card--peach">
         <div className="hero-grid stack">
           <div className="stack">
             <h1 style={{ fontSize: 31 }}>
-              Письмо из ведомства?
+              {t('Письмо из ведомства?')}
               <br />
-              <span style={{ color: 'var(--c-orange)' }}>Не переживайте.</span>
+              <span style={{ color: 'var(--c-orange)' }}>{t('Не переживайте.')}</span>
             </h1>
             <p className="text-2" style={{ fontSize: 15 }}>
-              Объясним по-русски, что в нём написано, что сделать и до какого
-              числа. Поможем ответить на немецком.
+              {t('Объясним по-русски, что в нём написано, что сделать и до какого числа. Поможем ответить на немецком.')}
             </p>
             <div className="stack" style={{ maxWidth: 420 }}>
               <Link to={start} className="btn btn--primary">
                 <Icon name="scan" size={20} color="#FFFFFF" width={2.2} />{' '}
-                Сфотографировать письмо
+                {t('Сфотографировать письмо')}
               </Link>
               <Link to={start} className="btn btn--secondary">
-                Загрузить PDF
+                {t('Загрузить PDF')}
               </Link>
               {!token && (
                 <span className="muted">
-                  Чтобы сохранить письма в своих делах, нужна регистрация:
-                  e-mail и пароль.
+                  {t('Чтобы сохранить письма в своих делах, нужна регистрация: e-mail и пароль.')}
                 </span>
               )}
             </div>
@@ -96,7 +95,7 @@ export function StartPage() {
               name="worried"
               height={300}
               blob="#F6C9B2"
-              alt="Молодой человек растерянно читает письмо из ведомства"
+              alt={t('Молодой человек растерянно читает письмо из ведомства')}
             />
             <div
               className="row"
@@ -131,7 +130,7 @@ export function StartPage() {
                   boxShadow: '0 4px 12px rgba(30,42,74,.08)',
                 }}
               >
-                Разберёмся!
+                {t('Разберёмся!')}
               </span>
             </div>
           </div>
@@ -140,9 +139,9 @@ export function StartPage() {
 
       <div className="row wrap" style={{ gap: 8 }}>
         {[
-          'Без установки',
-          'Тестовая версия бесплатная',
-          'Можно удалить всё',
+          t('Без установки'),
+          t('Тестовая версия бесплатная'),
+          t('Можно удалить всё'),
         ].map((t) => (
           <span key={t} className="chip">
             <Icon name="check" size={15} color="var(--c-teal)" width={2.4} />
@@ -152,7 +151,7 @@ export function StartPage() {
       </div>
 
       <section className="stack" style={{ paddingTop: 12 }}>
-        <h2>Три шага до спокойствия</h2>
+        <h2>{t('Три шага до спокойствия')}</h2>
         <div className="steps-grid stack">
           {STEPS.map((s) => (
             <div
@@ -164,7 +163,7 @@ export function StartPage() {
                 <Illustration name={s.illu} height={112} blob={s.blob} />
               </div>
               <div className="stack-s">
-                <span className="eyebrow">Шаг {s.n}</span>
+                <span className="eyebrow">{t('Шаг')}{' '}{s.n}</span>
                 <h3>{s.title}</h3>
                 <span className="small text-2">{s.text}</span>
               </div>
@@ -178,9 +177,9 @@ export function StartPage() {
 
       <section className="stack" style={{ paddingTop: 12 }}>
         <div className="row-between">
-          <h2>Блог</h2>
+          <h2>{t('Блог')}</h2>
           <Link to="/blog" className="link">
-            Все темы
+            {t('Все темы')}
           </Link>
         </div>
         <div className="grid-2 cards-4">
@@ -217,11 +216,11 @@ export function StartPage() {
           <div className="row" style={{ gap: 10 }}>
             <Icon name="flame" color="var(--c-green)" />
             <h2 id="hot-title" style={{ fontSize: 20 }}>
-              Горячие темы: что важно сейчас
+              {t('Горячие темы: что важно сейчас')}
             </h2>
           </div>
           <p className="small" style={{ color: '#2F4A2A' }}>
-            Продление § 24, работа и диплом, Jobcenter, жильё, садик. Коротко, с источниками и датой проверки.
+            {t('Продление § 24, работа и диплом, Jobcenter, жильё, садик. Коротко, с источниками и датой проверки.')}
           </p>
           <ul className="list-reset stack-s hot-list">
             {HOT.slice(0, 6).map((c) => (
@@ -231,7 +230,7 @@ export function StartPage() {
             ))}
           </ul>
           <Link to="/blog?topic=hot" className="btn btn--green btn--small" style={{ alignSelf: 'flex-start' }}>
-            Все горячие темы
+            {t('Все горячие темы')}
           </Link>
         </section>
 
@@ -243,21 +242,20 @@ export function StartPage() {
             name="consult"
             height={190}
             blob="#BFE0DB"
-            alt="Двое разбирают письмо за столом"
+            alt={t('Двое разбирают письмо за столом')}
           />
           <h2 style={{ fontSize: 20 }}>
-            Сложный случай? Подскажем, куда обратиться
+            {t('Сложный случай? Подскажем, куда обратиться')}
           </h2>
           <p className="small" style={{ color: '#2F4A52' }}>
-            Если нужно возражение (Widerspruch) или совет юриста, Ja!sno назовёт,
-            где получить консультацию.
+            {t('Если нужно возражение (Widerspruch) или совет юриста, Ja!sno назовёт, где получить консультацию.')}
           </p>
           <Link
             to="/beratung"
             className="btn btn--teal btn--small"
             style={{ alignSelf: 'flex-start' }}
           >
-            Найти консультацию
+            {t('Найти консультацию')}
           </Link>
         </section>
       </div>

@@ -154,6 +154,16 @@ textarea {
   background: var(--c-teal-light);
   box-shadow: none;
 }
+select.lang-select {
+  width: auto;
+  max-width: 96px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 4px 28px 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
 .card--green {
   background: var(--c-green-light);
   box-shadow: none;

@@ -4,12 +4,13 @@ import { errorCode } from '../../api/errors';
 import { Icon } from '../../components/Icon';
 import { ErrorAlert, Loading, PageHeader } from '../../components/ui';
 import { useAskChatMutation, useChatQuery, useClearChatMutation } from '../../store/api';
+import { t } from '../../i18n';
 
 const MAX_CHARS = 1000;
 const EXAMPLES = [
-  'Что такое Anmeldung и как её сделать?',
-  'Что делать, если я не успеваю к сроку из письма?',
-  'Где получить бесплатную консультацию?',
+  t('Что такое Anmeldung и как её сделать?'),
+  t('Что делать, если я не успеваю к сроку из письма?'),
+  t('Где получить бесплатную консультацию?'),
 ];
 
 /**
@@ -51,8 +52,8 @@ export function AskPage() {
   return (
     <>
       <PageHeader
-        title="Спросить Ja!sno"
-        subtitle="Вопросы о ведомствах, письмах, сроках и документах в Германии. Письма из кабинета помощник не читает: объяснение письма — в самом письме."
+        title={t('Спросить Ja!sno')}
+        subtitle={t('Вопросы о ведомствах, письмах, сроках и документах в Германии. Письма из кабинета помощник не читает: объяснение письма — в самом письме.')}
       />
 
       {chat.isLoading && <Loading />}
@@ -61,7 +62,7 @@ export function AskPage() {
       <div className="stack chat-log" aria-live="polite" data-testid="chat-log">
         {messages.length === 0 && !pending && chat.isSuccess && (
           <div className="card stack-s">
-            <p className="text-2">Например:</p>
+            <p className="text-2">{t('Например:')}</p>
             <div className="row wrap" style={{ gap: 8 }}>
               {EXAMPLES.map((ex) => (
                 <button key={ex} type="button" className="chip" onClick={() => void send(ex)}>
@@ -89,7 +90,7 @@ export function AskPage() {
           <>
             <div className="chat-bubble chat-bubble--me">{pending}</div>
             <div className="chat-bubble chat-bubble--bot" role="status">
-              Ja!sno думает…
+              {t('Ja!sno думает…')}
             </div>
           </>
         )}
@@ -101,7 +102,7 @@ export function AskPage() {
           <ErrorAlert error={error} />
           {errorCode(error) === 'AI_CONSENT_REQUIRED' && (
             <Link to="/app/profile" className="link">
-              Дать согласие в профиле
+              {t('Дать согласие в профиле')}
             </Link>
           )}
         </>
@@ -119,8 +120,8 @@ export function AskPage() {
           rows={2}
           maxLength={MAX_CHARS}
           value={text}
-          placeholder="Ваш вопрос…"
-          aria-label="Ваш вопрос"
+          placeholder={t('Ваш вопрос…')}
+          aria-label={t('Ваш вопрос')}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             // Enter отправляет, Shift+Enter — новая строка
@@ -134,7 +135,7 @@ export function AskPage() {
           type="submit"
           className="btn btn--primary btn--small"
           disabled={!text.trim() || asking.isLoading}
-          aria-label="Отправить"
+          aria-label={t('Отправить')}
         >
           <Icon name="send" size={18} color="#FFFFFF" />
         </button>
@@ -148,7 +149,7 @@ export function AskPage() {
           disabled={clearing.isLoading || asking.isLoading}
           onClick={() => void clear()}
         >
-          Очистить разговор
+          {t('Очистить разговор')}
         </button>
       )}
     </>

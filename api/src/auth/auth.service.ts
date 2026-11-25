@@ -55,6 +55,7 @@ export class AuthService {
           email: input.email,
           passwordHash,
           consentAt: new Date(),
+          ...(input.language ? { language: input.language } : {}),
           ...(input.aiConsent === true
             ? { aiConsentAt: new Date(), aiConsentVersion: AI_CONSENT_VERSION }
             : {}),

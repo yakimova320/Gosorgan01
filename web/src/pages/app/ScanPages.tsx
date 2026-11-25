@@ -22,6 +22,7 @@ import {
   useUploadLetterMutation,
 } from '../../store/api';
 import { putUploadFiles } from '../../store/uploads';
+import { t, tn } from '../../i18n';
 
 /*
  * Загрузка письма и проверка фактов (F02, B11). Один PDF или до 10 фото страниц одного письма.
@@ -37,10 +38,10 @@ const MB = 1024 * 1024;
 /** Проверка размера до отправки: файл до 10 МБ, все файлы письма до 20 МБ (сервер проверяет сам). */
 function sizeProblem(files: File[], already: File[]): string | null {
   const big = files.find((f) => f.size > MAX_FILE_MB * MB);
-  if (big) return `Файл «${big.name}» больше ${MAX_FILE_MB} МБ.`;
+  if (big) return t('Файл «{v0}» больше {v1} МБ.', { v0: big.name, v1: MAX_FILE_MB });
   const pdf = files.some((f) => f.type === 'application/pdf');
   const total = [...(pdf ? [] : already), ...files].reduce((sum, f) => sum + f.size, 0);
-  if (total > MAX_LETTER_MB * MB) return `Все файлы письма вместе больше ${MAX_LETTER_MB} МБ.`;
+  if (total > MAX_LETTER_MB * MB) return t('Все файлы письма вместе больше {v0} МБ.', { v0: MAX_LETTER_MB });
   return null;
 }
 
@@ -63,9 +64,9 @@ function useFilePickers(onFiles: (files: File[]) => void) {
 }
 
 function Steps({ n }: { n: 1 | 2 | 3 }) {
-  const labels = ['Файл', 'Чтение', 'Факты'];
+  const labels = [t('Файл'), t('Чтение'), t('Факты')];
   return (
-    <ol className="list-reset row" aria-label={`Шаг ${n} из 3`} style={{ gap: 6 }}>
+    <ol className="list-reset row" aria-label={t('Шаг {v0} из 3', { v0: n })} style={{ gap: 6 }}>
       {labels.map((l, i) => (
         <li key={l} style={{ flex: 1 }}>
           <span style={{ display: 'block', height: 5, borderRadius: 3, background: i < n ? 'var(--c-orange)' : 'var(--c-track)' }} />
@@ -92,17 +93,16 @@ export function ScanStartPage() {
 
   return (
     <>
-      <PageHeader title="Новое письмо" back="/app" />
+      <PageHeader title={t('Новое письмо')} back="/app" />
       <Steps n={1} />
       <div className="card card--peach stack" style={{ alignItems: 'center', textAlign: 'center' }}>
         <Illustration name="scan" height={200} blob="#FBE3D6" />
-        <h2>Сфотографируйте письмо</h2>
+        <h2>{t('Сфотографируйте письмо')}</h2>
         <p className="text-2 small">
-          Положите лист на ровную поверхность при дневном свете. В кадре должны быть все края листа. Письмо на нескольких
-          страницах: сфотографируйте каждую.
+          {t('Положите лист на ровную поверхность при дневном свете. В кадре должны быть все края листа. Письмо на нескольких страницах: сфотографируйте каждую.')}
         </p>
       </div>
-      <div className="alert alert--warn">Тестовая версия: загружайте только примеры писем, не настоящие документы.</div>
+      <div className="alert alert--warn">{t('Тестовая версия: загружайте только примеры писем, не настоящие документы.')}</div>
       {/* K11: без согласия на анализ ИИ вместо кнопок загрузки — согласие */}
       {cabinet.data && !cabinet.data.aiConsent.given ? (
         <AiConsentCard />
@@ -110,14 +110,14 @@ export function ScanStartPage() {
         <>
       {inputs}
       <button type="button" className="btn btn--primary" onClick={openCamera}>
-        <Icon name="camera" size={20} color="#FFFFFF" width={2.2} /> Сделать фото
+        <Icon name="camera" size={20} color="#FFFFFF" width={2.2} />{' '}{t('Сделать фото')}
       </button>
       <button type="button" className="btn btn--secondary" onClick={openPicker}>
-        <Icon name="upload" size={20} /> Выбрать фото или PDF
+        <Icon name="upload" size={20} />{' '}{t('Выбрать фото или PDF')}
       </button>
       {pages.length > 0 && (
         <Link to="/app/scan/pages" className="link">
-          Вернуться к выбранным страницам ({pages.length})
+          {t('Вернуться к выбранным страницам (')}{pages.length})
         </Link>
       )}
         </>
@@ -128,8 +128,7 @@ export function ScanStartPage() {
         </div>
       )}
       <p className="muted">
-        JPG, PNG или PDF (с текстом или скан), файл до {MAX_FILE_MB} МБ. Одно письмо: до 10 фото страниц или один PDF до 20
-        страниц.
+        {t('JPG, PNG или PDF (с текстом или скан), файл до')}{' '}{MAX_FILE_MB}{' '}{t('МБ. Одно письмо: до 10 фото страниц или один PDF до 20 страниц.')}
       </p>
     </>
   );
@@ -152,7 +151,7 @@ export function ScanPagesPage() {
 
   return (
     <>
-      <PageHeader title={pdf ? 'Проверьте файл' : 'Проверьте снимки'} back="/app/scan" />
+      <PageHeader title={pdf ? t('Проверьте файл') : t('Проверьте снимки')} back="/app/scan" />
       <Steps n={1} />
       {inputs}
       {pdf ? (
@@ -163,65 +162,64 @@ export function ScanPagesPage() {
             </div>
           </div>
           <p className="text-2 small">
-            PDF «{pages[0].file.name}». Ja!sno прочитает текст из файла, страницы-сканы распознает как фото.
+            PDF «{pages[0].file.name}{t('». Ja!sno прочитает текст из файла, страницы-сканы распознает как фото.')}
           </p>
         </>
       ) : (
         <>
           <p className="text-2 small">
-            {pages.length === 1 ? '1 страница.' : `${pages.length} страниц${pages.length < 5 ? 'ы' : ''}.`} Порядок как в письме:
-            страница 1 сверху. Текст на каждом снимке должен читаться целиком.
+            {tn('{n} страница.|{n} страницы.|{n} страниц.', pages.length)}{' '}{t('Порядок как в письме: страница 1 сверху. Текст на каждом снимке должен читаться целиком.')}
           </p>
-          <ol className="list-reset scan-pages" aria-label="Страницы письма">
+          <ol className="list-reset scan-pages" aria-label={t('Страницы письма')}>
             {pages.map((p, i) => (
               <li key={p.id} className="card scan-page" data-testid="scan-page">
                 <div className="thumb">
-                  <img src={p.url} alt={`Страница ${i + 1}`} />
+                  <img src={p.url} alt={t('Страница {v0}', { v0: i + 1 })} />
                   <span className="thumb-n" aria-hidden="true">
                     {i + 1}
                   </span>
                 </div>
                 <div className="stack-s scan-page-actions">
-                  <span className="small">Страница {i + 1}</span>
+                  <span className="small">{t('Страница')}{' '}{i + 1}</span>
                   <button
                     type="button"
                     className="btn btn--ghost btn--small"
                     disabled={i === 0}
-                    aria-label={`Страница ${i + 1}: выше`}
+                    aria-label={t('Страница {v0}: выше', { v0: i + 1 })}
                     onClick={() => movePage(p.id, -1)}
                   >
-                    ↑ Выше
+                    {t('↑ Выше')}
                   </button>
                   <button
                     type="button"
                     className="btn btn--ghost btn--small"
                     disabled={i === pages.length - 1}
-                    aria-label={`Страница ${i + 1}: ниже`}
+                    aria-label={t('Страница {v0}: ниже', { v0: i + 1 })}
                     onClick={() => movePage(p.id, 1)}
                   >
-                    ↓ Ниже
+                    {t('↓ Ниже')}
                   </button>
                   <button
                     type="button"
                     className="btn btn--ghost btn--small"
-                    aria-label={`Убрать страницу ${i + 1}`}
+                    aria-label={t('Убрать страницу {v0}', { v0: i + 1 })}
                     onClick={() => removePage(p.id)}
                   >
-                    <Icon name="trash" size={16} /> Убрать
+                    <Icon name="trash" size={16} />{' '}{t('Убрать')}
                   </button>
                 </div>
               </li>
             ))}
           </ol>
           {full ? (
-            <p className="muted">Это максимум: {MAX_PAGES} фото на письмо.</p>
+            <p className="muted">{t('Это максимум:')}{' '}{MAX_PAGES}{' '}{t('фото на письмо.')}</p>
           ) : (
             <div className="row wrap">
               <button type="button" className="btn btn--secondary btn--small" onClick={openCamera}>
-                <Icon name="camera" size={18} /> Снять ещё страницу
+                <Icon name="camera" size={18} />{' '}{t('Снять ещё страницу')}
               </button>
               <button type="button" className="btn btn--secondary btn--small" onClick={openPicker}>
-                <Icon name="plus" size={18} /> Добавить фото
+                <Icon name="plus" size={18} />{' '}{t('Добавить фото')}
               </button>
             </div>
           )}
@@ -233,7 +231,7 @@ export function ScanPagesPage() {
         </div>
       )}
       <button type="button" className="btn btn--primary" onClick={() => navigate('/app/scan/reading')}>
-        Готово, читать письмо
+        {t('Готово, читать письмо')}
       </button>
       <button
         type="button"
@@ -243,7 +241,7 @@ export function ScanPagesPage() {
           navigate('/app/scan', { replace: true });
         }}
       >
-        {pdf ? 'Выбрать другой файл' : 'Начать заново'}
+        {pdf ? t('Выбрать другой файл') : t('Начать заново')}
       </button>
     </>
   );
@@ -291,8 +289,8 @@ export function ScanReadingPage() {
   useEffect(() => {
     if (error || cancelled) return;
     setSeconds(0);
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
   }, [attempt, error, cancelled]);
 
   useEffect(() => {
@@ -336,7 +334,7 @@ export function ScanReadingPage() {
     // снимки остаются выбранными: можно убрать лишние или отправить ещё раз
     void navigate('/app/scan/pages', {
       replace: true,
-      state: { note: 'Чтение отменено. Если письмо успело сохраниться, оно появится во входящих в кабинете.' },
+      state: { note: t('Чтение отменено. Если письмо успело сохраниться, оно появится во входящих в кабинете.') },
     });
   };
 
@@ -352,19 +350,19 @@ export function ScanReadingPage() {
 
   return (
     <>
-      <PageHeader title="Ja!sno читает письмо" />
+      <PageHeader title={t('Ja!sno читает письмо')} />
       <Steps n={2} />
       <div className="card stack" style={{ alignItems: 'center', textAlign: 'center' }}>
         <Illustration name="talk" height={180} blob="#DDEFEC" />
         {!error && (
           <>
-            <div className="spinner" role="status" aria-label="Идёт чтение" />
-            <p className="text-2">Читаем текст и ищем факты с цитатами. Обычно это до минуты.</p>
+            <div className="spinner" role="status" aria-label={t('Идёт чтение')} />
+            <p className="text-2">{t('Читаем текст и ищем факты с цитатами. Обычно это до минуты.')}</p>
             <p className="small text-2" data-testid="reading-seconds" aria-live="off">
-              Прошло {seconds} с{seconds >= 90 ? '. Долго: возможно, слабая связь или большое письмо.' : ''}
+              {t('Прошло')}{' '}{seconds}{' '}{t('с')}{seconds >= 90 ? t('. Долго: возможно, слабая связь или большое письмо.') : ''}
             </p>
             <button type="button" className="btn btn--secondary btn--small" onClick={cancel} data-testid="reading-cancel">
-              Отменить
+              {t('Отменить')}
             </button>
           </>
         )}
@@ -372,16 +370,16 @@ export function ScanReadingPage() {
           <>
             <ErrorAlert error={error} />
             {several && badPages.length > 0 && (
-              <p className="small text-2">Письмо не сохранено. Уберите эту страницу и снимите её заново, остальные останутся.</p>
+              <p className="small text-2">{t('Письмо не сохранено. Уберите эту страницу и снимите её заново, остальные останутся.')}</p>
             )}
             <div className="row wrap" style={{ justifyContent: 'center' }}>
               {several && (
                 <button type="button" className="btn btn--primary btn--small" onClick={() => navigate('/app/scan/pages', { replace: true })}>
-                  Вернуться к снимкам
+                  {t('Вернуться к снимкам')}
                 </button>
               )}
               <button type="button" className={several ? 'btn btn--secondary btn--small' : 'btn btn--primary btn--small'} onClick={again}>
-                {several ? 'Начать заново' : 'Выбрать другой файл'}
+                {several ? t('Начать заново') : t('Выбрать другой файл')}
               </button>
             </div>
           </>
@@ -389,17 +387,17 @@ export function ScanReadingPage() {
         {problem === 'busy' && (
           <>
             <div className="alert alert--warn" role="alert" style={{ width: '100%' }} data-testid="upload-busy">
-              {errorText(error)}. Письмо не сохранено{isDailyLimit(error) ? '.' : ', файл остался выбранным.'}
+              {errorText(error)}{t('. Письмо не сохранено')}{isDailyLimit(error) ? '.' : t(', файл остался выбранным.')}
             </div>
             <div className="row wrap" style={{ justifyContent: 'center' }}>
               {/* B18: при дневном лимите повтор сразу бесполезен — кнопки нет */}
               {!isDailyLimit(error) && (
                 <button type="button" className="btn btn--primary btn--small" onClick={() => setAttempt((a) => a + 1)}>
-                  Попробовать ещё раз
+                  {t('Попробовать ещё раз')}
                 </button>
               )}
               <Link to="/app" className="btn btn--secondary btn--small">
-                В кабинет
+                {t('В кабинет')}
               </Link>
             </div>
           </>
@@ -407,20 +405,19 @@ export function ScanReadingPage() {
         {problem === 'model' && (
           <>
             <ErrorAlert error={error} />
-            <p className="small text-2">Письмо не сохранено.</p>
+            <p className="small text-2">{t('Письмо не сохранено.')}</p>
             <button type="button" className="btn btn--primary btn--small" onClick={() => setAttempt((a) => a + 1)}>
-              Попробовать ещё раз
+              {t('Попробовать ещё раз')}
             </button>
           </>
         )}
         {(problem === 'network' || problem === 'unknown') && (
           <>
             <div className="alert alert--warn" role="alert" style={{ width: '100%' }} data-testid="upload-unknown">
-              {problem === 'network' ? 'Связь с сервером прервалась.' : 'Сервер не ответил вовремя.'} Письмо могло успеть сохраниться.
-              Сначала проверьте входящие в кабинете, чтобы не загрузить его дважды.
+              {problem === 'network' ? t('Связь с сервером прервалась.') : t('Сервер не ответил вовремя.')}{' '}{t('Письмо могло успеть сохраниться. Сначала проверьте входящие в кабинете, чтобы не загрузить его дважды.')}
             </div>
             <Link to="/app" className="btn btn--primary btn--small">
-              Проверить входящие
+              {t('Проверить входящие')}
             </Link>
           </>
         )}
@@ -434,35 +431,35 @@ export function ScanReadingPage() {
 type Decision = 'ok' | 'wrong';
 
 const DEADLINE_KIND: Record<string, string> = {
-  REPLY: 'ответить',
-  DOCUMENTS: 'прислать документы',
-  OBJECTION: 'возражение',
-  FOLLOW_UP: 'напоминание',
+  REPLY: t('ответить'),
+  DOCUMENTS: t('прислать документы'),
+  OBJECTION: t('возражение'),
+  FOLLOW_UP: t('напоминание'),
 };
 
 /** Состояние факта по данным сервера. Локальная отметка «Верно» статус не меняет. */
 function ClaimStatusChip({ claim }: { claim: LetterClaim }) {
-  if (claim.status === 'CONFIRMED') return <span className="status status--done">Подтверждено</span>;
-  if (claim.status === 'REJECTED') return <span className="status status--overdue">Отклонено</span>;
-  if (claim.basis === 'USER') return <span className="status status--check">Исправлено вами</span>;
-  return <span className="status status--check">Нужно проверить</span>;
+  if (claim.status === 'CONFIRMED') return <span className="status status--done">{t('Подтверждено')}</span>;
+  if (claim.status === 'REJECTED') return <span className="status status--overdue">{t('Отклонено')}</span>;
+  if (claim.basis === 'USER') return <span className="status status--check">{t('Исправлено вами')}</span>;
+  return <span className="status status--check">{t('Нужно проверить')}</span>;
 }
 
 /** Даты с точками или запятыми → ГГГГ-ММ-ДД, сумма с запятой → с точкой. */
 export function parseUserValue(kind: LetterClaim['kind'], raw: string): { value: string } | { error: string } {
   const v = raw.trim();
-  if (!v) return { error: 'Введите значение' };
+  if (!v) return { error: t('Введите значение') };
   if (kind === 'DEADLINE' || kind === 'LETTER_DATE') {
     const m = /^(\d{1,2})[.,](\d{1,2})[.,](\d{4})$/.exec(v);
-    if (!m) return { error: 'Дата в формате ТТ.ММ.ГГГГ' };
+    if (!m) return { error: t('Дата в формате ТТ.ММ.ГГГГ') };
     const [d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])];
     const date = new Date(Date.UTC(y, mo - 1, d));
-    if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return { error: 'Такой даты нет' };
+    if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return { error: t('Такой даты нет') };
     return { value: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
   }
   if (kind === 'AMOUNT') {
     const n = v.replace(/\s|€|EUR/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
-    if (!/^\d+(\.\d{1,2})?$/.test(n)) return { error: 'Сумма числом, например 120,50' };
+    if (!/^\d+(\.\d{1,2})?$/.test(n)) return { error: t('Сумма числом, например 120,50') };
     return { value: n };
   }
   return { value: v };
@@ -490,7 +487,7 @@ function CorrectForm({ claim, letterId, onDone }: { claim: LetterClaim; letterId
   return (
     <form className="stack-s" onSubmit={submit} noValidate>
       <div className="field">
-        <label htmlFor={id}>{isDate ? 'Верная дата (ТТ.ММ.ГГГГ)' : 'Верное значение'}</label>
+        <label htmlFor={id}>{isDate ? t('Верная дата (ТТ.ММ.ГГГГ)') : t('Верное значение')}</label>
         <input
           id={id}
           className="input"
@@ -508,10 +505,10 @@ function CorrectForm({ claim, letterId, onDone }: { claim: LetterClaim; letterId
       </div>
       <div className="row wrap">
         <button type="submit" className="btn btn--navy btn--small" disabled={state.isLoading}>
-          Сохранить исправление
+          {t('Сохранить исправление')}
         </button>
         <button type="button" className="btn btn--ghost btn--small" onClick={() => onDone(null)}>
-          Отмена
+          {t('Отмена')}
         </button>
       </div>
     </form>
@@ -552,15 +549,15 @@ export function LetterCheckPage({ id }: { id: string }) {
     });
   }, [q.data]);
 
-  if (q.isLoading) return <Loading text="Загружаем письмо…" />;
+  if (q.isLoading) return <Loading text={t('Загружаем письмо…')} />;
   if (q.error || !q.data) {
     const notFound = errorCode(q.error) === 'NOT_FOUND';
     return (
       <>
-        <PageHeader title={notFound ? 'Письмо не найдено' : 'Не получилось открыть письмо'} back="/app" />
+        <PageHeader title={notFound ? t('Письмо не найдено') : t('Не получилось открыть письмо')} back="/app" />
         {!notFound && <ErrorAlert error={q.error} />}
         <Link to="/app" className="btn btn--secondary">
-          В кабинет
+          {t('В кабинет')}
         </Link>
       </>
     );
@@ -584,7 +581,7 @@ export function LetterCheckPage({ id }: { id: string }) {
     try {
       await confirmClaims({ id, confirm, reject }).unwrap();
       setDecisions({});
-      setNotice({ tone: 'info', text: 'Проверка сохранена.' });
+      setNotice({ tone: 'info', text: t('Проверка сохранена.') });
       return true;
     } catch (err) {
       if (errorCode(err) === 'CLAIM_STATE') setConflict(true);
@@ -606,7 +603,7 @@ export function LetterCheckPage({ id }: { id: string }) {
       const { [claim.id]: _old, ...rest } = x;
       return rest;
     });
-    setNotice({ tone: 'info', text: 'Исправление сохранено. Подтвердите новое значение.' });
+    setNotice({ tone: 'info', text: t('Исправление сохранено. Подтвердите новое значение.') });
   }
 
   async function remove() {
@@ -623,19 +620,19 @@ export function LetterCheckPage({ id }: { id: string }) {
 
   return (
     <>
-      <PageHeader title="Проверьте факты" subtitle="Сравните с письмом. Ja!sno показывает только то, что нашло дословно в тексте." back="/app" />
+      <PageHeader title={t('Проверьте факты')} subtitle={t('Сравните с письмом. Ja!sno показывает только то, что нашло дословно в тексте.')} back="/app" />
       <Steps n={3} />
       <LetterOriginals letterId={letter.id} files={letter.files} />
 
       {blocker.state === 'blocked' && (
-        <div className="alert alert--warn stack-s" role="alertdialog" aria-label="Несохранённые решения">
-          <span>Есть несохранённые решения ({pending}). Уйти без сохранения?</span>
+        <div className="alert alert--warn stack-s" role="alertdialog" aria-label={t('Несохранённые решения')}>
+          <span>{t('Есть несохранённые решения (')}{pending}{t('). Уйти без сохранения?')}</span>
           <div className="row wrap">
             <button type="button" className="btn btn--secondary btn--small" onClick={() => blocker.reset()}>
-              Остаться
+              {t('Остаться')}
             </button>
             <button type="button" className="btn btn--ghost btn--small" onClick={() => blocker.proceed()}>
-              Уйти без сохранения
+              {t('Уйти без сохранения')}
             </button>
           </div>
         </div>
@@ -643,7 +640,7 @@ export function LetterCheckPage({ id }: { id: string }) {
 
       {conflict && (
         <div className="alert alert--error stack-s" role="alert" data-testid="conflict">
-          <span>Факты изменились в другом окне или уже сохранены. Ничего не записано.</span>
+          <span>{t('Факты изменились в другом окне или уже сохранены. Ничего не записано.')}</span>
           <button
             type="button"
             className="btn btn--secondary btn--small"
@@ -652,7 +649,7 @@ export function LetterCheckPage({ id }: { id: string }) {
               void q.refetch();
             }}
           >
-            Перечитать данные
+            {t('Перечитать данные')}
           </button>
         </div>
       )}
@@ -664,14 +661,13 @@ export function LetterCheckPage({ id }: { id: string }) {
 
       {claims.length === 0 ? (
         <section className="card stack" data-testid="no-facts">
-          <h2 style={{ fontSize: 19 }}>Факты не найдены</h2>
+          <h2 style={{ fontSize: 19 }}>{t('Факты не найдены')}</h2>
           <p className="text-2">
-            Ja!sno прочитало письмо, но не нашло в тексте ведомство, номер дела, даты или требования с цитатой. Это не ошибка: посмотрите текст
-            письма ниже или в оригинале.
+            {t('Ja!sno прочитало письмо, но не нашло в тексте ведомство, номер дела, даты или требования с цитатой. Это не ошибка: посмотрите текст письма ниже или в оригинале.')}
           </p>
         </section>
       ) : (
-        <ul className="list-reset stack" aria-label="Факты письма">
+        <ul className="list-reset stack" aria-label={t('Факты письма')}>
           {claims.map((c) => {
             const d = decisions[c.id];
             return (
@@ -681,13 +677,13 @@ export function LetterCheckPage({ id }: { id: string }) {
                   <ClaimStatusChip claim={c} />
                 </div>
                 <strong>{c.text}</strong>
-                {c.relativeDeadline && <span className="small">Точную дату нужно уточнить: она зависит от дня получения письма.</span>}
+                {c.relativeDeadline && <span className="small">{t('Точную дату нужно уточнить: она зависит от дня получения письма.')}</span>}
                 {c.quote ? (
                   <blockquote className="small text-2" style={{ margin: 0 }}>
-                    «{c.quote}»{c.page ? ` · стр. ${c.page}` : ''}
+                    «{c.quote}»{c.page ? t(' · стр. {v0}', { v0: c.page }) : ''}
                   </blockquote>
                 ) : c.basis === 'USER' ? (
-                  <span className="small text-2">Указано вами, цитаты из письма нет.</span>
+                  <span className="small text-2">{t('Указано вами, цитаты из письма нет.')}</span>
                 ) : null}
                 {editing === c.id ? (
                   <CorrectForm claim={c} letterId={id} onDone={(detail, err) => afterCorrect(c, detail, err)} />
@@ -701,7 +697,7 @@ export function LetterCheckPage({ id }: { id: string }) {
                           aria-pressed={d === 'ok'}
                           onClick={() => decide(c.id, 'ok')}
                         >
-                          <Icon name="check" size={16} /> Верно
+                          <Icon name="check" size={16} />{' '}{t('Верно')}
                         </button>
                         <button
                           type="button"
@@ -709,12 +705,12 @@ export function LetterCheckPage({ id }: { id: string }) {
                           aria-pressed={d === 'wrong'}
                           onClick={() => decide(c.id, 'wrong')}
                         >
-                          Неверно
+                          {t('Неверно')}
                         </button>
                       </>
                     )}
                     <button type="button" className="btn btn--ghost btn--small" onClick={() => setEditing(c.id)}>
-                      Исправить
+                      {t('Исправить')}
                     </button>
                   </div>
                 )}
@@ -726,23 +722,22 @@ export function LetterCheckPage({ id }: { id: string }) {
 
       {dropped > 0 && (
         <div className="alert alert--info" data-testid="dropped">
-          Ещё {dropped} {dropped === 1 ? 'значение не прошло' : 'значения не прошли'} проверку: их не было дословно в тексте письма, поэтому Ja!sno
-          их не показывает.
+          {t('Ещё')}{' '}{dropped} {dropped === 1 ? t('значение не прошло') : t('значения не прошли')}{' '}{t('проверку: их не было дословно в тексте письма, поэтому Ja!sno их не показывает.')}
         </div>
       )}
 
       {deadlines.length > 0 && (
-        <section className="stack-s" aria-label="Сроки">
-          <h2 style={{ fontSize: 19 }}>Сроки</h2>
+        <section className="stack-s" aria-label={t('Сроки')}>
+          <h2 style={{ fontSize: 19 }}>{t('Сроки')}</h2>
           {deadlines.map((dl) => (
             <div key={dl.id} className="card row-between" data-testid="deadline">
               <span>
-                до {formatDate(dl.date)} · {DEADLINE_KIND[dl.kind] ?? dl.kind}
+                {t('до')}{' '}{formatDate(dl.date)} · {DEADLINE_KIND[dl.kind] ?? dl.kind}
               </span>
               {dl.active ? (
-                <span className="status status--action">Действует</span>
+                <span className="status status--action">{t('Действует')}</span>
               ) : (
-                <span className="status status--check">Кандидат: подтвердите срок</span>
+                <span className="status status--check">{t('Кандидат: подтвердите срок')}</span>
               )}
             </div>
           ))}
@@ -751,22 +746,22 @@ export function LetterCheckPage({ id }: { id: string }) {
 
       {claims.length > 0 && (
         <button type="button" className="btn btn--primary" disabled={pending === 0 || saving.isLoading} onClick={() => void save()}>
-          {saving.isLoading ? 'Сохраняем…' : `Сохранить проверку${pending ? ` (${pending})` : ''}`}
+          {saving.isLoading ? t('Сохраняем…') : `${t('Сохранить проверку')}${pending ? ` (${pending})` : ''}`}
         </button>
       )}
 
       <details className="card">
-        <summary>Текст письма</summary>
+        <summary>{t('Текст письма')}</summary>
         <pre className="small" style={{ whiteSpace: 'pre-wrap', margin: '8px 0 0' }}>
           {letter.text}
         </pre>
       </details>
 
-      <section className="card stack-s" aria-label="Что дальше">
-        <h2 style={{ fontSize: 19 }}>Что дальше</h2>
+      <section className="card stack-s" aria-label={t('Что дальше')}>
+        <h2 style={{ fontSize: 19 }}>{t('Что дальше')}</h2>
         {(fromUpload?.suggestions ?? []).map((s) => (
           <span key={s.caseId} className="small text-2">
-            Похоже на дело «{s.title}»: {s.reason}.
+            {t('Похоже на дело «')}{s.title}»: {s.reason}.
           </span>
         ))}
         <AssignBlock
@@ -779,21 +774,21 @@ export function LetterCheckPage({ id }: { id: string }) {
           onError={(text) => setNotice({ tone: 'error', text })}
         />
         <button type="button" className="btn btn--secondary btn--small" onClick={() => navigate('/app')}>
-          Оставить во входящих
+          {t('Оставить во входящих')}
         </button>
         {!askDelete ? (
           <button type="button" className="btn btn--danger btn--small" onClick={() => setAskDelete(true)}>
-            <Icon name="trash" size={16} /> Удалить письмо
+            <Icon name="trash" size={16} />{' '}{t('Удалить письмо')}
           </button>
         ) : (
-          <div className="alert alert--error stack-s" role="alertdialog" aria-label="Удалить письмо">
-            <span>Удалить письмо, его факты и файл безвозвратно?</span>
+          <div className="alert alert--error stack-s" role="alertdialog" aria-label={t('Удалить письмо')}>
+            <span>{t('Удалить письмо, его факты и файл безвозвратно?')}</span>
             <div className="row wrap">
               <button type="button" className="btn btn--danger btn--small" disabled={deleting.isLoading} onClick={remove}>
-                Удалить безвозвратно
+                {t('Удалить безвозвратно')}
               </button>
               <button type="button" className="btn btn--ghost btn--small" onClick={() => setAskDelete(false)}>
-                Отмена
+                {t('Отмена')}
               </button>
             </div>
           </div>
@@ -854,7 +849,7 @@ function AssignBlock({
 
   return (
     <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-      <legend className="small text-2">Положить письмо в дело</legend>
+      <legend className="small text-2">{t('Положить письмо в дело')}</legend>
       {options.map((o) => (
         <label key={o.id} className="checkbox">
           <input type="radio" name="case" checked={choice === o.id} onChange={() => setChoice(o.id)} />
@@ -866,24 +861,24 @@ function AssignBlock({
       ))}
       <label className="checkbox">
         <input type="radio" name="case" checked={choice === 'new'} onChange={() => setChoice('new')} />
-        <span>Новое дело</span>
+        <span>{t('Новое дело')}</span>
       </label>
       {choice === 'new' && (
         <div className="field">
-          <label htmlFor="new-case-title">Название дела (можно изменить)</label>
+          <label htmlFor="new-case-title">{t('Название дела (можно изменить)')}</label>
           <input
             id="new-case-title"
             className="input"
             value={title}
             maxLength={120}
-            placeholder="Из подтверждённых фактов или «Новое дело»"
+            placeholder={t('Из подтверждённых фактов или «Новое дело»')}
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
       )}
       {askPending && pending > 0 ? (
-        <div className="alert alert--warn stack-s" role="alertdialog" aria-label="Несохранённые решения перед делом">
-          <span>Есть несохранённые решения ({pending}). Сохранить их перед тем, как положить письмо в дело?</span>
+        <div className="alert alert--warn stack-s" role="alertdialog" aria-label={t('Несохранённые решения перед делом')}>
+          <span>{t('Есть несохранённые решения (')}{pending}{t('). Сохранить их перед тем, как положить письмо в дело?')}</span>
           <div className="row wrap">
             <button
               type="button"
@@ -893,7 +888,7 @@ function AssignBlock({
                 if (await onSave()) await assign();
               }}
             >
-              Сохранить и положить
+              {t('Сохранить и положить')}
             </button>
             <button
               type="button"
@@ -903,13 +898,13 @@ function AssignBlock({
                 setAskPending(false);
               }}
             >
-              Отменить решения
+              {t('Отменить решения')}
             </button>
           </div>
         </div>
       ) : (
         <button type="button" className="btn btn--primary btn--small" disabled={assigning.isLoading} onClick={() => void start()}>
-          В дело
+          {t('В дело')}
         </button>
       )}
     </fieldset>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLetterFileMutation } from '../store/api';
 import { ErrorAlert } from './ui';
+import { t } from '../i18n';
 
 /*
  * B11: оригинал письма для сверки фактов (ТЗ v3 6.2). Файлы грузятся только при открытии блока,
@@ -46,7 +47,7 @@ export function LetterOriginals({ letterId, files }: { letterId: string; files: 
 
   if (files.length === 0) return null;
   const isPdf = files.length === 1 && files[0].mime === 'application/pdf';
-  const label = isPdf ? 'Оригинал письма (PDF)' : `Оригинал письма (${files.length} ${files.length === 1 ? 'фото' : 'фото страниц'})`;
+  const label = isPdf ? t('Оригинал письма (PDF)') : t('Оригинал письма ({v0} {v1})', { v0: files.length, v1: files.length === 1 ? 'фото' : 'фото страниц' });
 
   return (
     <details
@@ -57,19 +58,19 @@ export function LetterOriginals({ letterId, files }: { letterId: string; files: 
       }}
     >
       <summary>{label}</summary>
-      {loading && <p className="muted">Загружаем оригинал…</p>}
+      {loading && <p className="muted">{t('Загружаем оригинал…')}</p>}
       <ErrorAlert error={error} />
       {originals && isPdf && (
         <a className="btn btn--secondary btn--small" href={originals[0].url} target="_blank" rel="noopener noreferrer">
-          Открыть PDF
+          {t('Открыть PDF')}
         </a>
       )}
       {originals && !isPdf && (
         <ol className="list-reset stack-s">
           {originals.map((o) => (
             <li key={o.n} className="stack-s">
-              <span className="small text-2">Страница {o.n}</span>
-              <img src={o.url} alt={`Оригинал, страница ${o.n}`} style={{ width: '100%', borderRadius: 12 }} />
+              <span className="small text-2">{t('Страница')}{' '}{o.n}</span>
+              <img src={o.url} alt={t('Оригинал, страница {v0}', { v0: o.n })} style={{ width: '100%', borderRadius: 12 }} />
             </li>
           ))}
         </ol>

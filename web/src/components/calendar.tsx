@@ -8,6 +8,7 @@ import {
   useResetCalendarLinkMutation,
   useSetReminderEmailMutation,
 } from '../store/api';
+import { t } from '../i18n';
 
 /** Полный адрес ленты: адрес API (абсолютный или относительный) + /calendar/<токен>.ics */
 export function feedUrl(feedPath: string, apiUrl: string = API_URL, origin: string = window.location.origin): string {
@@ -60,10 +61,9 @@ export function CalendarSection() {
 
   return (
     <div id="calendar" className="card stack-s" role="group" aria-labelledby="calendar-title" data-testid="calendar-profile">
-      <h3 id="calendar-title">Календарь и напоминания</h3>
+      <h3 id="calendar-title">{t('Календарь и напоминания')}</h3>
       <p className="small text-2">
-        Сроки из ваших писем появятся в календаре телефона: Google, iPhone или Outlook. В календаре только дата, вид
-        срока, ведомство и название дела, без текста письма.
+        {t('Сроки из ваших писем появятся в календаре телефона: Google, iPhone или Outlook. В календаре только дата, вид срока, ведомство и название дела, без текста письма.')}
       </p>
 
       {error && (
@@ -79,14 +79,14 @@ export function CalendarSection() {
           disabled={busy}
           onClick={() => void resetLink()}
         >
-          {resetState.isLoading ? 'Создаём…' : 'Создать ссылку для календаря'}
+          {resetState.isLoading ? t('Создаём…') : t('Создать ссылку для календаря')}
         </button>
       )}
 
       {url && (
         <>
           <div className="field">
-            <label htmlFor="calendar-url">Ваша ссылка на календарь</label>
+            <label htmlFor="calendar-url">{t('Ваша ссылка на календарь')}</label>
             <input
               id="calendar-url"
               className="input"
@@ -96,22 +96,22 @@ export function CalendarSection() {
               aria-describedby="calendar-url-hint"
             />
             <span id="calendar-url-hint" className="muted small">
-              Ссылка личная: кто её знает, видит ваши сроки. Не пересылайте её.
+              {t('Ссылка личная: кто её знает, видит ваши сроки. Не пересылайте её.')}
             </span>
           </div>
           <div className="row wrap">
             <a className="btn btn--primary btn--small" href={googleCalendarUrl(url)} target="_blank" rel="noreferrer">
-              Добавить в Google Календарь
+              {t('Добавить в Google Календарь')}
             </a>
             <a className="btn btn--secondary btn--small" href={webcalUrl(url)}>
-              Календарь iPhone или Mac
+              {t('Календарь iPhone или Mac')}
             </a>
             <button type="button" className="btn btn--ghost btn--small" onClick={() => void copy()}>
-              {copied ? 'Скопировано' : 'Скопировать ссылку'}
+              {copied ? t('Скопировано') : t('Скопировать ссылку')}
             </button>
           </div>
           <p className="small text-2">
-            Google Календарь обновляет подписку сам, обычно раз в несколько часов. Новый срок появится не сразу.
+            {t('Google Календарь обновляет подписку сам, обычно раз в несколько часов. Новый срок появится не сразу.')}
           </p>
           {!confirmReset ? (
             <div className="row wrap">
@@ -121,7 +121,7 @@ export function CalendarSection() {
                 disabled={busy}
                 onClick={() => setConfirmReset(true)}
               >
-                Новая ссылка
+                {t('Новая ссылка')}
               </button>
               <button
                 type="button"
@@ -129,13 +129,13 @@ export function CalendarSection() {
                 disabled={busy}
                 onClick={() => void removeLink()}
               >
-                Отключить календарь
+                {t('Отключить календарь')}
               </button>
             </div>
           ) : (
             <div className="stack-s">
               <div className="alert alert--info" role="status">
-                Старая ссылка перестанет работать. Календарь нужно будет добавить заново.
+                {t('Старая ссылка перестанет работать. Календарь нужно будет добавить заново.')}
               </div>
               <div className="row wrap">
                 <button
@@ -144,10 +144,10 @@ export function CalendarSection() {
                   disabled={busy}
                   onClick={() => void resetLink().then(() => setConfirmReset(false))}
                 >
-                  Создать новую ссылку
+                  {t('Создать новую ссылку')}
                 </button>
                 <button type="button" className="btn btn--ghost btn--small" onClick={() => setConfirmReset(false)}>
-                  Отмена
+                  {t('Отмена')}
                 </button>
               </div>
             </div>
@@ -165,7 +165,7 @@ export function CalendarSection() {
               disabled={reminderState.isLoading}
               onChange={(e) => void setReminder(e.target.checked)}
             />
-            <span>Напоминать письмом за 3 дня до срока</span>
+            <span>{t('Напоминать письмом за 3 дня до срока')}</span>
           </label>
         </div>
       )}

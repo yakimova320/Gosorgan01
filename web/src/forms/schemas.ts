@@ -14,13 +14,14 @@ import {
   RegisterSchema,
 } from '@jasno/shared';
 import { z } from 'zod';
+import { t } from '../i18n';
 
 /*
  * Схемы форм сайта. Основа: общие схемы запросов из packages/shared.
  * Повтор пароля: только поле формы, на сервер не отправляется. Несовпадение показывается у поля повтора.
  */
 
-const repeat = z.string().min(1, { message: 'Повторите пароль' });
+const repeat = z.string().min(1, { message: t('Повторите пароль') });
 const sameAs = (a: string, b: string) => (v: Record<string, unknown>) =>
   v[a] === v[b];
 /**
@@ -28,7 +29,7 @@ const sameAs = (a: string, b: string) => (v: Record<string, unknown>) =>
  * (иначе Zod пропускает проверку объекта и несовпадение не видно).
  */
 const mismatch = (a: string, b: string) => ({
-  message: 'Пароли не совпадают',
+  message: t('Пароли не совпадают'),
   path: [b],
   when: (payload: { value: unknown }) => {
     const v = payload.value as Record<string, unknown> | undefined;

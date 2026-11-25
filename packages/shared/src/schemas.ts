@@ -96,6 +96,11 @@ export function splitAddress(address: string): AddressParts | null {
   return m ? { street: m[1].trim(), postalCode: m[2], city: m[3].trim() } : null;
 }
 
+/** L07 (#83): языки Ja!sno. ru — исходный; uk и de — переводы. */
+export const LANGUAGES = ['ru', 'uk', 'de'] as const;
+export type Language = (typeof LANGUAGES)[number];
+export const LanguageSchema = z.enum(LANGUAGES);
+
 export const RegisterSchema = z.object({
   email: EmailSchema,
   password: NewPasswordSchema,
@@ -110,6 +115,8 @@ export const RegisterSchema = z.object({
    * без него нельзя загрузить письмо, спросим перед первой загрузкой.
    */
   aiConsent: z.boolean().optional(),
+  /** L07: язык сайта при регистрации; по умолчанию ru */
+  language: LanguageSchema.optional(),
 });
 // Код CONSENT_REQUIRED для поля consent: см. SPECIAL_CODES.
 export type RegisterInput = z.infer<typeof RegisterSchema>;

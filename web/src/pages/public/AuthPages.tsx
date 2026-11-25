@@ -13,13 +13,14 @@ import { revalidateIfTouched } from '../../forms/revalidate';
 import { useAppDispatch, useSession } from '../../store';
 import { useForgotPasswordMutation, useLoginMutation, useRegisterMutation, useResetPasswordMutation } from '../../store/api';
 import { signedIn, signedOut } from '../../store/session';
+import { getLang, t } from '../../i18n';
 
 /*
  * Формы входа и пароля: react-hook-form + схемы из packages/shared (TechBriefing v5, раздел 5).
  * mode 'onTouched': ошибка после первого ухода из поля, дальше при каждом изменении.
  */
 
-const PASSWORD_HINT = `Не меньше ${PASSWORD_MIN_CHARS} знаков`;
+const PASSWORD_HINT = t('Не меньше {v0} знаков', { v0: PASSWORD_MIN_CHARS });
 
 function AuthCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -56,32 +57,32 @@ export function LoginPage() {
   });
 
   return (
-    <AuthCard title="Вход">
+    <AuthCard title={t('Вход')}>
       {passwordReset && (
         <div className="alert alert--info" role="status" data-testid="password-reset-done">
-          Пароль изменён. Войдите с новым паролем.
+          {t('Пароль изменён. Войдите с новым паролем.')}
         </div>
       )}
       {expired && !passwordReset && (
         <p className="small text-2" role="status">
-          Сессия истекла. Войдите снова.
+          {t('Сессия истекла. Войдите снова.')}
         </p>
       )}
       <form className="stack" onSubmit={submit} noValidate>
         <EmailField id="email" label="E-mail" registration={form.register('email')} error={errors.email} />
-        <PasswordField id="password" label="Пароль" autoComplete="current-password" registration={form.register('password')} error={errors.password} />
+        <PasswordField id="password" label={t('Пароль')} autoComplete="current-password" registration={form.register('password')} error={errors.password} />
         <FormError message={formError} />
-        <SubmitButton submitting={isSubmitting} busyText="Входим…">
-          Войти
+        <SubmitButton submitting={isSubmitting} busyText={t('Входим…')}>
+          {t('Войти')}
         </SubmitButton>
       </form>
       <Link to="/forgot" className="link">
-        Забыли пароль?
+        {t('Забыли пароль?')}
       </Link>
       <span className="small text-2">
-        Нет аккаунта?{' '}
+        {t('Нет аккаунта?')}{' '}
         <Link to="/register" className="link">
-          Зарегистрироваться
+          {t('Зарегистрироваться')}
         </Link>
       </span>
     </AuthCard>
@@ -103,7 +104,7 @@ export function RegisterPage() {
   const submit = form.handleSubmit(async ({ email, password, consent, aiConsent, firstName, lastName, address }) => {
     setFormError(null);
     try {
-      const { sessionToken } = await register({ email, password, consent, aiConsent, firstName, lastName, address }).unwrap();
+      const { sessionToken } = await register({ email, password, consent, aiConsent, firstName, lastName, address, language: getLang() }).unwrap();
       dispatch(signedIn(sessionToken));
       navigate('/app', { replace: true });
     } catch (err) {
@@ -112,37 +113,37 @@ export function RegisterPage() {
   });
 
   return (
-    <AuthCard title="Регистрация">
-      <p className="small text-2">Нужны e-mail, пароль, имя, фамилия и адрес проживания. Имя, фамилию и адрес можно изменить в профиле.</p>
+    <AuthCard title={t('Регистрация')}>
+      <p className="small text-2">{t('Нужны e-mail, пароль, имя, фамилия и адрес проживания. Имя, фамилию и адрес можно изменить в профиле.')}</p>
       <form className="stack" onSubmit={submit} noValidate>
         <TextField
           id="r-first"
-          label="Имя"
+          label={t('Имя')}
           autoComplete="given-name"
           registration={form.register('firstName')}
           error={errors.firstName}
-          hint="Латинскими буквами, например Anna"
+          hint={t('Латинскими буквами, например Anna')}
         />
         <TextField
           id="r-last"
-          label="Фамилия"
+          label={t('Фамилия')}
           autoComplete="family-name"
           registration={form.register('lastName')}
           error={errors.lastName}
-          hint="Латинскими буквами, например Müller"
+          hint={t('Латинскими буквами, например Müller')}
         />
         <TextField
           id="r-address"
-          label="Адрес проживания"
+          label={t('Адрес проживания')}
           autoComplete="street-address"
           registration={form.register('address')}
           error={errors.address}
-          hint="Улица, дом, индекс, город"
+          hint={t('Улица, дом, индекс, город')}
         />
         <EmailField id="r-email" label="E-mail" registration={form.register('email')} error={errors.email} />
         <PasswordField
           id="r-password"
-          label="Пароль"
+          label={t('Пароль')}
           autoComplete="new-password"
           registration={form.register('password', { onChange: revalidateIfTouched(form, 'passwordRepeat') })}
           error={errors.password}
@@ -150,31 +151,31 @@ export function RegisterPage() {
         />
         <PasswordField
           id="r-password2"
-          label="Повторите пароль"
+          label={t('Повторите пароль')}
           autoComplete="new-password"
           registration={form.register('passwordRepeat')}
           error={errors.passwordRepeat}
         />
         <CheckboxField id="r-consent" registration={form.register('consent')} error={errors.consent}>
-          Я согласен(на) с обработкой моих данных по правилам{' '}
+          {t('Я согласен(на) с обработкой моих данных по правилам')}{' '}
           <Link to="/datenschutz" className="link" target="_blank">
             Datenschutz
           </Link>
-          . В тестовой версии загружайте только примеры писем.
+          {t('. В тестовой версии загружайте только примеры писем.')}
         </CheckboxField>
         {/* K11 (#134): отдельное согласие на анализ ИИ, не отмечено заранее; можно дать позже */}
         <CheckboxField id="r-ai-consent" registration={form.register('aiConsent')}>
-          {AI_CONSENT_LABEL} Необязательно сейчас: без согласия спросим перед первой загрузкой письма.
+          {AI_CONSENT_LABEL}{' '}{t('Необязательно сейчас: без согласия спросим перед первой загрузкой письма.')}
         </CheckboxField>
         <FormError message={formError} />
-        <SubmitButton submitting={isSubmitting} busyText="Создаём кабинет…">
-          Зарегистрироваться
+        <SubmitButton submitting={isSubmitting} busyText={t('Создаём кабинет…')}>
+          {t('Зарегистрироваться')}
         </SubmitButton>
       </form>
       <span className="small text-2">
-        Уже есть аккаунт?{' '}
+        {t('Уже есть аккаунт?')}{' '}
         <Link to="/login" className="link">
-          Войти
+          {t('Войти')}
         </Link>
       </span>
     </AuthCard>
@@ -208,21 +209,21 @@ export function ForgotPage() {
   });
 
   return (
-    <AuthCard title="Забыли пароль?">
+    <AuthCard title={t('Забыли пароль?')}>
       {sent ? (
         <div className="alert alert--info" role="status">
-          Если такой адрес есть, мы отправили письмо со ссылкой. Ссылка работает один раз и около часа.
+          {t('Если такой адрес есть, мы отправили письмо со ссылкой. Ссылка работает один раз и около часа.')}
         </div>
       ) : (
         <form className="stack" onSubmit={submit} noValidate>
-          <p className="small text-2">Введите e-mail, с которым вы регистрировались. Придёт письмо со ссылкой для нового пароля.</p>
+          <p className="small text-2">{t('Введите e-mail, с которым вы регистрировались. Придёт письмо со ссылкой для нового пароля.')}</p>
           <EmailField id="f-email" label="E-mail" registration={form.register('email')} error={errors.email} />
           <FormError message={formError} />
-          <SubmitButton submitting={isSubmitting}>Отправить ссылку</SubmitButton>
+          <SubmitButton submitting={isSubmitting}>{t('Отправить ссылку')}</SubmitButton>
         </form>
       )}
       <Link to="/login" className="link">
-        Назад ко входу
+        {t('Назад ко входу')}
       </Link>
     </AuthCard>
   );
@@ -268,16 +269,15 @@ export function ResetPage() {
 
   const again = (
     <Link to="/forgot" className="link">
-      Запросить новое письмо
+      {t('Запросить новое письмо')}
     </Link>
   );
 
   if (!token) {
     return (
-      <AuthCard title="Новый пароль">
+      <AuthCard title={t('Новый пароль')}>
         <div className="alert alert--error" role="alert" data-testid="reset-no-token">
-          Ссылки нет: страницу открыли без ссылки из письма или обновили. Откройте ссылку из письма ещё раз или
-          запросите новое письмо.
+          {t('Ссылки нет: страницу открыли без ссылки из письма или обновили. Откройте ссылку из письма ещё раз или запросите новое письмо.')}
         </div>
         {again}
       </AuthCard>
@@ -286,9 +286,9 @@ export function ResetPage() {
 
   if (invalid) {
     return (
-      <AuthCard title="Новый пароль">
+      <AuthCard title={t('Новый пароль')}>
         <div className="alert alert--error" role="alert" data-testid="reset-invalid">
-          Ссылка недействительна или устарела: она работает один раз и ограниченное время. Запросите новое письмо.
+          {t('Ссылка недействительна или устарела: она работает один раз и ограниченное время. Запросите новое письмо.')}
         </div>
         {again}
       </AuthCard>
@@ -296,11 +296,11 @@ export function ResetPage() {
   }
 
   return (
-    <AuthCard title="Новый пароль">
+    <AuthCard title={t('Новый пароль')}>
       <form className="stack" onSubmit={submit} noValidate>
         <PasswordField
           id="n-pw"
-          label="Новый пароль"
+          label={t('Новый пароль')}
           autoComplete="new-password"
           registration={form.register('newPassword', { onChange: revalidateIfTouched(form, 'newPasswordRepeat') })}
           error={errors.newPassword}
@@ -308,13 +308,13 @@ export function ResetPage() {
         />
         <PasswordField
           id="n-pw2"
-          label="Повторите пароль"
+          label={t('Повторите пароль')}
           autoComplete="new-password"
           registration={form.register('newPasswordRepeat')}
           error={errors.newPasswordRepeat}
         />
         <FormError message={formError} />
-        <SubmitButton submitting={isSubmitting}>Сохранить пароль</SubmitButton>
+        <SubmitButton submitting={isSubmitting}>{t('Сохранить пароль')}</SubmitButton>
       </form>
       {again}
     </AuthCard>

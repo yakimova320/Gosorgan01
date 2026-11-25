@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { errorText } from '../api/errors';
 import { AI_CONSENT_DETAILS, AI_CONSENT_LABEL, AI_CONSENT_LABEL_DE } from '../lib/consent';
 import { useSetAiConsentMutation } from '../store/api';
+import { locale, t } from '../i18n';
 
 /**
  * K11 (#134): согласие на анализ письма ИИ перед загрузкой. Чекбокс не отмечен заранее,
@@ -13,9 +14,9 @@ export function AiConsentCard() {
   const [setConsent, state] = useSetAiConsentMutation();
   return (
     <div className="card stack" data-testid="ai-consent">
-      <h2>Нужно ваше согласие</h2>
+      <h2>{t('Нужно ваше согласие')}</h2>
       <p className="small text-2">
-        Чтобы разобрать письмо, Ja!sno передаёт его текст модели ИИ. Без согласия загрузить письмо нельзя.
+        {t('Чтобы разобрать письмо, Ja!sno передаёт его текст модели ИИ. Без согласия загрузить письмо нельзя.')}
       </p>
       <ul className="small stack-s" style={{ margin: 0, paddingLeft: 18 }}>
         {AI_CONSENT_DETAILS.map((t) => (
@@ -44,10 +45,10 @@ export function AiConsentCard() {
         disabled={!checked || state.isLoading}
         onClick={() => void setConsent(true)}
       >
-        {state.isLoading ? 'Сохраняем…' : 'Дать согласие'}
+        {state.isLoading ? t('Сохраняем…') : t('Дать согласие')}
       </button>
       <Link to="/datenschutz" className="link small">
-        Подробно: Datenschutz
+        {t('Подробно: Datenschutz')}
       </Link>
     </div>
   );
@@ -58,11 +59,11 @@ export function AiConsentSection({ given, at }: { given: boolean; at: string | n
   const [setConsent, state] = useSetAiConsentMutation();
   return (
     <div className="card stack-s" role="group" aria-labelledby="ai-consent-title" data-testid="ai-consent-profile">
-      <h3 id="ai-consent-title">Анализ писем ИИ</h3>
+      <h3 id="ai-consent-title">{t('Анализ писем ИИ')}</h3>
       <p className="small">
         {given
-          ? `Согласие дано${at ? ` ${new Date(at).toLocaleDateString('ru-RU')}` : ''}. Письма можно загружать.`
-          : 'Согласия нет: загрузить и разобрать новое письмо нельзя.'}
+          ? `${t('Согласие дано')}${at ? ` ${new Date(at).toLocaleDateString(locale())}` : ''}. ${t('Письма можно загружать.')}`
+          : t('Согласия нет: загрузить и разобрать новое письмо нельзя.')}
       </p>
       <p className="small text-2">{AI_CONSENT_LABEL}</p>
       {state.isError && (
@@ -77,7 +78,7 @@ export function AiConsentSection({ given, at }: { given: boolean; at: string | n
           disabled={state.isLoading}
           onClick={() => void setConsent(!given)}
         >
-          {given ? 'Отозвать согласие' : 'Дать согласие'}
+          {given ? t('Отозвать согласие') : t('Дать согласие')}
         </button>
         <Link to="/datenschutz" className="link small">
           Datenschutz
