@@ -5456,6 +5456,253 @@
           ]
         }
       ]
+    },
+    {
+      "name": "14 Языки сайта (L07)",
+      "description": "L07 (#83): язык кабинета ru/uk/de. Объяснение, перевод, чат, письма и календарь приходят на этом языке. Нужен вход из папки 01 и письмо из папки 02 ({{letterId}}).",
+      "item": [
+        {
+          "name": "PATCH /cabinet: язык uk",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"language\": \"uk\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('язык uk', () => pm.expect(pm.response.json().language).to.eql('uk'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet: неизвестный язык → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"language\": \"fr\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/explain?lang=de: объяснение на простом немецком",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/explain?lang=de",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "explain"
+              ],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "de"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200 или 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "pm.test('язык de', () => pm.expect(pm.response.json().lang).to.eql('de'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /letters/:id/translate?lang=uk: перевод на украинский",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/letters/{{letterId}}/translate?lang=uk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "letters",
+                "{{letterId}}",
+                "translate"
+              ],
+              "query": [
+                {
+                  "key": "lang",
+                  "value": "uk"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200 или 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "pm.test('машинный перевод', () => pm.expect(pm.response.json().machine).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /chat/public: вопрос на украинском",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "public"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Чи можна увійти через Google або Apple?\", \"history\": [], \"language\": \"uk\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('ответ есть', () => pm.expect(pm.response.json().answer).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cabinet: вернуть язык ru",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cabinet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cabinet"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"language\": \"ru\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

@@ -62,6 +62,23 @@ describe('Правки 25.11 (e2e)', () => {
     await http().post('/chat/public').send({ text: 'Что такое Anmeldung?' }).expect(200);
   });
 
+  it('L07: чат без входа на украинском и немецком отвечает из FAQ этого языка', async () => {
+    const uk = await http()
+      .post('/chat/public')
+      .send({ text: 'Чи можна увійти через Google або Apple?', language: 'uk' })
+      .expect(200);
+    expect(uk.body.answer).toContain('Поки що лише через e-mail і пароль');
+    const de = await http()
+      .post('/chat/public')
+      .send({ text: 'Kann ich mich mit Google oder Apple anmelden?', language: 'de' })
+      .expect(200);
+    expect(de.body.answer).toContain('Noch nicht, nur mit E-Mail und Passwort');
+    const call = await db.llmCall.findFirst({ where: { promptName: 'chat' }, orderBy: { createdAt: 'desc' } });
+    expect(call?.promptVersion).toBe(2);
+    expect(call?.input).toContain('Язык ответа: простой немецкий');
+    await http().post('/chat/public').send({ text: 'x', language: 'fr' }).expect(400);
+  });
+
   it('чат без входа: проверка входа', async () => {
     await http().post('/chat/public').send({ text: '' }).expect(400);
     await http().post('/chat/public').send({ text: 'x'.repeat(1001) }).expect(400);

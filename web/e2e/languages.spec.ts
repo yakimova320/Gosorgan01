@@ -77,3 +77,17 @@ test('вход: язык кабинета главнее языка браузе
   await expect(page.getByTestId('lang-switcher').first()).toHaveValue('de');
   await expect(page.getByRole('heading', { name: 'Hier ist es noch ruhig' })).toBeVisible();
 });
+
+test('FAQ, блог и горячие темы на языке сайта', async ({ browser }) => {
+  const context = await browser.newContext({ locale: 'uk-UA' });
+  const page = await context.newPage();
+  await page.goto('/faq');
+  await expect(page.getByText('Чи можна увійти через Google або Apple?')).toBeVisible();
+  await page.goto('/blog');
+  await expect(page.getByText('Поїздка в Україну: спершу попередьте Jobcenter').first()).toBeVisible();
+  await page.getByTestId('lang-switcher').selectOption('de');
+  await expect(page.getByText('Reise in die Ukraine: Sagen Sie zuerst dem Jobcenter Bescheid').first()).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByText('Aus Bürgergeld wird Grundsicherungsgeld: Was ist neu?').first()).toBeVisible();
+  await context.close();
+});

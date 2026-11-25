@@ -1,0 +1,1160 @@
+{
+  "source": "Dokument „Ja!sno: Karten ‚Wichtig zu wissen‘“, Version vom 15.11.2026 (rev 16), deutsche Fassung. Die Texte schreiben und prüfen Menschen, der Code ändert sie nicht.",
+  "topics": [
+    {
+      "id": "hot",
+      "title": "Aktuelle Themen"
+    },
+    {
+      "id": "children",
+      "title": "Alles über Kinder"
+    },
+    {
+      "id": "housing",
+      "title": "Wohnen"
+    },
+    {
+      "id": "insurance",
+      "title": "Versicherungen"
+    },
+    {
+      "id": "health",
+      "title": "Gesundheit"
+    },
+    {
+      "id": "taxes",
+      "title": "Steuern"
+    },
+    {
+      "id": "letters",
+      "title": "Briefe und Fristen"
+    },
+    {
+      "id": "contracts",
+      "title": "Verträge"
+    },
+    {
+      "id": "german",
+      "title": "Deutsche Sprache"
+    }
+  ],
+  "cards": [
+    {
+      "id": "hot-24-extension",
+      "topic": "hot",
+      "title": "Aufenthaltserlaubnis nach § 24 gilt bis 4. März 2027 weiter, Sie müssen nicht zum Amt",
+      "text": "Erlaubnisse nach § 24, die am 1. Februar 2026 gültig waren, gelten automatisch bis 4. März 2027 weiter. Sie brauchen keinen Antrag und keinen Termin bei der Ausländerbehörde. Auf der Karte kann noch das alte Datum stehen. Das ist in Ordnung: Arbeit, Leistungen und Reisen bleiben erlaubt. In vielen Städten bekommen Sie eine Bescheinigung über die Verlängerung online.",
+      "german": [
+        "Aufenthaltserlaubnis nach § 24 AufenthG",
+        "Fortgeltung",
+        "Bescheinigung"
+      ],
+      "keywords": [
+        "Verlängerung",
+        "Aufenthaltserlaubnis",
+        "Paragraf 24",
+        "Ausländerbehörde",
+        "abgelaufen",
+        "Ukraine",
+        "Fortgeltung"
+      ],
+      "sources": [
+        {
+          "name": "Bundesregierung",
+          "url": "https://www.bundesregierung.de/ib-de/ich-moechte-mehr-wissen-ueber/flucht-und-asyl/aufenthaltstitel-verlaengern-sich-erneut-automatisch-um-ein-jahr-bis-zum-4-maerz-2027-2266260"
+        },
+        {
+          "name": "§ 2 UkraineAufenthFGV",
+          "url": "https://www.gesetze-im-internet.de/ukraineaufenthfgv/__2.html"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-travel-ukraine",
+      "topic": "hot",
+      "title": "Reise in die Ukraine: Sagen Sie zuerst dem Jobcenter Bescheid",
+      "text": "Mit einer Erlaubnis nach § 24 und einem gültigen Reisepass dürfen Sie in die Ukraine reisen. Wenn Sie Geld vom Jobcenter bekommen, müssen Sie die Abwesenheit vorher absprechen. Sonst kann das Jobcenter die Zahlung stoppen und Geld zurückfordern. Wenn Sie länger als 6 Monate weg sind, kann die Aufenthaltserlaubnis erlöschen.",
+      "german": [
+        "Ortsabwesenheit",
+        "Erreichbarkeit",
+        "Nationalpass"
+      ],
+      "keywords": [
+        "Reise",
+        "Ukraine",
+        "Urlaub",
+        "Ortsabwesenheit",
+        "Jobcenter",
+        "Leistungen",
+        "Paragraf 24"
+      ],
+      "sources": [
+        {
+          "name": "Stadt Köln: Reisen ins Ausland",
+          "url": "https://www.stadt-koeln.de/leben-in-koeln/soziales/aufenthalt-flucht-einwanderung/aufenthalt-einreise-reisen-ins-ausland"
+        },
+        {
+          "name": "§ 51 AufenthG",
+          "url": "https://www.gesetze-im-internet.de/aufenthg_2004/__51.html"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Jedes Jobcenter hat eigene Fristen für die Absprache. Fragen Sie Ihre Ansprechperson."
+    },
+    {
+      "id": "hot-switch-permit",
+      "topic": "hot",
+      "title": "Von § 24 zu einem sicheren Aufenthalt: Den Wechsel müssen Sie selbst beantragen",
+      "text": "Solange Ihre Erlaubnis nach § 24 gilt, können Sie zu einer anderen wechseln: für Fachkräfte mit anerkannter Ausbildung (§ 18a, § 18b), Blaue Karte, Studium oder Ausbildung. Sie müssen die Bedingungen der neuen Erlaubnis erfüllen: passende Arbeit, anerkannter Abschluss, genug Geld zum Leben. Der Status ändert sich nicht von selbst. Den Antrag stellen Sie bei der Ausländerbehörde. Gehen Sie vorher am besten zu einer Beratung.",
+      "german": [
+        "Wechsel des Aufenthaltstitels",
+        "Fachkraft",
+        "§ 18a AufenthG",
+        "§ 18b AufenthG"
+      ],
+      "keywords": [
+        "Statuswechsel",
+        "Paragraf 24",
+        "Aufenthaltserlaubnis",
+        "Arbeitsvisum",
+        "Fachkraft",
+        "Ausbildung",
+        "Studium"
+      ],
+      "sources": [
+        {
+          "name": "IHK Regensburg",
+          "url": "https://www.ihk.de/regensburg/fachthemen/fachkraefte/aktuelles-fachkraeftesicherung/ukrainische-beschaeftigte-7192720"
+        },
+        {
+          "name": "BAGFW: Aufenthaltsverfestigung",
+          "url": "https://www.bagfw.de/fileadmin/user_upload/2025/Aufenthaltsverfestigung_Geflüchtete_Ukraine.pdf"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-blue-card",
+      "topic": "hot",
+      "title": "Blaue Karte: Gehalt ab 50.700 € im Jahr (2026)",
+      "text": "Die Blaue Karte bekommen Sie mit einem Hochschulabschluss (anerkannt oder vergleichbar) und einem konkreten Jobangebot in Ihrem Fach. Die Gehaltsgrenze 2026 ist 50.700 € brutto im Jahr. Für Engpassberufe und Berufsanfänger ist sie niedriger: 45.934,20 €. Die Grenze ändert sich jedes Jahr im Januar.",
+      "german": [
+        "Blaue Karte EU",
+        "Mangelberuf",
+        "Bruttojahresgehalt"
+      ],
+      "keywords": [
+        "Blue Card",
+        "Blaue Karte",
+        "Fachkraft",
+        "Gehalt",
+        "Aufenthaltserlaubnis",
+        "Arbeit"
+      ],
+      "sources": [
+        {
+          "name": "RT Partner: Mindestgehalt 2026",
+          "url": "https://www.rtpartner.de/immigration/blaue-karte-eu-mindestgehalt-2026/"
+        },
+        {
+          "name": "CMS: Blaue Karte EU",
+          "url": "https://cms.law/de/deu/legal-updates/gefragt-wie-nie-die-blaue-karte-eu-als-schluessel-im-recruiting-internationaler-fachkraefte"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Im Januar 2027 prüfen."
+    },
+    {
+      "id": "hot-diploma",
+      "topic": "hot",
+      "title": "Anerkennung vom Abschluss: Starten Sie mit dem Anerkennungs-Finder",
+      "text": "Mit § 24 dürfen Sie auch ohne Anerkennung arbeiten. Für reglementierte Berufe ist die Anerkennung aber Pflicht, zum Beispiel Ärztin, Pflegekraft oder Lehrer. Der Anerkennungs-Finder zeigt, ob Sie sie für Ihren Beruf brauchen, wo Sie den Antrag stellen und welche Unterlagen nötig sind. Kostenlose Beratung gibt es beim IQ Netzwerk.",
+      "german": [
+        "Anerkennung",
+        "reglementierter Beruf",
+        "Anerkennungs-Finder",
+        "Zeugnisbewertung (ZAB)"
+      ],
+      "keywords": [
+        "Diplom",
+        "Abschluss",
+        "Anerkennung",
+        "Beruf",
+        "Arzt",
+        "Lehrer",
+        "Pflege"
+      ],
+      "sources": [
+        {
+          "name": "Anerkennung in Deutschland: Geflüchtete",
+          "url": "https://www.anerkennung-in-deutschland.de/gefluechtete"
+        },
+        {
+          "name": "Anerkennung in Deutschland: FAQ",
+          "url": "https://www.anerkennung-in-deutschland.de/html/de/faq.php"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Jeder Beruf hat eigene Regeln. Bei Mann und Frau kann der Weg verschieden sein."
+    },
+    {
+      "id": "hot-grundsicherung",
+      "topic": "hot",
+      "title": "Aus Bürgergeld wird Grundsicherungsgeld: Was ist neu?",
+      "text": "Seit 1. Juli 2026 heißt das Bürgergeld Grundsicherungsgeld. Für eine erwachsene Person sind es weiter 563 €. Die Regeln sind strenger: Das Jobcenter bietet zuerst Arbeit an. Wenn Sie ablehnen, kann es die Zahlung stärker kürzen. Sie dürfen weniger Erspartes haben. In Briefen kann bis Ende 2026 noch „Bürgergeld“ stehen.",
+      "german": [
+        "Grundsicherungsgeld",
+        "Jobcenter",
+        "Vermittlungsvorrang",
+        "Leistungsminderung"
+      ],
+      "keywords": [
+        "Bürgergeld",
+        "Leistungen",
+        "Jobcenter",
+        "Zahlung",
+        "Sanktionen",
+        "Grundsicherung"
+      ],
+      "sources": [
+        {
+          "name": "Bundesagentur für Arbeit",
+          "url": "https://www.arbeitsagentur.de/grundsicherung-loest-buergergeld-ab"
+        },
+        {
+          "name": "Bundesregierung",
+          "url": "https://www.bundesregierung.de/breg-de/aktuelles/neue-grundsicherung-2399562"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-asylblg",
+      "topic": "hot",
+      "title": "Nach dem 1. April 2025 gekommen? Achten Sie auf das neue Gesetz",
+      "text": "Die Regierung will, dass Menschen aus der Ukraine, die nach dem 1. April 2025 gekommen sind, weniger Geld nach dem AsylbLG bekommen statt vom Jobcenter. Im Sommer 2026 gilt das Gesetz noch nicht. Wenn es gilt, schickt das Amt einen Brief. Wer schon Geld bekommt, wird nicht sofort umgestellt. Solange nichts entschieden ist: Ändern Sie nichts selbst und fragen Sie beim Jobcenter nach.",
+      "german": [
+        "Rechtskreiswechsel",
+        "Asylbewerberleistungsgesetz (AsylbLG)",
+        "Leistungsrechtsanpassungsgesetz"
+      ],
+      "keywords": [
+        "AsylbLG",
+        "Leistungen",
+        "Jobcenter",
+        "Sozialamt",
+        "neue Regeln",
+        "Ukraine"
+      ],
+      "sources": [
+        {
+          "name": "Bundestag hib 15/2026",
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1136158"
+        },
+        {
+          "name": "Bundesregierung: Kabinett",
+          "url": "https://www.bundesregierung.de/breg-de/aktuelles/kabinett-rechtskreiswechsel-2382474"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Gesetz in Arbeit: jeden Monat prüfen."
+    },
+    {
+      "id": "hot-housing-jobcenter",
+      "topic": "hot",
+      "title": "Wohnung mit Leistungen: Zusicherung vom Jobcenter vor der Unterschrift",
+      "text": "Wenn das Jobcenter die Miete zahlt, zeigen Sie ihm zuerst das Wohnungsangebot und holen Sie eine schriftliche Zusicherung. Ohne sie zahlt das Jobcenter nur eine „angemessene“ Miete. Umzug, Kaution und Möbel zahlt es dann vielleicht nicht. Welche Miete angemessen ist, entscheidet jede Stadt selbst.",
+      "german": [
+        "Zusicherung",
+        "Kosten der Unterkunft",
+        "Angemessenheit",
+        "Mietangebot"
+      ],
+      "keywords": [
+        "Wohnung",
+        "Miete",
+        "Umzug",
+        "Jobcenter",
+        "Kaution",
+        "Mietvertrag",
+        "Zusicherung"
+      ],
+      "sources": [
+        {
+          "name": "Jobcenter Berlin Mitte",
+          "url": "https://www.berlin.de/jobcenter-mitte/buergergeld/geldleistungen/wohnung-heizung/informationsschreiben_zur_neuanmietung_von_angemessenem_wohnraum.pdf"
+        },
+        {
+          "name": "betanet: Kosten der Unterkunft",
+          "url": "https://www.betanet.de/buergergeld-kosten-unterkunft.html"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-language",
+      "topic": "hot",
+      "title": "Sprachkurse: Wo Sie jetzt einen Platz bekommen",
+      "text": "Der Integrationskurs ist für § 24 kostenlos. Die Zulassung gibt das BAMF. Seit Februar 2026 gibt das BAMF kaum freiwillige Zulassungen. Menschen aus der Ukraine mit § 24 haben Vorrang, aber die Plätze hängen vom Geld im Haushalt ab. Wenn Sie Leistungen bekommen, fragen Sie das Jobcenter: Wer zum Kurs verpflichtet ist, kommt zuerst dran. Nach B1 gibt es den Berufssprachkurs für die Arbeit.",
+      "german": [
+        "Integrationskurs",
+        "Zulassung",
+        "Verpflichtung",
+        "Berufssprachkurs"
+      ],
+      "keywords": [
+        "Kurs",
+        "Deutsch",
+        "Sprache",
+        "Integrationskurs",
+        "BAMF",
+        "B1",
+        "Jobcenter"
+      ],
+      "sources": [
+        {
+          "name": "migrando (13.05.2026)",
+          "url": "https://migrando.de/news/integration/neue-regeln-fuer-freiwillige-integrationskurse-wer-darf-teilnehmen-und-wer-nicht/"
+        },
+        {
+          "name": "Stadt Stuttgart: Deutschkurse",
+          "url": "https://www.stuttgart.de/buergerinnen-und-buerger/migranten/fluechtlinge/ukraine-hilfe/ankommen/deutschkurse.php"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Die Regeln ändern sich. Prüfen Sie die Seite vom BAMF."
+    },
+    {
+      "id": "hot-kita",
+      "topic": "hot",
+      "title": "Kita: In einem Bundesland kostenlos, im nächsten Hunderte Euro",
+      "text": "Die Kita-Gebühren legen Bundesland und Stadt fest. Ganz kostenlos für Eltern ist die Kita in Berlin und Mecklenburg-Vorpommern. In vielen Ländern sind Stunden oder Jahre ab 3 Jahren kostenlos, zum Beispiel in Hessen 6 Stunden am Tag. Wer Grundsicherung, Wohngeld oder Kinderzuschlag bekommt, zahlt nichts für die Kita: Stellen Sie einen Antrag beim Jugendamt. Die Kita ist keine Pflicht. Die Schule ist überall Pflicht.",
+      "german": [
+        "Kita-Gebühren",
+        "Beitragsfreiheit",
+        "Jugendamt",
+        "Schulpflicht"
+      ],
+      "keywords": [
+        "Kita",
+        "Kindergarten",
+        "Gebühren",
+        "Schule",
+        "Kinder",
+        "Umzug in ein anderes Bundesland"
+      ],
+      "sources": [
+        {
+          "name": "Bildungsserver: Kita-Gebühren",
+          "url": "https://www.bildungsserver.de/Kita-Gebuehren-5674-de.html"
+        },
+        {
+          "name": "Regierung MV",
+          "url": "https://www.regierung-mv.de/Landesregierung/bm/Kindertagesfoerderung/Elternbeitragsfreiheit/"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Prüfen Sie die Regeln Ihres Bundeslands auf der Seite der Stadt."
+    },
+    {
+      "id": "hot-medicine",
+      "topic": "hot",
+      "title": "Ärzte: Hausarzt, Überweisung und Arztsuche nach Sprache",
+      "text": "Gehen Sie mit der Karte der Krankenkasse zuerst zur Hausärztin oder zum Hausarzt. Dort werden Sie behandelt und bekommen eine Überweisung zur Fachärztin oder zum Facharzt. Dringende Termine und ärztlicher Bereitschaftsdienst: 116117. Lebensgefahr: 112. Ärzte, die Ukrainisch oder Russisch sprechen, finden Sie in der Arztsuche 116117 mit dem Filter Sprache.",
+      "german": [
+        "Hausarzt",
+        "Überweisung",
+        "Gesundheitskarte",
+        "Arztsuche"
+      ],
+      "keywords": [
+        "Arzt",
+        "Medizin",
+        "Überweisung",
+        "Hausarzt",
+        "116117",
+        "Krankenkasse",
+        "Arztsuche"
+      ],
+      "sources": [
+        {
+          "name": "116117",
+          "url": "https://www.116117.de"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "housing-anmeldung",
+      "topic": "housing",
+      "title": "Anmelden müssen Sie sich innerhalb von 2 Wochen",
+      "text": "Nach dem Umzug melden Sie Ihre Adresse innerhalb von zwei Wochen beim Bürgeramt an. Dafür brauchen Sie die Wohnungsgeberbestätigung vom Vermieter. Der Mietvertrag allein reicht nicht. In einer WG oder bei Untermiete unterschreibt die Hauptmieterin oder der Hauptmieter.",
+      "german": [
+        "Anmeldung",
+        "Wohnungsgeberbestätigung"
+      ],
+      "keywords": [
+        "Umzug",
+        "Anmeldung",
+        "Adresse",
+        "Wohnung",
+        "Ummeldung",
+        "Wohnungsgeberbestätigung"
+      ],
+      "sources": [
+        {
+          "name": "§ 17 BMG",
+          "url": "https://www.gesetze-im-internet.de/bmg/__17.html"
+        },
+        {
+          "name": "формуляр с выдержкой из § 17 и § 19 BMG",
+          "url": "https://www.twist-emsland.de/pdf_files/wohnungsgeberbestaetigung_1571_1.pdf"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-kaution",
+      "topic": "housing",
+      "title": "Kaution: höchstens 3 Kaltmieten, in drei Teilen möglich",
+      "text": "Die Kaution ist höchstens drei Monatsmieten ohne Nebenkosten. Sie dürfen sie in drei gleichen Teilen zahlen: den ersten zu Beginn, die anderen in den nächsten Monaten. Dieses Recht gilt auch, wenn im Vertrag etwas anderes steht.",
+      "german": [
+        "Kaution",
+        "Nettokaltmiete",
+        "Ratenzahlung"
+      ],
+      "keywords": [
+        "Kaution",
+        "Mietkaution",
+        "Wohnung",
+        "Mietvertrag",
+        "Kaltmiete"
+      ],
+      "sources": [
+        {
+          "name": "Berliner Mieterverein",
+          "url": "https://www.berliner-mieterverein.de/?p=14846"
+        },
+        {
+          "name": "Finanztip",
+          "url": "https://finanztip.de/mietkaution/"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-fake",
+      "topic": "housing",
+      "title": "Kein Geld vor Besichtigung und Vertrag überweisen",
+      "text": "Wenn ein „Vermieter“ die Kaution vor dem Vertrag will oder Geld für einen Schlüssel zur Besichtigung, ist das oft Betrug. Warnzeichen: sehr niedriger Preis, der Vermieter ist „gerade im Ausland“, er will vorher eine Kopie vom Pass. Zahlen Sie erst nach der Besichtigung und mit unterschriebenem Vertrag.",
+      "german": [
+        "Vorkasse",
+        "Vorkaution",
+        "Fake-Anzeige"
+      ],
+      "keywords": [
+        "Wohnung",
+        "Anzeige",
+        "Besichtigung",
+        "Betrug",
+        "ImmoScout",
+        "Kleinanzeigen"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Fake-Wohnungen",
+          "url": "https://www.verbraucherzentrale.de/node/27576"
+        },
+        {
+          "name": "Verbraucherzentrale Niedersachsen",
+          "url": "https://www.verbraucherzentrale-niedersachsen.de/themen/freizeit-reise/freizeit/5-miese-maschen-bei-der-wohnungssuche"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-rundfunk",
+      "topic": "housing",
+      "title": "Den Rundfunkbeitrag zahlt jede Wohnung",
+      "text": "18,36 € im Monat pro Wohnung, auch ohne Fernseher. Eine Person zahlt für die ganze Wohnung, auch in der WG. Der Brief vom Beitragsservice ist kein Spam. Mit Bürgergeld, Wohngeld und einigen anderen Leistungen können Sie eine Befreiung beantragen.",
+      "german": [
+        "Rundfunkbeitrag",
+        "Beitragsservice",
+        "Befreiung"
+      ],
+      "keywords": [
+        "GEZ",
+        "Fernsehen",
+        "Radio",
+        "Umzug",
+        "Beitragsservice",
+        "Rundfunkbeitrag"
+      ],
+      "sources": [
+        {
+          "name": "betanet: Rundfunkbeitrag",
+          "url": "https://www.betanet.de/rundfunkbeitrag-befreiung-ermaessigung.html?pdf=328"
+        },
+        {
+          "name": "Finanztip",
+          "url": "https://finanztip.de/rundfunkbeitrag/"
+        }
+      ],
+      "checkedAt": "2026-11-15",
+      "note": "Der Betrag kann 2027 steigen. Im Januar prüfen."
+    },
+    {
+      "id": "insurance-haftpflicht",
+      "topic": "insurance",
+      "title": "Die Haftpflichtversicherung zahlt Schäden bei anderen",
+      "text": "Sie ist keine Pflicht. Aber ohne sie zahlen Sie einen Schaden selbst. Beispiel: Ihre Waschmaschine läuft aus und das Wasser beschädigt die Wohnung unter Ihnen. Diesen Schaden zahlt Ihre Privathaftpflicht.",
+      "german": [
+        "Privathaftpflichtversicherung",
+        "Wasserschaden"
+      ],
+      "keywords": [
+        "Versicherung",
+        "Nachbarn",
+        "Wasserschaden",
+        "Waschmaschine",
+        "kaputt",
+        "Wohnung",
+        "Umzug",
+        "Haftpflicht"
+      ],
+      "sources": [
+        {
+          "name": "Stiftung Warentest: Wasserschaden",
+          "url": "https://www.test.de/Wasserschaden-Welche-Versicherung-wann-zahlt-5700777-0"
+        },
+        {
+          "name": "Verbraucherzentrale: Privathaftpflicht",
+          "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/weitere-versicherungen/private-haftpflichtversicherung-ein-absolutes-muss-fuer-alle-13891"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-mietsachschaden",
+      "topic": "insurance",
+      "title": "Prüfen Sie, ob die Police Mietsachschäden abdeckt",
+      "text": "Schäden an der Mietwohnung selbst (Boden, Türen, Bad) sind nur mit dem Punkt „Mietsachschäden“ versichert. Die Verbraucherzentrale rät zu mindestens 500.000 € dafür. Möbel und Geräte vom Vermieter und Schäden, die langsam entstehen (Feuchtigkeit, Schimmel), sind oft ausgeschlossen. Lesen Sie die Bedingungen in Ihrem Vertrag.",
+      "german": [
+        "Mietsachschäden",
+        "Allmählichkeitsschäden",
+        "Versicherungsbedingungen"
+      ],
+      "keywords": [
+        "Mietwohnung",
+        "Mietvertrag",
+        "Boden beschädigt",
+        "Auszug",
+        "Renovierung",
+        "Kaution nicht zurück"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Privathaftpflicht",
+          "url": "https://www.verbraucherzentrale.de/node/13891"
+        },
+        {
+          "name": "Allianz: Allmählichkeitsschäden",
+          "url": "https://www.allianz.de/recht-und-eigentum/privat-haftpflichtversicherung/allmaehlichkeitsschaeden/"
+        },
+        {
+          "name": "Berliner MieterGemeinschaft: Wasserschaden",
+          "url": "https://bmgev.de/mieterecho/artikel/wasserschaden---wer-muss-zahlen"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-pets",
+      "topic": "insurance",
+      "title": "Die Katze ist meist versichert, der Hund braucht eine eigene Versicherung",
+      "text": "Schäden durch Katze oder Kaninchen zahlt meist die Privathaftpflicht. Für einen Hund brauchen Sie eine eigene Hundehaftpflicht. In Berlin, Hamburg, Niedersachsen und weiteren Ländern ist sie Pflicht. Wenn ein Tier die Mietwohnung stark beschädigt (zum Beispiel Urin auf dem Boden), kann die Versicherung ablehnen. Dann zahlt die Mieterin oder der Mieter.",
+      "german": [
+        "Tierhalterhaftpflicht",
+        "Hundehaftpflicht"
+      ],
+      "keywords": [
+        "Katze",
+        "Hund",
+        "Tier",
+        "Haustier",
+        "Mietwohnung",
+        "Teppichboden",
+        "Tierhaltung"
+      ],
+      "sources": [
+        {
+          "name": "Stiftung Warentest: Tierhalterhaftpflicht",
+          "url": "https://test.de/thema/tierhalterhaftpflichtversicherung/meldungen"
+        },
+        {
+          "name": "GDV: Hundehalterhaftpflicht",
+          "url": "https://www.dieversicherer.de/versicherer/freizeit/hundehalterhaftpflichtversicherung"
+        },
+        {
+          "name": "IWW: отказ при моче кошек",
+          "url": "https://www.iww.de/vk/haftpflichtversicherung/privathaftpflichtversicherung-tierhalterhaftpflicht-in-diesen-faellen-gilt-der-ausschluss-der-uebermaessigen-beanspruchung-f85233"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-hausrat",
+      "topic": "insurance",
+      "title": "Ihre eigenen Sachen versichert die Hausrat",
+      "text": "Die Privathaftpflicht zahlt nur für Sachen von anderen. Wenn Wasser, Feuer oder ein Einbruch Ihre Möbel und Geräte kaputt machen, zahlt die Hausratversicherung. Sie ist keine Pflicht.",
+      "german": [
+        "Hausratversicherung",
+        "Leitungswasser",
+        "Einbruchdiebstahl"
+      ],
+      "keywords": [
+        "eigene Sachen",
+        "Möbel",
+        "Diebstahl",
+        "Einbruch",
+        "Wasserschaden",
+        "Hausrat"
+      ],
+      "sources": [
+        {
+          "name": "Berliner MieterGemeinschaft: Wasserschaden",
+          "url": "https://bmgev.de/mieterecho/artikel/wasserschaden---wer-muss-zahlen"
+        },
+        {
+          "name": "Stiftung Warentest: Wasserschaden",
+          "url": "https://www.test.de/Wasserschaden-Welche-Versicherung-wann-zahlt-5700777-0"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-kuendigung",
+      "topic": "insurance",
+      "title": "Eine Versicherung kündigen Sie rechtzeitig",
+      "text": "Meist können Sie eine Versicherung zum Ende vom Versicherungsjahr kündigen. Die Kündigungsfrist ist ein bis drei Monate. Das Versicherungsjahr beginnt mit dem Datum vom Vertrag, nicht am 1. Januar. Die Regel „mit einem Monat kündigen“ für Verträge ab März 2022 (Handy, Fitness, Abos) gilt nicht für Versicherungen.",
+      "german": [
+        "Kündigung",
+        "Kündigungsfrist",
+        "Versicherungsjahr"
+      ],
+      "keywords": [
+        "kündigen",
+        "Versicherung beenden",
+        "Vertrag verlängert",
+        "Kündigung"
+      ],
+      "sources": [
+        {
+          "name": "§ 11 VVG",
+          "url": "https://www.gesetze-im-internet.de/vvg%5F2008/__11.html"
+        },
+        {
+          "name": "exali: Gesetz für faire Verbraucherverträge",
+          "url": "https://www.exali.de/Info-Base/gesetz-faire-verbrauchervertraege"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-pflicht",
+      "topic": "health",
+      "title": "Krankenversicherung ist Pflicht für alle",
+      "text": "Seit 2009 muss jede Person, die in Deutschland lebt, krankenversichert sein: gesetzlich (Krankenkasse) oder privat. Wenn Sie sich später versichern, kann die Kasse Beiträge für die Zeit davor verlangen.",
+      "german": [
+        "Krankenversicherungspflicht",
+        "Krankenkasse"
+      ],
+      "keywords": [
+        "Krankenversicherung",
+        "Arzt",
+        "Umzug nach Deutschland",
+        "Brief von der Krankenkasse"
+      ],
+      "sources": [
+        {
+          "name": "betanet: Krankenversicherung",
+          "url": "https://www.betanet.de/krankenversicherung.html"
+        },
+        {
+          "name": "Бундестаг, ответ на петицию 117485",
+          "url": "https://epetitionen.bundestag.de/petitionen/_2020/_10/_29/Petition_117485.abschlussbegruendungpdf.pdf"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-116117",
+      "topic": "health",
+      "title": "Nachts und am Wochenende: 116 117, bei Lebensgefahr: 112",
+      "text": "116 117 ist der ärztliche Bereitschaftsdienst, wenn die Praxen zu sind: hohes Fieber, starke Schmerzen im Hals oder Rücken. Der Anruf ist kostenlos und funktioniert in ganz Deutschland ohne Vorwahl. Herzinfarkt, schwere Verletzung, starke Blutung: sofort 112.",
+      "german": [
+        "Ärztlicher Bereitschaftsdienst",
+        "Notruf"
+      ],
+      "keywords": [
+        "Arzt nachts",
+        "Wochenende",
+        "krank",
+        "Fieber",
+        "Notarzt",
+        "Notfall",
+        "Bereitschaftsdienst"
+      ],
+      "sources": [
+        {
+          "name": "KV Baden-Württemberg: 116117",
+          "url": "https://www.kvbawue.de/buerger/notfallpraxen/116-117/"
+        },
+        {
+          "name": "praktischArzt: 116 117",
+          "url": "https://www.praktischarzt.de/ratgeber/aerztlicher-bereitschaftsdienst-116117/"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-krankmeldung",
+      "topic": "health",
+      "title": "Krankmeldung: sofort Bescheid geben, Bescheinigung bis zum 4. Tag",
+      "text": "Sagen Sie Ihrem Arbeitgeber am ersten Tag Bescheid, dass Sie krank sind. Die Bescheinigung vom Arzt brauchen Sie spätestens am vierten Tag. Der Arbeitgeber darf sie aber schon ab dem ersten Tag verlangen. Seit 2023 schickt die Praxis die Bescheinigung elektronisch an die Krankenkasse. Der Arbeitgeber holt sie dort selbst ab.",
+      "german": [
+        "Krankmeldung",
+        "Arbeitsunfähigkeitsbescheinigung (eAU)"
+      ],
+      "keywords": [
+        "Krankmeldung",
+        "krank",
+        "Arbeit",
+        "Arbeitgeber",
+        "Bescheinigung",
+        "gelber Schein"
+      ],
+      "sources": [
+        {
+          "name": "TK: eAU",
+          "url": "https://www.tk.de/firmenkunden/service/fachthemen/meldeverfahren-fachthemen/eau-weg-zur-elektronischen-meldung-2102198?tkcm=aaus"
+        },
+        {
+          "name": "IG Metall: больничный",
+          "url": "https://www.igmetall.de/service/ratgeber/arbeitsunfaehig-krank-das-gilt-es-zu-beachten"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "taxes-steuerid",
+      "topic": "taxes",
+      "title": "Die Steuer-ID kommt mit der Post",
+      "text": "Nach der ersten Anmeldung schickt das BZSt die Steuer-ID von selbst. Sie brauchen keinen Antrag. Ihr Arbeitgeber braucht die Nummer. Heben Sie den Brief auf. Wenn nach 3 Monaten kein Brief da ist, können Sie ihn auf der Seite vom BZSt anfordern. Die Antwort kommt nur per Post.",
+      "german": [
+        "Steuer-Identifikationsnummer",
+        "Bundeszentralamt für Steuern (BZSt)"
+      ],
+      "keywords": [
+        "Steuernummer",
+        "Arbeit",
+        "Steuer-ID",
+        "erste Arbeit",
+        "Anmeldung"
+      ],
+      "sources": [
+        {
+          "name": "BayernPortal: Steuer-ID anfordern",
+          "url": "https://www.bayernportal.de/dokumente/leistung/694749931600"
+        },
+        {
+          "name": "steuertipps.de: Steuer-ID",
+          "url": "https://www.steuertipps.de/finanzamt-formalitaeten/steuer-identifikationsnummer/themen"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "taxes-kirchensteuer",
+      "topic": "taxes",
+      "title": "Kirchensteuer zahlen nicht alle",
+      "text": "Sie zahlen Mitglieder von Kirchen, die die Steuer über das Finanzamt einziehen, vor allem die römisch-katholische und die evangelische Kirche. Orthodoxe Kirchen in Deutschland ziehen sie meist nicht ein. Musliminnen, Muslime und Buddhisten zahlen sie nicht. Höhe: 8 % der Einkommensteuer in Bayern und Baden-Württemberg, 9 % in den anderen Ländern. Bei der Anmeldung im Bürgeramt werden Sie nach der Religion gefragt. Dieser Eintrag entscheidet, ob die Steuer abgezogen wird. Sie können nicht Mitglied bleiben und keine Steuer zahlen. Dafür müssen Sie offiziell austreten, beim Standesamt oder Amtsgericht. Das kostet meist etwa 30 €, in manchen Ländern nichts. Die Steuer fällt ab dem nächsten Monat weg.",
+      "german": [
+        "Kirchensteuer",
+        "Religionszugehörigkeit",
+        "Kirchenaustritt"
+      ],
+      "keywords": [
+        "Kirchensteuer",
+        "Religion",
+        "orthodox",
+        "katholisch",
+        "Kirchenaustritt",
+        "Anmeldung",
+        "Gehalt",
+        "Abzüge"
+      ],
+      "sources": [
+        {
+          "name": "VLH: Kirchensteuer",
+          "url": "https://www.vlh.de/wissen-service/steuer-abc/kirchensteuer-was-muss-ich-wissen-was-kann-ich-absetzen.html"
+        },
+        {
+          "name": "ETL: Kirchensteuer im Überblick",
+          "url": "https://www.etl.de/aktuelles/die-kirchensteuer-im-ueberblick-2025/"
+        },
+        {
+          "name": "Lohnsteuer kompakt: Kirchensteuer",
+          "url": "https://www.lohnsteuer-kompakt.de/texte/2025/4/prozstpflproz"
+        },
+        {
+          "name": "steuerschroeder.de: Kirchensteuer für Zugezogene",
+          "url": "https://www.steuerschroeder.de/Kirchensteuerpflicht-Auslaender.html"
+        },
+        {
+          "name": "t-online: Kirchenaustritt",
+          "url": "https://www.t-online.de/finanzen/id_86403516/kirchensteuer-sparen-immer-mehr-menschen-treten-aus-der-kirche-aus.html"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-bekanntgabe",
+      "topic": "letters",
+      "title": "Ein Brief gilt am 4. Tag als bekannt gegeben",
+      "text": "Ein Bescheid vom Amt per Post gilt am vierten Tag nach dem Versand als bekannt gegeben (bis 2025 war es der dritte Tag). Ab diesem Tag laufen die Fristen, auch wenn Sie lange nicht in den Briefkasten geschaut haben. Die gleiche Regel gilt für elektronische Bescheide.",
+      "german": [
+        "Bekanntgabe",
+        "Bescheid",
+        "Aufgabe zur Post"
+      ],
+      "keywords": [
+        "Frist",
+        "Zugang",
+        "Datum vom Brief",
+        "zu spät",
+        "Jobcenter",
+        "Finanzamt",
+        "Bekanntgabe"
+      ],
+      "sources": [
+        {
+          "name": "DATEV-Magazin: Bekanntgabefiktion",
+          "url": "https://www.datev-magazin.de/nachrichten-steuern-recht/steuern/bekanntgabefiktion-die-zugangsvermutung-verlaengert-sich-ab-dem-1-januar-2025-auf-vier-tage-135900"
+        },
+        {
+          "name": "gegen-hartz.de: Vier-Tages-Fiktion",
+          "url": "https://www.gegen-hartz.de/news/vier-tages-fiktion-was-das-jetzt-fuer-buergergeld-bezieher-bedeutet"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-widerspruch",
+      "topic": "letters",
+      "title": "Nicht einverstanden? Meist haben Sie einen Monat Zeit",
+      "text": "Gegen einen Bescheid können Sie Widerspruch einlegen, gegen einen Bescheid vom Jobcenter meist innerhalb von einem Monat nach Zugang. Die genaue Frist und die Adresse stehen am Ende vom Brief. Ja!sno schreibt keinen Widerspruch, zeigt Ihnen aber, wo Sie Beratung bekommen.",
+      "german": [
+        "Widerspruch",
+        "Einspruch (Finanzamt)",
+        "Rechtsbehelfsbelehrung"
+      ],
+      "keywords": [
+        "Widerspruch",
+        "nicht einverstanden",
+        "Ablehnung",
+        "anfechten",
+        "Bescheid"
+      ],
+      "sources": [
+        {
+          "name": "gegen-hartz.de: Vier-Tages-Fiktion",
+          "url": "https://www.gegen-hartz.de/news/vier-tages-fiktion-was-das-jetzt-fuer-buergergeld-bezieher-bedeutet"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-aktenzeichen",
+      "topic": "letters",
+      "title": "Geben Sie das Aktenzeichen an und heben Sie Kopien auf",
+      "text": "Schreiben Sie in jede Antwort an das Amt das Aktenzeichen aus dem Brief. Heben Sie eine Kopie von allem auf, was Sie schicken, und notieren Sie das Datum. In Ja!sno gibt es dafür den Fall und die Markierung „Ich habe es geschickt“.",
+      "german": [
+        "Aktenzeichen",
+        "Geschäftszeichen",
+        "Kundennummer"
+      ],
+      "keywords": [
+        "Aktenzeichen",
+        "Antwort an das Amt",
+        "Kopie",
+        "abgeschickt",
+        "Nachweis"
+      ],
+      "sources": [],
+      "checkedAt": "2026-11-15",
+      "note": "Allgemeiner Tipp, kein Gesetz."
+    },
+    {
+      "id": "contracts-telefon",
+      "topic": "contracts",
+      "title": "Handy und Internet: Nach 24 Monaten mit einem Monat Frist kündbar",
+      "text": "Die erste Laufzeit von einem Handy- oder Internetvertrag ist höchstens 24 Monate. Wenn Sie nicht rechtzeitig kündigen, verlängert sich der Vertrag. Danach können Sie aber jederzeit mit einem Monat Frist kündigen. Am einfachsten ist der Button „Vertrag kündigen“ auf der Seite vom Anbieter: Die Bestätigung kommt sofort. Kündigen Sie lieber nicht am Telefon, sonst können Sie es später nicht beweisen.",
+      "german": [
+        "Mindestvertragslaufzeit",
+        "Kündigung",
+        "Kündigungsbutton"
+      ],
+      "keywords": [
+        "Handy",
+        "Mobilfunk",
+        "Internet",
+        "Handyvertrag",
+        "kündigen",
+        "Vodafone",
+        "Telekom",
+        "O2"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Handyvertrag kündigen",
+          "url": "https://www.verbraucherzentrale.de/node/38191"
+        },
+        {
+          "name": "Verbraucherzentrale: Kundenrechte Telefon und Internet",
+          "url": "https://www.verbraucherzentrale.de/node/65879"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-umzug",
+      "topic": "contracts",
+      "title": "Umzug: Internet vorzeitig kündigen",
+      "text": "Wenn der Anbieter an der neuen Adresse kein Internet liefern kann, dürfen Sie mit einem Monat Frist kündigen, auch vor dem Ende der Laufzeit. Sie können die Kündigung vorher schicken, damit sie zum Umzugstag wirkt.",
+      "german": [
+        "Umzug",
+        "Sonderkündigungsrecht"
+      ],
+      "keywords": [
+        "Umzug",
+        "neue Wohnung",
+        "Internet",
+        "Wohnung",
+        "Anmeldung",
+        "Sonderkündigung"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Telekommunikationsgesetz",
+          "url": "https://www.verbraucherzentrale.de/wissen/digitale-welt/mobilfunk-und-festnetz/das-telekommunikationsgesetz-vorteile-fuer-die-telefonkunden-10956"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-widerruf",
+      "topic": "contracts",
+      "title": "Vertrag am Telefon, online oder an der Haustür: 14 Tage Widerruf",
+      "text": "Wenn Sie einen Vertrag im Internet, am Telefon oder an der Haustür geschlossen haben, können Sie ihn 14 Tage lang ohne Grund widerrufen. Bei Verträgen für Handy, Internet, Strom oder Gas zählt die Frist ab dem Tag vom Vertrag. Einfach nicht zahlen reicht nicht: Sie müssen der Firma den Widerruf mitteilen, zum Beispiel per E-Mail. Im Geschäft gibt es dieses Recht meist nicht.",
+      "german": [
+        "Widerrufsrecht",
+        "Widerrufsfrist",
+        "Widerrufsbelehrung"
+      ],
+      "keywords": [
+        "Widerruf",
+        "aufgedrängt",
+        "am Telefon",
+        "Haustür",
+        "Strom",
+        "Online-Kauf"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Widerruf",
+          "url": "https://www.verbraucherzentrale.de/wissen/vertraege-reklamation/kundenrechte/von-widerruf-bis-umtausch-wenn-sie-mit-der-ware-nicht-zufrieden-sind-5117"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-abo",
+      "topic": "contracts",
+      "title": "Fitness und Abos: Nach der Mindestlaufzeit mit einem Monat Frist kündbar",
+      "text": "Für Verträge ab 1. März 2022 (Fitness, Streaming, Zeitschriften) gilt nach der Mindestlaufzeit: Sie können mit einem Monat Frist kündigen. Wenn Sie den Vertrag online geschlossen haben, muss es seit 1. Juli 2022 auf der Seite der Firma einen Kündigungsbutton geben, ohne Login. Für Versicherungen gelten diese Regeln nicht (siehe „Eine Versicherung kündigen Sie rechtzeitig“).",
+      "german": [
+        "Gesetz für faire Verbraucherverträge",
+        "Kündigungsbutton",
+        "Vertragsverlängerung"
+      ],
+      "keywords": [
+        "Fitness",
+        "Abo",
+        "Mitgliedschaft",
+        "Vertrag verlängert",
+        "kündigen",
+        "Kündigungsbutton"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Gesetz für fairere Verträge",
+          "url": "https://www.verbraucherzentrale.de/wissen/vertraege-reklamation/kundenrechte/gesetz-fuer-fairere-vertraege-mehr-schutz-bei-kosten-und-laufzeiten-55274"
+        },
+        {
+          "name": "IT-Recht Kanzlei",
+          "url": "https://www.it-recht-kanzlei.de/information-vertragslaufzeit-kuendigungsbedingugen-dauerschuldverhaeltnisse.html"
+        },
+        {
+          "name": "ÖKO-TEST",
+          "url": "https://www.oekotest.de/geld-versicherungen/Faire-Verbrauchervertraege-Neues-Gesetz-kuerzt-Vertragslaufzeiten-und-Kuendigungsfristen-_11951_1.html"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "children-pregnancy",
+      "topic": "children",
+      "title": "Schwangerschaft und Geburt",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Mutterpass",
+        "Geburtsurkunde"
+      ],
+      "keywords": [
+        "Schwangerschaft",
+        "Geburt",
+        "Baby"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-register",
+      "topic": "children",
+      "title": "Kind anmelden: Leistungen und Unterlagen",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Kindergeld",
+        "Elterngeld"
+      ],
+      "keywords": [
+        "Kindergeld",
+        "Kind anmelden",
+        "Geburtsurkunde"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-kita",
+      "topic": "children",
+      "title": "Kita",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Kita",
+        "Kita-Gutschein"
+      ],
+      "keywords": [
+        "Kita",
+        "Kindergarten",
+        "Krippe"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-doctor",
+      "topic": "children",
+      "title": "Kinderarzt",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Kinderarzt",
+        "U-Untersuchungen"
+      ],
+      "keywords": [
+        "Kinderarzt",
+        "Impfung",
+        "Vorsorge"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-school",
+      "topic": "children",
+      "title": "Kinder und Schule",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Schulpflicht",
+        "Grundschule"
+      ],
+      "keywords": [
+        "Schule",
+        "Schulanmeldung"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-german",
+      "topic": "children",
+      "title": "Extra Deutschunterricht für Kinder",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Deutsch als Zweitsprache",
+        "Willkommensklasse"
+      ],
+      "keywords": [
+        "Deutsch für Kinder",
+        "Willkommensklasse"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-students",
+      "topic": "children",
+      "title": "Studienbewerber und Studierende",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Abitur",
+        "BAföG",
+        "Studium"
+      ],
+      "keywords": [
+        "Universität",
+        "Studium",
+        "Studierende"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "german-teacher",
+      "topic": "german",
+      "title": "Wo finde ich Deutschunterricht?",
+      "text": "Das Team schreibt diesen Teil gerade.",
+      "german": [
+        "Integrationskurs",
+        "Volkshochschule"
+      ],
+      "keywords": [
+        "Deutschkurs",
+        "Deutschlehrer",
+        "Lehrerin"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    }
+  ]
+}
