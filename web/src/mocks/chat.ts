@@ -27,6 +27,14 @@ export const mockChat = {
     messages = [...messages, question, answer];
     return { disclaimer: CHAT_DISCLAIMER, question, answer };
   },
+  /** KORR 25.11: чат на главной без входа */
+  askPublic(): { disclaimer: string; answer: string } {
+    return {
+      disclaimer: CHAT_DISCLAIMER,
+      answer:
+        'Примерные данные: настоящего ответа нет. С сервером Ja!sno ответит по FAQ, блогу и общим знаниям о немецких ведомствах.',
+    };
+  },
   clear(): void {
     messages = [];
   },

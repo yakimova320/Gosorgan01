@@ -5336,6 +5336,126 @@
           ]
         }
       ]
+    },
+    {
+      "name": "13 Правки 25.11: чат на главной, история",
+      "description": "POST /chat/public работает без входа (лимит 20 в час с IP). История после входа (sessionToken) и вопроса в чате.",
+      "item": [
+        {
+          "name": "POST /chat/public: вопрос без входа",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "public"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Что такое Anmeldung?\", \"history\": []}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('ответ и пометка', () => { const b = pm.response.json(); pm.expect(b.answer).to.be.a('string').and.not.empty; pm.expect(b.disclaimer).to.include('не юридическая консультация'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /chat/public: 7 реплик в history → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "public"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"вопрос\", \"history\": [{\"role\": \"USER\", \"text\": \"q0\"}, {\"role\": \"USER\", \"text\": \"q1\"}, {\"role\": \"USER\", \"text\": \"q2\"}, {\"role\": \"USER\", \"text\": \"q3\"}, {\"role\": \"USER\", \"text\": \"q4\"}, {\"role\": \"USER\", \"text\": \"q5\"}, {\"role\": \"USER\", \"text\": \"q6\"}]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /history?type=question: вопросы из чата",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/history?type=question",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "question"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('у вопросов из чата caseId null', () => { const items = pm.response.json().items.filter(i => i.type === 'CHAT_QUESTION'); items.forEach(i => pm.expect(i.caseId).to.eql(null)); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

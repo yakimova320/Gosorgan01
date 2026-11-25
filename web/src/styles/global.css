@@ -154,6 +154,21 @@ textarea {
   background: var(--c-teal-light);
   box-shadow: none;
 }
+.card--green {
+  background: var(--c-green-light);
+  box-shadow: none;
+}
+.btn--green {
+  background: var(--c-green);
+  color: var(--c-white);
+}
+.btn--green:hover {
+  background: var(--c-green-dark);
+}
+.hot-list a {
+  color: var(--c-green-dark);
+  font-weight: 600;
+}
 .card--peach {
   background: linear-gradient(170deg, var(--c-peach) 0%, var(--c-peach-2) 100%);
   box-shadow: none;

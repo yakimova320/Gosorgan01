@@ -19,6 +19,10 @@ import { caseProgress, caseStage } from './stage.js';
 
 export const HISTORY_PAGE = 30;
 
+/** KORR 25.11: вопросы из чата в истории. Название группы вместо названия дела. */
+export const CHAT_HISTORY_TITLE = 'Чат с Ja!sno';
+const CHAT_QUESTION_CHARS = 120;
+
 const HISTORY_TYPES: Record<NonNullable<HistoryQuery['type']>, string[]> = {
   letter: ['LETTER_RECEIVED', 'CLAIM_CONFIRMED', 'CLAIM_REJECTED', 'REVISION'],
   // #124: события самого дела отдельно от писем; каждое событие ровно в одной группе
@@ -248,35 +252,84 @@ export class CasesService {
     query: HistoryQuery,
   ): Promise<{ items: HistoryItem[]; nextCursor: string | null }> {
     const cursor = query.cursor ? decodeCursor(query.cursor) : null;
-    const rows = await this.db.event.findMany({
+    const after = cursor
+      ? {
+          OR: [
+            { at: { lt: cursor.at } },
+            { at: cursor.at, id: { lt: cursor.id } },
+          ],
+        }
+      : {};
+    const events = await this.db.event.findMany({
       where: {
         case: { cabinetId },
         ...(query.type
           ? { type: { in: HISTORY_TYPES[query.type] as never } }
           : {}),
-        ...(cursor
-          ? {
-              OR: [
-                { at: { lt: cursor.at } },
-                { at: cursor.at, id: { lt: cursor.id } },
-              ],
-            }
-          : {}),
+        ...after,
       },
       orderBy: [{ at: 'desc' }, { id: 'desc' }],
       take: HISTORY_PAGE + 1,
       include: { case: { select: { id: true, title: true } } },
     });
-    const page = rows.slice(0, HISTORY_PAGE);
+    // KORR 25.11: вопросы из чата — в «Всё» и в «Вопросы». Курсор общий: (время, id) по обоим спискам.
+    const withChat = !query.type || query.type === 'question';
+    const chat = withChat
+      ? await this.db.chatMessage.findMany({
+          where: {
+            cabinetId,
+            role: 'USER',
+            ...(cursor
+              ? {
+                  OR: [
+                    { createdAt: { lt: cursor.at } },
+                    { createdAt: cursor.at, id: { lt: cursor.id } },
+                  ],
+                }
+              : {}),
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: HISTORY_PAGE + 1,
+          select: { id: true, text: true, createdAt: true },
+        })
+      : [];
+    const merged: { at: Date; id: string; item: HistoryItem }[] = [
+      ...events.map((e) => ({
+        at: e.at,
+        id: e.id,
+        item: { ...toTimeline(e), caseId: e.case.id, caseTitle: e.case.title },
+      })),
+      ...chat.map((m) => ({
+        at: m.createdAt,
+        id: m.id,
+        item: {
+          id: m.id,
+          type: 'CHAT_QUESTION',
+          at: m.createdAt.toISOString(),
+          title:
+            m.text.length > CHAT_QUESTION_CHARS
+              ? `${m.text.slice(0, CHAT_QUESTION_CHARS)}…`
+              : m.text,
+          subtitle: 'Вопрос в чате',
+          caseId: null,
+          caseTitle: CHAT_HISTORY_TITLE,
+        } satisfies HistoryItem,
+      })),
+    ].sort((a, b) =>
+      b.at.getTime() !== a.at.getTime()
+        ? b.at.getTime() - a.at.getTime()
+        : b.id < a.id
+          ? -1
+          : b.id > a.id
+            ? 1
+            : 0,
+    );
+    const page = merged.slice(0, HISTORY_PAGE);
     const last = page[page.length - 1];
     return {
-      items: page.map((e) => ({
-        ...toTimeline(e),
-        caseId: e.case.id,
-        caseTitle: e.case.title,
-      })),
+      items: page.map((m) => m.item),
       nextCursor:
-        rows.length > HISTORY_PAGE && last
+        merged.length > HISTORY_PAGE && last
           ? encodeCursor(last.at, last.id)
           : null,
     };

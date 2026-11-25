@@ -14,6 +14,8 @@ import {
   type ChatMessageView,
   type ChatReply,
   type ChatView,
+  type PublicAskInput,
+  type PublicChatReply,
 } from './chat.dto.js';
 
 /** Сколько последних сообщений модель видит как контекст разговора. */
@@ -48,6 +50,19 @@ export class ChatService {
     } catch {
       this.logger.warn(`FAQ не найден в ${dir}: чат отвечает без него`);
       this.faqCache = '';
+    }
+    // KORR 25.11: «Горячие темы» блога тоже в контексте — проверенные короткие тексты с датой проверки
+    try {
+      const data = JSON.parse(
+        readFileSync(resolve(dir, 'important', 'cards.ru.json'), 'utf8'),
+      ) as { cards: { topic: string; title: string; text: string; checkedAt: string; draft?: boolean }[] };
+      const hot = data.cards.filter((c) => c.topic === 'hot' && !c.draft);
+      if (hot.length)
+        this.faqCache += `\n\n## Горячие темы (блог Ja!sno)\n\n${hot
+          .map((c) => `### ${c.title}\n${c.text}\n(проверено ${c.checkedAt})`)
+          .join('\n\n')}`;
+    } catch {
+      this.logger.warn(`карточки блога не найдены в ${dir}: чат отвечает без них`);
     }
     return this.faqCache;
   }
@@ -109,6 +124,33 @@ export class ChatService {
       return [q, a];
     });
     return { disclaimer: CHAT_DISCLAIMER, question: toView(question), answer: toView(answer) };
+  }
+
+  /**
+   * KORR 25.11: вопрос с главной, без входа и без сохранения. Лимит по IP в контроллере,
+   * общий дневной бюджет токенов — в LlmService. Вызов пишется в LlmCall с cabinetId null.
+   */
+  async askPublic(input: PublicAskInput): Promise<PublicChatReply> {
+    const history = input.history
+      .map(
+        (m) =>
+          `${m.role === 'USER' ? 'Пользователь' : 'Ja!sno'}: ${
+            m.text.length > CONTEXT_CHARS ? `${m.text.slice(0, CONTEXT_CHARS)}…` : m.text
+          }`,
+      )
+      .join('\n\n');
+    const result = await this.llm.call({
+      prompt: 'chat',
+      version: 1,
+      variables: { faq: this.faq(), history, question: input.text },
+      schema: ChatAnswerSchema,
+      context: { cabinetId: null },
+      operation: this.llm.operation(null, 'CHAT'),
+      ...(this.config.LLM_MODEL_ASSISTANT
+        ? { model: this.config.LLM_MODEL_ASSISTANT }
+        : {}),
+    });
+    return { disclaimer: CHAT_DISCLAIMER, answer: result.answer };
   }
 
   async clear(cabinetId: string): Promise<void> {

@@ -31,6 +31,7 @@ import type {
   ApiExplanation,
   ApiTranslation,
   ChatReply,
+  PublicChatReply,
   ChatView,
   CreateDraftArgs,
   DraftQuestions,
@@ -502,6 +503,25 @@ export const api = createApi({
     }),
 
     /** «Очистить разговор». */
+    /** KORR 25.11: вопрос с главной без входа. Прошлые реплики присылает сайт, сервер ничего не хранит. */
+    askPublicChat: b.mutation<
+      PublicChatReply,
+      { text: string; history: { role: 'USER' | 'ASSISTANT'; text: string }[] }
+    >({
+      queryFn: async (body, _api, _x, base) => {
+        if (isMock) {
+          await wait(700);
+          return ok(mockChat.askPublic());
+        }
+        return base({
+          method: 'POST',
+          path: '/chat/public',
+          body,
+          timeoutMs: UPLOAD_TIMEOUT_MS,
+        }) as Promise<Result<PublicChatReply>>;
+      },
+    }),
+
     clearChat: b.mutation<void, void>({
       queryFn: (_a, _api, _x, base) => {
         if (isMock) {
@@ -920,6 +940,7 @@ export const {
   useRenameLetterMutation,
   useChatQuery,
   useAskChatMutation,
+  useAskPublicChatMutation,
   useClearChatMutation,
   useTranslateLetterMutation,
   useUpdateProfileMutation,

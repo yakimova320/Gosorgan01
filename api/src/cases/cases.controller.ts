@@ -159,7 +159,8 @@ export class CasesController {
     summary: 'История всех дел: по убыванию времени, по 30 событий',
     description:
       'type: letter (письмо получено, факты, исправления) | case (дело создано, срок выполнен) | question | draft. ' +
-      'Каждое событие ровно в одной группе. cursor: nextCursor из прошлой страницы.',
+      'Каждое событие ровно в одной группе. Вопросы из чата с Ja!sno (type CHAT_QUESTION, caseId null) — в «всё» и в question. ' +
+      'cursor: nextCursor из прошлой страницы.',
   })
   @ApiQuery({
     name: 'type',

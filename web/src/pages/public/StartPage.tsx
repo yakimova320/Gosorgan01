@@ -3,6 +3,7 @@ import { Illustration } from '../../components/Watercolor';
 import { Link, useLocation } from 'react-router';
 import { useSession } from '../../store';
 import { CARDS, TOPICS } from '../../content';
+import { PublicChat } from '../../components/PublicChat';
 
 const STEPS = [
   {
@@ -27,6 +28,9 @@ const STEPS = [
     blob: '#FCEFC9',
   },
 ] as const;
+
+/** KORR 25.11: карточки «Горячие темы» (content/important/cards.ru.json, тема hot) */
+const HOT = CARDS.filter((c) => c.topic === 'hot' && !c.draft);
 
 const TOPIC_BLOBS = [
   '#FBE3D6',
@@ -169,6 +173,9 @@ export function StartPage() {
         </div>
       </section>
 
+      {/* KORR 25.11: чат-помощник на главной, без входа */}
+      <PublicChat />
+
       <section className="stack" style={{ paddingTop: 12 }}>
         <div className="row-between">
           <h2>Блог</h2>
@@ -177,7 +184,7 @@ export function StartPage() {
           </Link>
         </div>
         <div className="grid-2 cards-4">
-          {TOPICS.slice(0, 4).map((t, i) => {
+          {TOPICS.filter((t) => t.id !== 'hot').slice(0, 4).map((t, i) => {
             const first = CARDS.find((c) => c.topic === t.id);
             return (
               <Link
@@ -204,31 +211,56 @@ export function StartPage() {
         </div>
       </section>
 
-      <section
-        className="card card--teal stack"
-        style={{ borderRadius: 28, marginTop: 12 }}
-      >
-        <Illustration
-          name="consult"
-          height={190}
-          blob="#BFE0DB"
-          alt="Двое разбирают письмо за столом"
-        />
-        <h2 style={{ fontSize: 20 }}>
-          Сложный случай? Подскажем, куда обратиться
-        </h2>
-        <p className="small" style={{ color: '#2F4A52' }}>
-          Если нужно возражение (Widerspruch) или совет юриста, Ja!sno назовёт,
-          где получить консультацию.
-        </p>
-        <Link
-          to="/beratung"
-          className="btn btn--teal btn--small"
-          style={{ alignSelf: 'flex-start' }}
+      {/* KORR 25.11: «Горячие темы» рядом с консультацией, те же карточки в блоге */}
+      <div className="desktop-2col stack" style={{ marginTop: 12 }}>
+        <section className="card card--green stack" style={{ borderRadius: 28 }} aria-labelledby="hot-title" data-testid="hot-topics">
+          <div className="row" style={{ gap: 10 }}>
+            <Icon name="flame" color="var(--c-green)" />
+            <h2 id="hot-title" style={{ fontSize: 20 }}>
+              Горячие темы: что важно сейчас
+            </h2>
+          </div>
+          <p className="small" style={{ color: '#2F4A2A' }}>
+            Продление § 24, работа и диплом, Jobcenter, жильё, садик. Коротко, с источниками и датой проверки.
+          </p>
+          <ul className="list-reset stack-s hot-list">
+            {HOT.slice(0, 6).map((c) => (
+              <li key={c.id}>
+                <Link to={`/blog?topic=hot#${c.id}`}>{c.title}</Link>
+              </li>
+            ))}
+          </ul>
+          <Link to="/blog?topic=hot" className="btn btn--green btn--small" style={{ alignSelf: 'flex-start' }}>
+            Все горячие темы
+          </Link>
+        </section>
+
+        <section
+          className="card card--teal stack"
+          style={{ borderRadius: 28 }}
         >
-          Найти консультацию
-        </Link>
-      </section>
+          <Illustration
+            name="consult"
+            height={190}
+            blob="#BFE0DB"
+            alt="Двое разбирают письмо за столом"
+          />
+          <h2 style={{ fontSize: 20 }}>
+            Сложный случай? Подскажем, куда обратиться
+          </h2>
+          <p className="small" style={{ color: '#2F4A52' }}>
+            Если нужно возражение (Widerspruch) или совет юриста, Ja!sno назовёт,
+            где получить консультацию.
+          </p>
+          <Link
+            to="/beratung"
+            className="btn btn--teal btn--small"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            Найти консультацию
+          </Link>
+        </section>
+      </div>
     </>
   );
 }

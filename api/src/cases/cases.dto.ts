@@ -59,7 +59,8 @@ export interface CaseDetail extends CaseSummary {
 }
 
 export interface HistoryItem extends TimelineItem {
-  caseId: string;
+  /** null: вопрос в чате с Ja!sno (KORR 25.11), не событие дела */
+  caseId: string | null;
   caseTitle: string;
 }
 
