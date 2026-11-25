@@ -2,16 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { assertAiConsent } from '../cabinet/ai-consent.js';
 import { ApiError } from '../common/api-error.js';
+import { cabinetLanguage, languageVariables, type Language } from '../common/language.js';
 import { LlmService } from '../llm/llm.service.js';
 import { TranslateSchema } from '../llm/schemas/translate.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { TranslationView } from './letters.dto.js';
 
 /** Версия промпта перевода: входит в ключ кэша. */
-export const TRANSLATE_PROMPT_VERSION = 1;
+export const TRANSLATE_PROMPT_VERSION = 2; // L07: translate.v2 — перевод на язык кабинета
 
 interface CachedTranslation {
-  lang: 'ru';
+  lang: Language;
   promptVersion: number;
   textHash: string;
   text: string;
@@ -34,7 +35,7 @@ export class TranslateService {
   async translate(
     cabinetId: string,
     letterId: string,
-    lang: 'ru',
+    requested?: Language,
   ): Promise<TranslationView> {
     const letter = await this.db.letter.findFirst({
       where: { id: letterId, cabinetId },
@@ -43,6 +44,7 @@ export class TranslateService {
     if (!letter) throw new ApiError('NOT_FOUND');
     // перевод отправляет текст письма модели — нужно действующее согласие (кэш тоже не отдаём)
     await assertAiConsent(this.db, cabinetId);
+    const lang = requested ?? (await cabinetLanguage(this.db, cabinetId));
 
     const textHash = hash(letter.rawText);
     const cached = letter.translation as unknown as CachedTranslation | null;
@@ -56,7 +58,7 @@ export class TranslateService {
     const result = await this.llm.call({
       prompt: 'translate',
       version: TRANSLATE_PROMPT_VERSION,
-      variables: { letterText: letter.rawText },
+      variables: { letterText: letter.rawText, ...languageVariables(lang) },
       schema: TranslateSchema,
       context: {
         cabinetId,

@@ -1,0 +1,1161 @@
+{
+  "source": "Документ «Ja!sno: картки «Важливо знати»», версія від 15.11.2026 (rev 16), переклад українською. Тексти пишуть і перевіряють люди, код їх не змінює.",
+  "topics": [
+    {
+      "id": "hot",
+      "title": "Гарячі теми"
+    },
+    {
+      "id": "children",
+      "title": "Усе про дітей"
+    },
+    {
+      "id": "housing",
+      "title": "Житло"
+    },
+    {
+      "id": "insurance",
+      "title": "Страхування"
+    },
+    {
+      "id": "health",
+      "title": "Здоров'я"
+    },
+    {
+      "id": "taxes",
+      "title": "Податки"
+    },
+    {
+      "id": "letters",
+      "title": "Листи й терміни"
+    },
+    {
+      "id": "contracts",
+      "title": "Договори"
+    },
+    {
+      "id": "german",
+      "title": "Німецька мова"
+    }
+  ],
+  "cards": [
+    {
+      "id": "hot-24-extension",
+      "topic": "hot",
+      "title": "Дозвіл на проживання за § 24 продовжено до 4 березня 2027, до відомства йти не треба",
+      "text": "Дозволи за § 24, які діяли 1 лютого 2026, автоматично продовжено до 4 березня 2027. Заява й запис в Ausländerbehörde не потрібні. На картці може стояти стара дата, це нормально: робота, виплати й поїздки зберігаються. У багатьох містах довідку про продовження (Bescheinigung) можна отримати онлайн.",
+      "german": [
+        "Aufenthaltserlaubnis nach § 24 AufenthG",
+        "Fortgeltung",
+        "Bescheinigung"
+      ],
+      "keywords": [
+        "продовження",
+        "посвідка на проживання",
+        "дозвіл на проживання",
+        "параграф 24",
+        "Ausländerbehörde",
+        "закінчився дозвіл",
+        "Україна"
+      ],
+      "sources": [
+        {
+          "name": "Bundesregierung",
+          "url": "https://www.bundesregierung.de/ib-de/ich-moechte-mehr-wissen-ueber/flucht-und-asyl/aufenthaltstitel-verlaengern-sich-erneut-automatisch-um-ein-jahr-bis-zum-4-maerz-2027-2266260"
+        },
+        {
+          "name": "§ 2 UkraineAufenthFGV",
+          "url": "https://www.gesetze-im-internet.de/ukraineaufenthfgv/__2.html"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-travel-ukraine",
+      "topic": "hot",
+      "title": "Поїздка в Україну: спершу попередьте Jobcenter",
+      "text": "З дозволом за § 24 і чинним закордонним паспортом їздити в Україну можна. Якщо ви отримуєте гроші від Jobcenter, відсутність треба заздалегідь погодити: інакше виплати можуть зупинити й вимагати повернути. Якщо виїхати більш ніж на 6 місяців, дозвіл на проживання може припинитися.",
+      "german": [
+        "Ortsabwesenheit",
+        "Erreichbarkeit",
+        "Nationalpass"
+      ],
+      "keywords": [
+        "поїздка",
+        "Україна",
+        "відпустка",
+        "виїзд",
+        "Jobcenter",
+        "виплати",
+        "параграф 24"
+      ],
+      "sources": [
+        {
+          "name": "Stadt Köln: Reisen ins Ausland",
+          "url": "https://www.stadt-koeln.de/leben-in-koeln/soziales/aufenthalt-flucht-einwanderung/aufenthalt-einreise-reisen-ins-ausland"
+        },
+        {
+          "name": "§ 51 AufenthG",
+          "url": "https://www.gesetze-im-internet.de/aufenthg_2004/__51.html"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Терміни погодження в кожного Jobcenter свої, запитайте свого консультанта."
+    },
+    {
+      "id": "hot-switch-permit",
+      "topic": "hot",
+      "title": "З § 24 на стабільніший дозвіл: перехід треба подати самому",
+      "text": "Поки дозвіл за § 24 діє, можна перейти на інший: для фахівців із визнаною освітою (§ 18a, § 18b), Blue Card, навчання або Ausbildung. Треба виконати умови нового дозволу: відповідна робота, визнаний диплом, дохід на життя. Сам статус не змінюється, заяву подають в Ausländerbehörde. Перед цим краще сходити на консультацію.",
+      "german": [
+        "Wechsel des Aufenthaltstitels",
+        "Fachkraft",
+        "§ 18a AufenthG",
+        "§ 18b AufenthG"
+      ],
+      "keywords": [
+        "зміна статусу",
+        "параграф 24",
+        "дозвіл на проживання",
+        "робоча віза",
+        "Fachkraft",
+        "Ausbildung",
+        "навчання"
+      ],
+      "sources": [
+        {
+          "name": "IHK Regensburg",
+          "url": "https://www.ihk.de/regensburg/fachthemen/fachkraefte/aktuelles-fachkraeftesicherung/ukrainische-beschaeftigte-7192720"
+        },
+        {
+          "name": "BAGFW: Aufenthaltsverfestigung",
+          "url": "https://www.bagfw.de/fileadmin/user_upload/2025/Aufenthaltsverfestigung_Geflüchtete_Ukraine.pdf"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-blue-card",
+      "topic": "hot",
+      "title": "Blue Card: зарплата від 50 700 € на рік (2026)",
+      "text": "Blue Card дають за наявності вищої освіти (визнаної або порівнянної) і конкретної пропозиції роботи за фахом. Поріг зарплати у 2026 році 50 700 € брутто на рік. Для дефіцитних професій і фахівців-початківців він нижчий: 45 934,20 €. Поріг змінюється щосічня.",
+      "german": [
+        "Blaue Karte EU",
+        "Mangelberuf",
+        "Bruttojahresgehalt"
+      ],
+      "keywords": [
+        "Blue Card",
+        "блакитна карта",
+        "фахівець",
+        "зарплата",
+        "дозвіл на проживання",
+        "робота"
+      ],
+      "sources": [
+        {
+          "name": "RT Partner: Mindestgehalt 2026",
+          "url": "https://www.rtpartner.de/immigration/blaue-karte-eu-mindestgehalt-2026/"
+        },
+        {
+          "name": "CMS: Blaue Karte EU",
+          "url": "https://cms.law/de/deu/legal-updates/gefragt-wie-nie-die-blaue-karte-eu-als-schluessel-im-recruiting-internationaler-fachkraefte"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Перевірити в січні 2027."
+    },
+    {
+      "id": "hot-diploma",
+      "topic": "hot",
+      "title": "Визнання диплома: почніть з Anerkennungs-Finder",
+      "text": "Працювати з § 24 можна й без визнання диплома. Але для регульованих професій визнання обов'язкове: лікар, медсестра, вчитель та інші. Anerkennungs-Finder покаже, чи потрібне воно для вашої професії, куди подавати й які документи потрібні. Безкоштовно консультують служби мережі IQ.",
+      "german": [
+        "Anerkennung",
+        "reglementierter Beruf",
+        "Anerkennungs-Finder",
+        "Zeugnisbewertung (ZAB)"
+      ],
+      "keywords": [
+        "диплом",
+        "підтвердження",
+        "визнання",
+        "професія",
+        "лікар",
+        "вчитель",
+        "медсестра"
+      ],
+      "sources": [
+        {
+          "name": "Anerkennung in Deutschland: Geflüchtete",
+          "url": "https://www.anerkennung-in-deutschland.de/gefluechtete"
+        },
+        {
+          "name": "Anerkennung in Deutschland: FAQ",
+          "url": "https://www.anerkennung-in-deutschland.de/html/de/faq.php"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Порядок для кожної професії свій, у чоловіка й дружини він може відрізнятися."
+    },
+    {
+      "id": "hot-grundsicherung",
+      "topic": "hot",
+      "title": "Bürgergeld тепер Grundsicherungsgeld: що змінилося",
+      "text": "З 1 липня 2026 Bürgergeld називається Grundsicherungsgeld, сума для одного дорослого залишилася 563 €. Правила суворіші: Jobcenter спершу пропонує роботу, за відмову виплату можуть урізати сильніше, допустимі заощадження менші. У листах до кінця 2026 ще може стояти слово «Bürgergeld».",
+      "german": [
+        "Grundsicherungsgeld",
+        "Jobcenter",
+        "Vermittlungsvorrang",
+        "Leistungsminderung"
+      ],
+      "keywords": [
+        "Bürgergeld",
+        "допомога",
+        "Jobcenter",
+        "виплати",
+        "санкції",
+        "Grundsicherung"
+      ],
+      "sources": [
+        {
+          "name": "Bundesagentur für Arbeit",
+          "url": "https://www.arbeitsagentur.de/grundsicherung-loest-buergergeld-ab"
+        },
+        {
+          "name": "Bundesregierung",
+          "url": "https://www.bundesregierung.de/breg-de/aktuelles/neue-grundsicherung-2399562"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-asylblg",
+      "topic": "hot",
+      "title": "Приїхали після 1 квітня 2025: стежте за законом про виплати",
+      "text": "Уряд хоче, щоб українці, які приїхали після 1 квітня 2025, отримували менші виплати за AsylbLG замість Jobcenter. За даними на літо 2026 закон ще не набув чинності. Якщо він набуде чинності, відомство надішле лист, а тих, хто вже отримує гроші, переведуть не одразу. Поки рішення немає, нічого не змінюйте самі й перевіряйте новини в Jobcenter.",
+      "german": [
+        "Rechtskreiswechsel",
+        "Asylbewerberleistungsgesetz (AsylbLG)",
+        "Leistungsrechtsanpassungsgesetz"
+      ],
+      "keywords": [
+        "AsylbLG",
+        "виплати",
+        "Jobcenter",
+        "Sozialamt",
+        "нові правила",
+        "українці"
+      ],
+      "sources": [
+        {
+          "name": "Bundestag hib 15/2026",
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1136158"
+        },
+        {
+          "name": "Bundesregierung: Kabinett",
+          "url": "https://www.bundesregierung.de/breg-de/aktuelles/kabinett-rechtskreiswechsel-2382474"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Закон у роботі: перевіряти щомісяця."
+    },
+    {
+      "id": "hot-housing-jobcenter",
+      "topic": "hot",
+      "title": "Квартира при виплатах: згода Jobcenter до підпису договору",
+      "text": "Якщо оренду платить Jobcenter, спершу покажіть йому пропозицію квартири й отримайте письмову згоду (Zusicherung). Без неї оплатять лише «прийнятну» оренду, а переїзд, заставу й меблі можуть не оплатити. Яка оренда прийнятна, вирішує кожне місто саме.",
+      "german": [
+        "Zusicherung",
+        "Kosten der Unterkunft",
+        "Angemessenheit",
+        "Mietangebot"
+      ],
+      "keywords": [
+        "квартира",
+        "оренда",
+        "переїзд",
+        "Jobcenter",
+        "застава",
+        "Mietvertrag",
+        "зняти квартиру"
+      ],
+      "sources": [
+        {
+          "name": "Jobcenter Berlin Mitte",
+          "url": "https://www.berlin.de/jobcenter-mitte/buergergeld/geldleistungen/wohnung-heizung/informationsschreiben_zur_neuanmietung_von_angemessenem_wohnraum.pdf"
+        },
+        {
+          "name": "betanet: Kosten der Unterkunft",
+          "url": "https://www.betanet.de/buergergeld-kosten-unterkunft.html"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "hot-language",
+      "topic": "hot",
+      "title": "Мовні курси: де зараз узяти місце",
+      "text": "Integrationskurs для § 24 безкоштовний, допуск дає BAMF. З лютого 2026 BAMF майже не дає добровільних допусків, українців із § 24 названо пріоритетною групою, але місця залежать від бюджету. Якщо ви отримуєте виплати, запитайте Jobcenter: тих, кого він зобов'язав пройти курс, беруть у першу чергу. Після B1 є Berufssprachkurs для роботи.",
+      "german": [
+        "Integrationskurs",
+        "Zulassung",
+        "Verpflichtung",
+        "Berufssprachkurs"
+      ],
+      "keywords": [
+        "курси",
+        "німецька",
+        "мова",
+        "Integrationskurs",
+        "BAMF",
+        "B1",
+        "Jobcenter"
+      ],
+      "sources": [
+        {
+          "name": "migrando (13.05.2026)",
+          "url": "https://migrando.de/news/integration/neue-regeln-fuer-freiwillige-integrationskurse-wer-darf-teilnehmen-und-wer-nicht/"
+        },
+        {
+          "name": "Stadt Stuttgart: Deutschkurse",
+          "url": "https://www.stuttgart.de/buergerinnen-und-buerger/migranten/fluechtlinge/ukraine-hilfe/ankommen/deutschkurse.php"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Правила допуску змінюються, перевірте на сайті BAMF."
+    },
+    {
+      "id": "hot-kita",
+      "topic": "hot",
+      "title": "Садочок: в одній землі безкоштовно, в сусідній сотні євро",
+      "text": "Плату за садочок встановлюють земля й місто. Для батьків повністю безкоштовно в Берліні та Мекленбурзі-Передній Померанії. У багатьох землях безкоштовні години або роки з 3 років, наприклад у Гессені 6 годин на день. Хто отримує Grundsicherung, Wohngeld або Kinderzuschlag, за садочок не платить: подайте заяву в Jugendamt. Садочок не обов'язковий, школа обов'язкова скрізь.",
+      "german": [
+        "Kita-Gebühren",
+        "Beitragsfreiheit",
+        "Jugendamt",
+        "Schulpflicht"
+      ],
+      "keywords": [
+        "садочок",
+        "дитячий садок",
+        "Kita",
+        "плата",
+        "школа",
+        "діти",
+        "переїзд в іншу землю"
+      ],
+      "sources": [
+        {
+          "name": "Bildungsserver: Kita-Gebühren",
+          "url": "https://www.bildungsserver.de/Kita-Gebuehren-5674-de.html"
+        },
+        {
+          "name": "Regierung MV",
+          "url": "https://www.regierung-mv.de/Landesregierung/bm/Kindertagesfoerderung/Elternbeitragsfreiheit/"
+        }
+      ],
+      "checkedAt": "2026-11-25",
+      "note": "Правила своєї землі перевірте на сайті міста."
+    },
+    {
+      "id": "hot-medicine",
+      "topic": "hot",
+      "title": "Лікарі: Hausarzt, направлення й пошук лікаря за мовою",
+      "text": "З карткою лікарняної каси йдіть спершу до сімейного лікаря (Hausarzt). Він лікує й дає направлення (Überweisung) до спеціаліста. Термінові записи й черговий лікар: 116117, загроза життю: 112. Лікаря, який говорить українською чи російською, шукайте в пошуку лікарів 116117 за мовою.",
+      "german": [
+        "Hausarzt",
+        "Überweisung",
+        "Gesundheitskarte",
+        "Arztsuche"
+      ],
+      "keywords": [
+        "лікар",
+        "медицина",
+        "направлення",
+        "україномовний лікар",
+        "російськомовний лікар",
+        "116117",
+        "лікарняна каса"
+      ],
+      "sources": [
+        {
+          "name": "116117",
+          "url": "https://www.116117.de"
+        }
+      ],
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "id": "housing-anmeldung",
+      "topic": "housing",
+      "title": "Зареєструватися треба протягом 2 тижнів",
+      "text": "Після переїзду адресу треба зареєструвати в Bürgeramt протягом двох тижнів. Для цього потрібне підтвердження заселення від орендодавця, одного договору оренди не вистачить. У WG чи при суборенді підтвердження підписує головний орендар.",
+      "german": [
+        "Anmeldung",
+        "Wohnungsgeberbestätigung"
+      ],
+      "keywords": [
+        "переїзд",
+        "реєстрація",
+        "реєстрація адреси",
+        "зняти квартиру",
+        "Ummeldung",
+        "Anmeldung"
+      ],
+      "sources": [
+        {
+          "name": "§ 17 BMG",
+          "url": "https://www.gesetze-im-internet.de/bmg/__17.html"
+        },
+        {
+          "name": "формуляр с выдержкой из § 17 и § 19 BMG",
+          "url": "https://www.twist-emsland.de/pdf_files/wohnungsgeberbestaetigung_1571_1.pdf"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-kaution",
+      "topic": "housing",
+      "title": "Застава: максимум 3 «холодні» оренди, можна трьома частинами",
+      "text": "Застава не більша за три місячні оренди без комунальних платежів. Її можна внести трьома рівними частинами: першу на початку оренди, решту в наступні місяці. Це право діє, навіть якщо в договорі написано інакше.",
+      "german": [
+        "Kaution",
+        "Nettokaltmiete",
+        "Ratenzahlung"
+      ],
+      "keywords": [
+        "застава",
+        "депозит",
+        "зняти квартиру",
+        "договір оренди",
+        "Mietvertrag",
+        "Kaution"
+      ],
+      "sources": [
+        {
+          "name": "Berliner Mieterverein",
+          "url": "https://www.berliner-mieterverein.de/?p=14846"
+        },
+        {
+          "name": "Finanztip",
+          "url": "https://finanztip.de/mietkaution/"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-fake",
+      "topic": "housing",
+      "title": "Гроші до перегляду й договору не переказуйте",
+      "text": "Якщо «власник» просить заставу до підписання договору або гроші за ключ для перегляду, це часто шахрайство. Ознаки: надто низька ціна, власник «зараз за кордоном», прохання надіслати копію паспорта заздалегідь. Платіть лише після перегляду й підписаного договору.",
+      "german": [
+        "Vorkasse",
+        "Vorkaution",
+        "Fake-Anzeige"
+      ],
+      "keywords": [
+        "зняти квартиру",
+        "оголошення",
+        "перегляд",
+        "Besichtigung",
+        "шахраї",
+        "ImmoScout",
+        "Kleinanzeigen"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Fake-Wohnungen",
+          "url": "https://www.verbraucherzentrale.de/node/27576"
+        },
+        {
+          "name": "Verbraucherzentrale Niedersachsen",
+          "url": "https://www.verbraucherzentrale-niedersachsen.de/themen/freizeit-reise/freizeit/5-miese-maschen-bei-der-wohnungssuche"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "housing-rundfunk",
+      "topic": "housing",
+      "title": "Внесок за радіо й ТБ платить кожна квартира",
+      "text": "18,36 € на місяць за квартиру, навіть без телевізора. Платить одна людина за всю квартиру, у WG теж. Лист від Beitragsservice не спам. За Bürgergeld, Wohngeld і деяких інших виплат можна попросити звільнення.",
+      "german": [
+        "Rundfunkbeitrag",
+        "Beitragsservice",
+        "Befreiung"
+      ],
+      "keywords": [
+        "GEZ",
+        "телебачення",
+        "радіо",
+        "переїзд",
+        "лист Beitragsservice",
+        "Rundfunkbeitrag"
+      ],
+      "sources": [
+        {
+          "name": "betanet: Rundfunkbeitrag",
+          "url": "https://www.betanet.de/rundfunkbeitrag-befreiung-ermaessigung.html?pdf=328"
+        },
+        {
+          "name": "Finanztip",
+          "url": "https://finanztip.de/rundfunkbeitrag/"
+        }
+      ],
+      "checkedAt": "2026-11-15",
+      "note": "Сума може зрости у 2027 році, перевірити в січні."
+    },
+    {
+      "id": "insurance-haftpflicht",
+      "topic": "insurance",
+      "title": "Страхування відповідальності платить за шкоду іншим",
+      "text": "Воно не обов'язкове, але без нього за випадкову шкоду платите ви самі. Приклад: у вас протекла пральна машина, і вода зіпсувала квартиру сусідів знизу. Цю шкоду оплачує ваша Privathaftpflicht.",
+      "german": [
+        "Privathaftpflichtversicherung",
+        "Wasserschaden"
+      ],
+      "keywords": [
+        "страхування",
+        "сусіди",
+        "залив",
+        "пральна машина",
+        "зламав",
+        "зняти квартиру",
+        "переїзд"
+      ],
+      "sources": [
+        {
+          "name": "Stiftung Warentest: Wasserschaden",
+          "url": "https://www.test.de/Wasserschaden-Welche-Versicherung-wann-zahlt-5700777-0"
+        },
+        {
+          "name": "Verbraucherzentrale: Privathaftpflicht",
+          "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/weitere-versicherungen/private-haftpflichtversicherung-ein-absolutes-muss-fuer-alle-13891"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-mietsachschaden",
+      "topic": "insurance",
+      "title": "Перевірте, чи покриває поліс шкоду орендованій квартирі",
+      "text": "Шкода самій орендованій квартирі (підлога, двері, сантехніка) входить у поліс лише через пункт «Mietsachschäden». Verbraucherzentrale радить суму для нього не меншу за 500 000 €. Меблі й техніка орендодавця та шкода, що накопичується поступово (вологість, пліснява), часто виключені. Дивіться умови свого договору.",
+      "german": [
+        "Mietsachschäden",
+        "Allmählichkeitsschäden",
+        "Versicherungsbedingungen"
+      ],
+      "keywords": [
+        "орендована квартира",
+        "договір оренди",
+        "пошкодив підлогу",
+        "виїзд",
+        "ремонт",
+        "заставу не повернули"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Privathaftpflicht",
+          "url": "https://www.verbraucherzentrale.de/node/13891"
+        },
+        {
+          "name": "Allianz: Allmählichkeitsschäden",
+          "url": "https://www.allianz.de/recht-und-eigentum/privat-haftpflichtversicherung/allmaehlichkeitsschaeden/"
+        },
+        {
+          "name": "Berliner MieterGemeinschaft: Wasserschaden",
+          "url": "https://bmgev.de/mieterecho/artikel/wasserschaden---wer-muss-zahlen"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-pets",
+      "topic": "insurance",
+      "title": "Кішка зазвичай у полісі, собаці потрібне окреме страхування",
+      "text": "Шкоду від кішки чи кролика зазвичай покриває Privathaftpflicht. Для собаки потрібна окрема Hundehaftpflicht, у Berlin, Hamburg, Niedersachsen і низці інших земель вона обов'язкова. Якщо тварина сильно зіпсувала орендовану квартиру (наприклад, сеча на підлозі), страховка може відмовити, і тоді ремонт оплачує орендар.",
+      "german": [
+        "Tierhalterhaftpflicht",
+        "Hundehaftpflicht"
+      ],
+      "keywords": [
+        "кішка",
+        "собака",
+        "тварина",
+        "домашній улюбленець",
+        "орендована квартира",
+        "ковролін",
+        "Tierhaltung"
+      ],
+      "sources": [
+        {
+          "name": "Stiftung Warentest: Tierhalterhaftpflicht",
+          "url": "https://test.de/thema/tierhalterhaftpflichtversicherung/meldungen"
+        },
+        {
+          "name": "GDV: Hundehalterhaftpflicht",
+          "url": "https://www.dieversicherer.de/versicherer/freizeit/hundehalterhaftpflichtversicherung"
+        },
+        {
+          "name": "IWW: отказ при моче кошек",
+          "url": "https://www.iww.de/vk/haftpflichtversicherung/privathaftpflichtversicherung-tierhalterhaftpflicht-in-diesen-faellen-gilt-der-ausschluss-der-uebermaessigen-beanspruchung-f85233"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-hausrat",
+      "topic": "insurance",
+      "title": "Свої речі страхує Hausrat",
+      "text": "Privathaftpflicht платить лише за чужі речі. Якщо вода, пожежа чи крадіжка зі зламом зіпсували ваші меблі й техніку, платить Hausratversicherung. Вона не обов'язкова.",
+      "german": [
+        "Hausratversicherung",
+        "Leitungswasser",
+        "Einbruchdiebstahl"
+      ],
+      "keywords": [
+        "свої речі",
+        "меблі",
+        "крадіжка",
+        "затопило",
+        "страхування квартири"
+      ],
+      "sources": [
+        {
+          "name": "Berliner MieterGemeinschaft: Wasserschaden",
+          "url": "https://bmgev.de/mieterecho/artikel/wasserschaden---wer-muss-zahlen"
+        },
+        {
+          "name": "Stiftung Warentest: Wasserschaden",
+          "url": "https://www.test.de/Wasserschaden-Welche-Versicherung-wann-zahlt-5700777-0"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "insurance-kuendigung",
+      "topic": "insurance",
+      "title": "Страхування розривають заздалегідь",
+      "text": "Зазвичай страхування можна розірвати до кінця страхового року, строк повідомлення від одного до трьох місяців. Страховий рік рахується від дати договору, а не від 1 січня. Правило «розірвати за місяць» для договорів з березня 2022 року (телефон, фітнес, підписки) на страхування не поширюється.",
+      "german": [
+        "Kündigung",
+        "Kündigungsfrist",
+        "Versicherungsjahr"
+      ],
+      "keywords": [
+        "розірвати",
+        "відмовитися від страхування",
+        "договір продовжився",
+        "Kündigung"
+      ],
+      "sources": [
+        {
+          "name": "§ 11 VVG",
+          "url": "https://www.gesetze-im-internet.de/vvg%5F2008/__11.html"
+        },
+        {
+          "name": "exali: Gesetz für faire Verbraucherverträge",
+          "url": "https://www.exali.de/Info-Base/gesetz-faire-verbrauchervertraege"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-pflicht",
+      "topic": "health",
+      "title": "Медичне страхування обов'язкове для всіх",
+      "text": "З 2009 року кожен, хто живе в Німеччині, мусить мати медичне страхування: державне (Krankenkasse) або приватне. Якщо оформити його пізніше, внески можуть вимагати за минулий час.",
+      "german": [
+        "Krankenversicherungspflicht",
+        "Krankenkasse"
+      ],
+      "keywords": [
+        "медичне страхування",
+        "лікар",
+        "переїзд до Німеччини",
+        "лист від Krankenkasse"
+      ],
+      "sources": [
+        {
+          "name": "betanet: Krankenversicherung",
+          "url": "https://www.betanet.de/krankenversicherung.html"
+        },
+        {
+          "name": "Бундестаг, ответ на петицию 117485",
+          "url": "https://epetitionen.bundestag.de/petitionen/_2020/_10/_29/Petition_117485.abschlussbegruendungpdf.pdf"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-116117",
+      "topic": "health",
+      "title": "Уночі й на вихідних: 116 117, за загрози життю: 112",
+      "text": "116 117 це чергова служба лікарів, коли практики зачинені: висока температура, сильний біль у горлі чи спині. Дзвінок безкоштовний, номер працює по всій Німеччині без коду. Інфаркт, тяжка травма, сильна кровотеча: одразу 112.",
+      "german": [
+        "Ärztlicher Bereitschaftsdienst",
+        "Notruf"
+      ],
+      "keywords": [
+        "лікар уночі",
+        "вихідні",
+        "захворів",
+        "температура",
+        "швидка",
+        "невідкладна допомога"
+      ],
+      "sources": [
+        {
+          "name": "KV Baden-Württemberg: 116117",
+          "url": "https://www.kvbawue.de/buerger/notfallpraxen/116-117/"
+        },
+        {
+          "name": "praktischArzt: 116 117",
+          "url": "https://www.praktischarzt.de/ratgeber/aerztlicher-bereitschaftsdienst-116117/"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "health-krankmeldung",
+      "topic": "health",
+      "title": "Лікарняний: повідомити одразу, довідка до 4-го дня",
+      "text": "Про хворобу роботодавцю повідомляють у перший же день. Довідка від лікаря потрібна не пізніше четвертого дня, але роботодавець може вимагати її з першого дня. З 2023 року лікар передає довідку в Krankenkasse електронно, роботодавець забирає її там сам.",
+      "german": [
+        "Krankmeldung",
+        "Arbeitsunfähigkeitsbescheinigung (eAU)"
+      ],
+      "keywords": [
+        "лікарняний",
+        "захворів",
+        "робота",
+        "роботодавець",
+        "довідка",
+        "gelber Schein"
+      ],
+      "sources": [
+        {
+          "name": "TK: eAU",
+          "url": "https://www.tk.de/firmenkunden/service/fachthemen/meldeverfahren-fachthemen/eau-weg-zur-elektronischen-meldung-2102198?tkcm=aaus"
+        },
+        {
+          "name": "IG Metall: больничный",
+          "url": "https://www.igmetall.de/service/ratgeber/arbeitsunfaehig-krank-das-gilt-es-zu-beachten"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "taxes-steuerid",
+      "topic": "taxes",
+      "title": "Податковий номер прийде поштою",
+      "text": "Після першої реєстрації адреси BZSt надсилає Steuer-ID сам, заява не потрібна. Номер потрібен роботодавцю, лист із ним збережіть. Якщо через 3 місяці листа немає, його можна запросити на сайті BZSt, відповідь прийде лише поштою.",
+      "german": [
+        "Steuer-Identifikationsnummer",
+        "Bundeszentralamt für Steuern (BZSt)"
+      ],
+      "keywords": [
+        "податковий номер",
+        "робота",
+        "Steuer-ID",
+        "перша робота",
+        "Anmeldung"
+      ],
+      "sources": [
+        {
+          "name": "BayernPortal: Steuer-ID anfordern",
+          "url": "https://www.bayernportal.de/dokumente/leistung/694749931600"
+        },
+        {
+          "name": "steuertipps.de: Steuer-ID",
+          "url": "https://www.steuertipps.de/finanzamt-formalitaeten/steuer-identifikationsnummer/themen"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "taxes-kirchensteuer",
+      "topic": "taxes",
+      "title": "Церковний податок платять не всі",
+      "text": "Його платять члени церков, які збирають податок через Finanzamt, насамперед римо-католицької та євангельської. Православні церкви в Німеччині його, як правило, не збирають, мусульмани й буддисти його не платять. Сума: 8 % від податку на доходи в Bayern і Baden-Württemberg, 9 % в інших землях. Під час реєстрації адреси в Bürgeramt запитують релігію, і від цього запису залежить, чи утримуватимуть податок. Не платити податок і при цьому залишатися членом церкви не можна: треба офіційно вийти з церкви в Standesamt або Amtsgericht. Зазвичай це коштує близько 30 €, у деяких землях безкоштовно. Податок перестають утримувати з наступного місяця.",
+      "german": [
+        "Kirchensteuer",
+        "Religionszugehörigkeit",
+        "Kirchenaustritt"
+      ],
+      "keywords": [
+        "церковний податок",
+        "релігія",
+        "православний",
+        "католик",
+        "вихід із церкви",
+        "Anmeldung",
+        "зарплата",
+        "відрахування"
+      ],
+      "sources": [
+        {
+          "name": "VLH: Kirchensteuer",
+          "url": "https://www.vlh.de/wissen-service/steuer-abc/kirchensteuer-was-muss-ich-wissen-was-kann-ich-absetzen.html"
+        },
+        {
+          "name": "ETL: Kirchensteuer im Überblick",
+          "url": "https://www.etl.de/aktuelles/die-kirchensteuer-im-ueberblick-2025/"
+        },
+        {
+          "name": "Lohnsteuer kompakt: Kirchensteuer",
+          "url": "https://www.lohnsteuer-kompakt.de/texte/2025/4/prozstpflproz"
+        },
+        {
+          "name": "steuerschroeder.de: Kirchensteuer für Zugezogene",
+          "url": "https://www.steuerschroeder.de/Kirchensteuerpflicht-Auslaender.html"
+        },
+        {
+          "name": "t-online: Kirchenaustritt",
+          "url": "https://www.t-online.de/finanzen/id_86403516/kirchensteuer-sparen-immer-mehr-menschen-treten-aus-der-kirche-aus.html"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-bekanntgabe",
+      "topic": "letters",
+      "title": "Лист вважається отриманим на 4-й день",
+      "text": "Рішення відомства, надіслане поштою, вважається отриманим на четвертий день після відправлення (до 2025 року був третій). Від цього дня рахуються терміни, навіть якщо ви довго не заглядали в поштову скриньку. Те саме правило діє для електронних рішень.",
+      "german": [
+        "Bekanntgabe",
+        "Bescheid",
+        "Aufgabe zur Post"
+      ],
+      "keywords": [
+        "термін",
+        "коли отримав",
+        "дата листа",
+        "запізнився",
+        "Jobcenter",
+        "Finanzamt"
+      ],
+      "sources": [
+        {
+          "name": "DATEV-Magazin: Bekanntgabefiktion",
+          "url": "https://www.datev-magazin.de/nachrichten-steuern-recht/steuern/bekanntgabefiktion-die-zugangsvermutung-verlaengert-sich-ab-dem-1-januar-2025-auf-vier-tage-135900"
+        },
+        {
+          "name": "gegen-hartz.de: Vier-Tages-Fiktion",
+          "url": "https://www.gegen-hartz.de/news/vier-tages-fiktion-was-das-jetzt-fuer-buergergeld-bezieher-bedeutet"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-widerspruch",
+      "topic": "letters",
+      "title": "Не згодні: зазвичай є місяць",
+      "text": "На рішення можна подати заперечення, на рішення Jobcenter зазвичай протягом місяця з дня отримання. Точний термін і адреса написані в кінці листа. Ja!sno не пише заперечень, але покаже, куди звернутися по консультацію.",
+      "german": [
+        "Widerspruch",
+        "Einspruch (Finanzamt)",
+        "Rechtsbehelfsbelehrung"
+      ],
+      "keywords": [
+        "заперечення",
+        "не згоден",
+        "відмова",
+        "оскаржити",
+        "Bescheid",
+        "Widerspruch"
+      ],
+      "sources": [
+        {
+          "name": "gegen-hartz.de: Vier-Tages-Fiktion",
+          "url": "https://www.gegen-hartz.de/news/vier-tages-fiktion-was-das-jetzt-fuer-buergergeld-bezieher-bedeutet"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "letters-aktenzeichen",
+      "topic": "letters",
+      "title": "Вказуйте номер справи й зберігайте копії",
+      "text": "У кожній відповіді відомству пишіть номер справи з їхнього листа. Зберігайте копію всього, що надсилаєте, і дату відправлення. У Ja!sno для цього є справа й позначка «Я надіслав(ла)».",
+      "german": [
+        "Aktenzeichen",
+        "Geschäftszeichen",
+        "Kundennummer"
+      ],
+      "keywords": [
+        "номер справи",
+        "відповідь відомству",
+        "копія",
+        "надіслав",
+        "довести",
+        "Aktenzeichen"
+      ],
+      "sources": [],
+      "checkedAt": "2026-11-15",
+      "note": "Загальна порада, без норми закону."
+    },
+    {
+      "id": "contracts-telefon",
+      "topic": "contracts",
+      "title": "Телефон та інтернет: після 24 місяців можна розірвати за місяць",
+      "text": "Перший строк договору на телефон чи інтернет не довший за 24 місяці. Якщо не розірвати його вчасно, він продовжується, але потім його можна розірвати будь-коли з повідомленням за місяць. Найзручніше кнопка «Vertrag kündigen» на сайті провайдера: підтвердження приходить одразу. Телефоном краще не розривати, потім не доведете.",
+      "german": [
+        "Mindestvertragslaufzeit",
+        "Kündigung",
+        "Kündigungsbutton"
+      ],
+      "keywords": [
+        "телефон",
+        "мобільний",
+        "інтернет",
+        "Handyvertrag",
+        "розірвати",
+        "Vodafone",
+        "Telekom",
+        "O2"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Handyvertrag kündigen",
+          "url": "https://www.verbraucherzentrale.de/node/38191"
+        },
+        {
+          "name": "Verbraucherzentrale: Kundenrechte Telefon und Internet",
+          "url": "https://www.verbraucherzentrale.de/node/65879"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-umzug",
+      "topic": "contracts",
+      "title": "Переїзд: інтернет можна розірвати достроково",
+      "text": "Якщо провайдер не може підключити вас за новою адресою, договір можна розірвати з повідомленням за місяць, навіть до кінця строку. Розірвання можна надіслати заздалегідь, щоб воно спрацювало до дня переїзду.",
+      "german": [
+        "Umzug",
+        "Sonderkündigungsrecht"
+      ],
+      "keywords": [
+        "переїзд",
+        "нова квартира",
+        "інтернет",
+        "зняти квартиру",
+        "Anmeldung"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Telekommunikationsgesetz",
+          "url": "https://www.verbraucherzentrale.de/wissen/digitale-welt/mobilfunk-und-festnetz/das-telekommunikationsgesetz-vorteile-fuer-die-telefonkunden-10956"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-widerruf",
+      "topic": "contracts",
+      "title": "Договір телефоном, онлайн чи біля дверей: 14 днів на відмову",
+      "text": "Якщо договір укладено в інтернеті, телефоном чи з агентом біля дверей, від нього можна відмовитися протягом 14 днів без пояснення причин. Для договорів на телефон, інтернет, електрику чи газ строк рахується від дня укладення договору. Просто не платити не можна: про відмову треба заявити компанії, наприклад e-mail. У магазині такого права зазвичай немає.",
+      "german": [
+        "Widerrufsrecht",
+        "Widerrufsfrist",
+        "Widerrufsbelehrung"
+      ],
+      "keywords": [
+        "відмовитися",
+        "нав'язали",
+        "телефоном",
+        "агент біля дверей",
+        "електрика",
+        "онлайн-покупка",
+        "Widerruf"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Widerruf",
+          "url": "https://www.verbraucherzentrale.de/wissen/vertraege-reklamation/kundenrechte/von-widerruf-bis-umtausch-wenn-sie-mit-der-ware-nicht-zufrieden-sind-5117"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "contracts-abo",
+      "topic": "contracts",
+      "title": "Фітнес і підписки: після мінімального строку розривають за місяць",
+      "text": "Для договорів, укладених з 1 березня 2022 року (фітнес, стримінг, журнали), після мінімального строку діє право розірвати за місяць. Якщо договір укладено онлайн, на сайті компанії з 1 липня 2022 року має бути кнопка розірвання, без входу в акаунт. На страхування ці правила не поширюються (див. «Страхування розривають заздалегідь»).",
+      "german": [
+        "Gesetz für faire Verbraucherverträge",
+        "Kündigungsbutton",
+        "Vertragsverlängerung"
+      ],
+      "keywords": [
+        "фітнес",
+        "підписка",
+        "абонемент",
+        "Abo",
+        "договір продовжився",
+        "розірвати"
+      ],
+      "sources": [
+        {
+          "name": "Verbraucherzentrale: Gesetz für fairere Verträge",
+          "url": "https://www.verbraucherzentrale.de/wissen/vertraege-reklamation/kundenrechte/gesetz-fuer-fairere-vertraege-mehr-schutz-bei-kosten-und-laufzeiten-55274"
+        },
+        {
+          "name": "IT-Recht Kanzlei",
+          "url": "https://www.it-recht-kanzlei.de/information-vertragslaufzeit-kuendigungsbedingugen-dauerschuldverhaeltnisse.html"
+        },
+        {
+          "name": "ÖKO-TEST",
+          "url": "https://www.oekotest.de/geld-versicherungen/Faire-Verbrauchervertraege-Neues-Gesetz-kuerzt-Vertragslaufzeiten-und-Kuendigungsfristen-_11951_1.html"
+        }
+      ],
+      "checkedAt": "2026-11-15"
+    },
+    {
+      "id": "children-pregnancy",
+      "topic": "children",
+      "title": "Вагітність і народження дитини",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Mutterpass",
+        "Geburtsurkunde"
+      ],
+      "keywords": [
+        "вагітність",
+        "пологи",
+        "народження"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-register",
+      "topic": "children",
+      "title": "Заявити про дитину: виплати й документи",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Kindergeld",
+        "Elterngeld"
+      ],
+      "keywords": [
+        "допомога на дитину",
+        "заявити про дитину",
+        "Kindergeld"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-kita",
+      "topic": "children",
+      "title": "Дитячий садок",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Kita",
+        "Kita-Gutschein"
+      ],
+      "keywords": [
+        "дитячий садок",
+        "ясла",
+        "Kita"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-doctor",
+      "topic": "children",
+      "title": "Дитячий лікар",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Kinderarzt",
+        "U-Untersuchungen"
+      ],
+      "keywords": [
+        "педіатр",
+        "щеплення",
+        "огляд"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-school",
+      "topic": "children",
+      "title": "Діти й школа",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Schulpflicht",
+        "Grundschule"
+      ],
+      "keywords": [
+        "школа",
+        "записати до школи"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-german",
+      "topic": "children",
+      "title": "Додаткові уроки німецької для дітей",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Deutsch als Zweitsprache",
+        "Willkommensklasse"
+      ],
+      "keywords": [
+        "німецька для дітей",
+        "клас інтеграції"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "children-students",
+      "topic": "children",
+      "title": "Абітурієнти й студенти",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Abitur",
+        "BAföG",
+        "Studium"
+      ],
+      "keywords": [
+        "університет",
+        "студент",
+        "абітурієнт"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "german-teacher",
+      "topic": "german",
+      "title": "Де знайти викладача німецької",
+      "text": "Розділ готує команда.",
+      "german": [
+        "Integrationskurs",
+        "Volkshochschule"
+      ],
+      "keywords": [
+        "курси німецької",
+        "вчитель німецької",
+        "викладач"
+      ],
+      "sources": [],
+      "checkedAt": "",
+      "draft": true
+    }
+  ]
+}

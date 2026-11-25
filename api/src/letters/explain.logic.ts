@@ -1,3 +1,4 @@
+import type { Language } from '../common/language.js';
 import { createHash } from 'node:crypto';
 import type {
   ExplainResult,
@@ -23,7 +24,7 @@ export interface ExplainFact {
 }
 
 export interface ExplanationView {
-  lang: 'ru';
+  lang: Language;
   about: { text: string; claimIds: string[]; unconfirmed: boolean };
   actions: { text: string; claimIds: string[]; unconfirmed: boolean }[];
   /**
@@ -209,6 +210,7 @@ export function checkExplanation(
 export function finalizeExplanation(
   r: ExplainResult | ExplainV2Result,
   facts: ExplainFact[],
+  lang: Language = 'ru',
 ): ExplanationView {
   const byId = new Map(facts.map((f) => [f.id, f]));
   const unconfirmed = (ids: string[]) =>
@@ -242,7 +244,7 @@ export function finalizeExplanation(
         a.date.localeCompare(b.date) || a.claimId.localeCompare(b.claimId),
     );
   return {
-    lang: 'ru',
+    lang,
     about,
     actions,
     requests,

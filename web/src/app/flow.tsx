@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DraftKind } from '../api/types';
 import { useSession } from '../store';
+import { t } from '../i18n';
 
 /*
  * Состояние сценариев, которое не хранится на сервере (TechBriefing v5, 4.1).
@@ -53,7 +54,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     const current = pagesRef.current;
     const pdfs = files.filter(isPdf);
     if (pdfs.length > 0) {
-      if (files.length > 1) return 'PDF загружается отдельно: выберите один PDF или только фото.';
+      if (files.length > 1) return t('PDF загружается отдельно: выберите один PDF или только фото.');
       release(current);
       const next = [toPicked(pdfs[0])];
       pagesRef.current = next;
@@ -68,7 +69,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     const next = [...base, ...added];
     pagesRef.current = next;
     setPages(next);
-    return files.length > room ? `Можно не больше ${MAX_PAGES} фото на письмо. Лишние не добавлены.` : null;
+    return files.length > room ? t('Можно не больше {v0} фото на письмо. Лишние не добавлены.', { v0: MAX_PAGES }) : null;
   }, []);
 
   const removePage = useCallback((id: string) => {
@@ -117,6 +118,6 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
 export function useFlow(): FlowValue {
   const v = useContext(FlowContext);
-  if (!v) throw new Error('useFlow: нет FlowProvider');
+  if (!v) throw new Error(t('useFlow: нет FlowProvider'));
   return v;
 }

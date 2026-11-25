@@ -19,24 +19,25 @@ import {
   useDeadlineIcsMutation,
 } from '../../store/api';
 import { LetterOriginals } from '../../components/LetterOriginals';
+import { getLang, t, tMsg } from '../../i18n';
 
 /*
  * Экраны дела, письма с объяснением и истории (F03) на API B07 и B08.
  */
 
 const STAGE_HINT: Partial<Record<CaseStage, string>> = {
-  OVERDUE: 'Срок прошёл. Ответьте как можно скорее или обратитесь в консультацию.',
-  DOCUMENTS: 'Ведомство ждёт от вас документы.',
-  REPLY: 'Ведомство ждёт ваш ответ.',
-  NEEDS_CHECK: 'Проверьте факты письма: черновик собирается только из подтверждённых.',
-  WAITING: 'Вы ответили. Теперь ход за ведомством.',
+  OVERDUE: t('Срок прошёл. Ответьте как можно скорее или обратитесь в консультацию.'),
+  DOCUMENTS: t('Ведомство ждёт от вас документы.'),
+  REPLY: t('Ведомство ждёт ваш ответ.'),
+  NEEDS_CHECK: t('Проверьте факты письма: черновик собирается только из подтверждённых.'),
+  WAITING: t('Вы ответили. Теперь ход за ведомством.'),
 };
 
 const DEADLINE_KIND: Record<string, string> = {
-  REPLY: 'ответить',
-  DOCUMENTS: 'прислать документы',
-  OBJECTION: 'возражение',
-  FOLLOW_UP: 'напоминание',
+  REPLY: t('ответить'),
+  DOCUMENTS: t('прислать документы'),
+  OBJECTION: t('возражение'),
+  FOLLOW_UP: t('напоминание'),
 };
 
 export type DeadlineState = 'unconfirmed' | 'done' | 'overdue' | 'active';
@@ -51,16 +52,16 @@ export function deadlineState(d: { date: string; active: boolean; done: boolean 
 function DeadlineRow({ d }: { d: { date: string; kind: string; active: boolean; done: boolean } }) {
   const state = deadlineState(d);
   const label = {
-    unconfirmed: <span className="status status--check">Не подтверждён: проверьте срок</span>,
-    done: <span className="status status--done">Выполнен</span>,
-    overdue: <span className="status status--overdue">Просрочен</span>,
-    active: <span className="status status--action">Действует</span>,
+    unconfirmed: <span className="status status--check">{t('Не подтверждён: проверьте срок')}</span>,
+    done: <span className="status status--done">{t('Выполнен')}</span>,
+    overdue: <span className="status status--overdue">{t('Просрочен')}</span>,
+    active: <span className="status status--action">{t('Действует')}</span>,
   }[state];
   return (
     <div className="row-between" data-testid="deadline" data-state={state}>
       <span className="stack-s" style={{ gap: 2 }}>
         <span style={{ fontWeight: 700 }}>
-          {state === 'unconfirmed' ? 'возможно, ' : ''}до {formatDate(d.date)}
+          {state === 'unconfirmed' ? t('возможно, ') : ''}{t('до')}{' '}{formatDate(d.date)}
         </span>
         <span className="small text-2">
           {DEADLINE_KIND[d.kind] ?? d.kind}
@@ -110,11 +111,11 @@ function DeadlineActions({ caseId, d }: { caseId: string; d: { id: string; date:
     <div className="stack-s">
       <div className="row wrap">
         <button type="button" className="btn btn--ghost btn--small" disabled={saving.isLoading} onClick={() => void toggle()}>
-          <Icon name="check" size={16} /> {d.done ? 'Открыть срок снова' : 'Выполнено'}
+          <Icon name="check" size={16} /> {d.done ? t('Открыть срок снова') : t('Выполнено')}
         </button>
         {!d.done && (
           <button type="button" className="btn btn--ghost btn--small" disabled={loading.isLoading} onClick={() => void calendar()}>
-            <Icon name="calendar" size={16} /> В календарь
+            <Icon name="calendar" size={16} />{' '}{t('В календарь')}
           </button>
         )}
       </div>
@@ -125,8 +126,8 @@ function DeadlineActions({ caseId, d }: { caseId: string; d: { id: string; date:
 
 /** Поправка 24.11: дата письма (факт LETTER_DATE), а не дата загрузки. */
 export function letterDateText(d: { date: string; confirmed: boolean } | null | undefined): string {
-  if (!d) return 'дата письма не найдена';
-  return d.confirmed ? `от ${formatDate(d.date)}` : `от ${formatDate(d.date)}, дата не подтверждена`;
+  if (!d) return t('дата письма не найдена');
+  return d.confirmed ? t('от {v0}', { v0: formatDate(d.date) }) : t('от {v0}, дата не подтверждена', { v0: formatDate(d.date) });
 }
 
 /** Письмо в карточке дела. Поправка 24.11: каждое письмо можно удалить (с подтверждением). */
@@ -134,7 +135,7 @@ function CaseLetterCard({ letter: l }: { letter: ApiCaseDetail['letters'][number
   const [deleteLetter, deleting] = useDeleteLetterMutation();
   const [askDelete, setAskDelete] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const name = l.title || l.authority || 'Письмо';
+  const name = l.title || l.authority || t('Письмо');
 
   async function remove() {
     setError(null);
@@ -156,30 +157,30 @@ function CaseLetterCard({ letter: l }: { letter: ApiCaseDetail['letters'][number
             </span>
           )}
         </span>
-        {l.unconfirmed > 0 && <span className="status status--check">Проверить фактов: {l.unconfirmed}</span>}
+        {l.unconfirmed > 0 && <span className="status status--check">{t('Проверить фактов:')}{' '}{l.unconfirmed}</span>}
       </div>
       <div className="row wrap">
         <Link to={`/app/letters/${l.id}`} className="btn btn--secondary btn--small">
-          Объяснение
+          {t('Объяснение')}
         </Link>
         <Link to={`/app/letters/${l.id}/check`} className="btn btn--ghost btn--small">
-          Проверить факты
+          {t('Проверить факты')}
         </Link>
         {!askDelete && (
           <button type="button" className="btn btn--ghost btn--small" onClick={() => setAskDelete(true)}>
-            <Icon name="trash" size={16} /> Удалить письмо
+            <Icon name="trash" size={16} />{' '}{t('Удалить письмо')}
           </button>
         )}
       </div>
       {askDelete && (
-        <div className="alert alert--error stack-s" role="alertdialog" aria-label={`Удалить письмо «${name}»`}>
-          <span>Удалятся письмо, его факты, сроки и файлы. Дело и другие письма останутся. Восстановить нельзя.</span>
+        <div className="alert alert--error stack-s" role="alertdialog" aria-label={t('Удалить письмо «{v0}»', { v0: name })}>
+          <span>{t('Удалятся письмо, его факты, сроки и файлы. Дело и другие письма останутся. Восстановить нельзя.')}</span>
           <div className="row wrap">
             <button type="button" className="btn btn--danger btn--small" disabled={deleting.isLoading} onClick={() => void remove()}>
-              Удалить письмо безвозвратно
+              {t('Удалить письмо безвозвратно')}
             </button>
             <button type="button" className="btn btn--ghost btn--small" onClick={() => setAskDelete(false)}>
-              Отмена
+              {t('Отмена')}
             </button>
           </div>
         </div>
@@ -204,7 +205,7 @@ export function CasePage({ id }: { id: string }) {
     const notFound = errorCode(c.error) === 'NOT_FOUND';
     return (
       <>
-        <PageHeader title={notFound ? 'Дело не найдено' : 'Не получилось открыть дело'} back="/app/cases" />
+        <PageHeader title={notFound ? t('Дело не найдено') : t('Не получилось открыть дело')} back="/app/cases" />
         {!notFound && <ErrorAlert error={c.error} />}
       </>
     );
@@ -237,7 +238,7 @@ export function CasePage({ id }: { id: string }) {
       <div className="row wrap">
         <StageChip stage={cs.stage} />
         <span className="muted">
-          {cs.authority ?? 'ведомство не подтверждено'} · {cs.caseNumber ?? 'номер дела не подтверждён'}
+          {cs.authority ?? t('ведомство не подтверждено')} · {cs.caseNumber ?? t('номер дела не подтверждён')}
         </span>
       </div>
       {STAGE_HINT[cs.stage] && <div className="alert alert--info">{STAGE_HINT[cs.stage]}</div>}
@@ -249,8 +250,8 @@ export function CasePage({ id }: { id: string }) {
       <div className="desktop-2col stack">
         <section className="stack">
           {cs.deadlines.length > 0 && (
-            <div className="card stack-s" aria-label="Сроки">
-              <span className="eyebrow">Сроки</span>
+            <div className="card stack-s" aria-label={t('Сроки')}>
+              <span className="eyebrow">{t('Сроки')}</span>
               {cs.deadlines.map((d) => (
                 <div key={d.id} className="stack-s deadline-item">
                   <DeadlineRow d={d} />
@@ -261,22 +262,22 @@ export function CasePage({ id }: { id: string }) {
           )}
           {cs.origin === 'OUTGOING' && (
             <div className="card card--teal stack-s" data-testid="own-letter">
-              <span className="eyebrow">Своё письмо</span>
-              <span>Это дело началось с вашего письма в ведомство. Ответ ведомства добавьте, когда он придёт.</span>
+              <span className="eyebrow">{t('Своё письмо')}</span>
+              <span>{t('Это дело началось с вашего письма в ведомство. Ответ ведомства добавьте, когда он придёт.')}</span>
               {cs.drafts[0] && (
                 <Link
                   to={`/app/cases/${cs.id}/answer/draft?draft=${cs.drafts[0].id}&kind=TEMPLATE`}
                   className="btn btn--primary btn--small"
                 >
-                  <Icon name="doc" size={16} color="#FFFFFF" /> Открыть письмо
+                  <Icon name="doc" size={16} color="#FFFFFF" />{' '}{t('Открыть письмо')}
                 </Link>
               )}
             </div>
           )}
           <div className="stack">
-            <h2 style={{ fontSize: 19 }}>Письма</h2>
+            <h2 style={{ fontSize: 19 }}>{t('Письма')}</h2>
             {cs.letters.length === 0 && (
-              <p className="muted">{cs.origin === 'OUTGOING' ? 'Писем от ведомства пока нет.' : 'В деле пока нет писем.'}</p>
+              <p className="muted">{cs.origin === 'OUTGOING' ? t('Писем от ведомства пока нет.') : t('В деле пока нет писем.')}</p>
             )}
             {cs.letters.map((l) => (
               <CaseLetterCard key={l.id} letter={l} />
@@ -285,46 +286,46 @@ export function CasePage({ id }: { id: string }) {
           <div className="row wrap">
             {cs.letters.length > 0 && (
               <Link to={`/app/cases/${cs.id}/answer`} className="btn btn--primary">
-                <Icon name="send" size={18} color="#FFFFFF" /> Подготовить ответ
+                <Icon name="send" size={18} color="#FFFFFF" />{' '}{t('Подготовить ответ')}
               </Link>
             )}
             <Link to="/app/scan" className="btn btn--secondary">
-              <Icon name="plus" size={18} /> Добавить письмо
+              <Icon name="plus" size={18} />{' '}{t('Добавить письмо')}
             </Link>
           </div>
         </section>
         <section className="stack">
-          <h2 style={{ fontSize: 19 }}>История дела</h2>
+          <h2 style={{ fontSize: 19 }}>{t('История дела')}</h2>
           <ol className="list-reset stack">
             {cs.timeline.map((t) => (
               <li key={t.id} className="card stack-s" style={{ padding: 14 }}>
-                <span style={{ fontWeight: 600 }}>{t.title}</span>
+                <span style={{ fontWeight: 600 }}>{tMsg(t.title)}</span>
                 <span className="muted">
                   {formatDateTime(t.at)}
-                  {t.subtitle ? ` · ${t.subtitle}` : ''}
+                  {t.subtitle ? ` · ${tMsg(t.subtitle)}` : ''}
                 </span>
               </li>
             ))}
           </ol>
           <div className="row wrap">
             <button type="button" className="btn btn--secondary btn--small" disabled={updating.isLoading} onClick={() => void setStatus(closed ? 'OPEN' : 'CLOSED')}>
-              {closed ? 'Открыть снова' : 'Завершить дело'}
+              {closed ? t('Открыть снова') : t('Завершить дело')}
             </button>
             {!askDelete && (
               <button type="button" className="btn btn--danger btn--small" onClick={() => setAskDelete(true)}>
-                <Icon name="trash" size={16} /> Удалить дело
+                <Icon name="trash" size={16} />{' '}{t('Удалить дело')}
               </button>
             )}
           </div>
           {askDelete && (
-            <div className="alert alert--error stack-s" role="alertdialog" aria-label="Удалить дело">
-              <span>Удалятся письма дела, их факты, сроки и файлы. Восстановить нельзя.</span>
+            <div className="alert alert--error stack-s" role="alertdialog" aria-label={t('Удалить дело')}>
+              <span>{t('Удалятся письма дела, их факты, сроки и файлы. Восстановить нельзя.')}</span>
               <div className="row wrap">
                 <button type="button" className="btn btn--danger btn--small" disabled={deleting.isLoading} onClick={() => void remove()}>
-                  Удалить безвозвратно
+                  {t('Удалить безвозвратно')}
                 </button>
                 <button type="button" className="btn btn--ghost btn--small" onClick={() => setAskDelete(false)}>
-                  Отмена
+                  {t('Отмена')}
                 </button>
               </div>
             </div>
@@ -342,12 +343,12 @@ function Sources({ ids, claims }: { ids: string[]; claims: Map<string, LetterCla
   if (found.length === 0) return null;
   return (
     <details>
-      <summary className="small text-2">На чём основано</summary>
+      <summary className="small text-2">{t('На чём основано')}</summary>
       <ul className="list-reset stack-s" style={{ marginTop: 6 }}>
         {found.map((c) => (
           <li key={c.id} className="small">
-            {c.text}
-            {c.quote ? <span className="text-2"> · «{c.quote}»</span> : <span className="text-2"> · указано вами, цитаты из письма нет</span>}
+            {tMsg(c.text)}
+            {c.quote ? <span className="text-2"> · «{c.quote}»</span> : <span className="text-2">{' '}{t('· указано вами, цитаты из письма нет')}</span>}
           </li>
         ))}
       </ul>
@@ -381,7 +382,7 @@ export function LetterPage({ id }: { id: string }) {
     const notFound = errorCode(letter.error) === 'NOT_FOUND';
     return (
       <>
-        <PageHeader title={notFound ? 'Письмо не найдено' : 'Не получилось открыть письмо'} back="/app/cases" />
+        <PageHeader title={notFound ? t('Письмо не найдено') : t('Не получилось открыть письмо')} back="/app/cases" />
         {!notFound && <ErrorAlert error={letter.error} />}
       </>
     );
@@ -396,32 +397,32 @@ export function LetterPage({ id }: { id: string }) {
   return (
     <>
       <PageHeader
-        title={letter.data.letter.title || 'Письмо'}
-        subtitle="Объяснение по фактам письма. Перепроверьте сроки по оригиналу."
+        title={letter.data.letter.title || t('Письмо')}
+        subtitle={t('Объяснение по фактам письма. Перепроверьте сроки по оригиналу.')}
         back={back}
       />
       <LetterTitleEditor letterId={id} title={letter.data.letter.title ?? null} />
       <LetterOriginals letterId={id} files={letter.data.letter.files} />
       <div className="desktop-2col stack">
         <section className="stack">
-          {expl.isFetching && <Loading text="Ja!sno объясняет письмо…" />}
+          {expl.isFetching && <Loading text={t('Ja!sno объясняет письмо…')} />}
 
           {!expl.isFetching && code === 'CLAIMS_CHANGED' && (
             <div className="alert alert--info" role="status">
-              Факты письма изменились. Обновляем объяснение…
+              {t('Факты письма изменились. Обновляем объяснение…')}
             </div>
           )}
           {!expl.isFetching && code === 'DATES_NOT_VERIFIED' && (
             <div className="stack-s" data-testid="dates-not-verified">
               <div className="alert alert--warn" role="alert">
-                Не удалось надёжно объяснить сроки. Посмотрите срок в оригинале письма.
+                {t('Не удалось надёжно объяснить сроки. Посмотрите срок в оригинале письма.')}
               </div>
               <ul className="list-reset stack-s">
                 {claims
                   .filter((c) => c.status === 'CONFIRMED')
                   .map((c) => (
                     <li key={c.id} className="card small">
-                      {c.text}
+                      {tMsg(c.text)}
                       {c.quote && <span className="text-2"> · «{c.quote}»</span>}
                     </li>
                   ))}
@@ -430,7 +431,7 @@ export function LetterPage({ id }: { id: string }) {
           )}
           {!expl.isFetching && code === 'NO_CLAIMS' && (
             <div className="alert alert--info" role="status">
-              Нет фактов для объяснения. <Link to={`/app/letters/${id}/check`}>Проверьте факты письма</Link>.
+              {t('Нет фактов для объяснения.')}{' '}<Link to={`/app/letters/${id}/check`}>{t('Проверьте факты письма')}</Link>.
             </div>
           )}
           {!expl.isFetching && expl.isError && !['CLAIMS_CHANGED', 'DATES_NOT_VERIFIED', 'NO_CLAIMS'].includes(code ?? '') && (
@@ -440,37 +441,37 @@ export function LetterPage({ id }: { id: string }) {
           {show && expl.data && (
             <>
               <div className="card stack-s" data-testid="explanation">
-                <span className="eyebrow">О чём письмо</span>
+                <span className="eyebrow">{t('О чём письмо')}</span>
                 <p style={{ fontSize: 16 }}>{expl.data.about.text}</p>
-                {expl.data.about.unconfirmed && <span className="small text-2">Часть фактов ещё не подтверждена.</span>}
+                {expl.data.about.unconfirmed && <span className="small text-2">{t('Часть фактов ещё не подтверждена.')}</span>}
                 <Sources ids={expl.data.about.claimIds} claims={byId} />
               </div>
               {(expl.data.requests ?? []).length > 0 && (
                 <div className="card stack-s" data-testid="requests">
-                  <span className="eyebrow">Ведомство просит</span>
+                  <span className="eyebrow">{t('Ведомство просит')}</span>
                   <ul className="list-reset stack-s">
                     {expl.data.requests.map((q) => (
                       <li key={q.claimId} className="stack-s" data-testid="request">
-                        {q.ru && <span lang="ru">{q.ru}</span>}
+                        {q.ru && <span lang={getLang()}>{q.ru}</span>}
                         <span lang="de" className={q.ru ? 'small text-2' : undefined}>
                           {q.ru && <span aria-hidden="true">DE · </span>}
                           {q.de}
                         </span>
-                        {q.unconfirmed && <span className="status status--check">Проверьте: факт ещё не подтверждён</span>}
+                        {q.unconfirmed && <span className="status status--check">{t('Проверьте: факт ещё не подтверждён')}</span>}
                       </li>
                     ))}
                   </ul>
-                  <span className="small text-2">Немецкий текст — как в письме. Его можно показать в ведомстве или найти документ по этому названию.</span>
+                  <span className="small text-2">{t('Немецкий текст — как в письме. Его можно показать в ведомстве или найти документ по этому названию.')}</span>
                 </div>
               )}
               {expl.data.actions.length > 0 && (
                 <div className="card stack-s">
-                  <span className="eyebrow">Что сделать</span>
+                  <span className="eyebrow">{t('Что сделать')}</span>
                   <ol className="stack-s" style={{ margin: 0, paddingLeft: 18 }}>
                     {expl.data.actions.map((a, i) => (
                       <li key={i} className="stack-s" data-testid="action">
                         <span>{a.text}</span>
-                        {a.unconfirmed && <span className="status status--check">Проверьте: факт ещё не подтверждён</span>}
+                        {a.unconfirmed && <span className="status status--check">{t('Проверьте: факт ещё не подтверждён')}</span>}
                         <Sources ids={a.claimIds} claims={byId} />
                       </li>
                     ))}
@@ -478,8 +479,8 @@ export function LetterPage({ id }: { id: string }) {
                 </div>
               )}
               {expl.data.deadlines.length > 0 && (
-                <div className="card stack-s" aria-label="Сроки письма">
-                  <span className="eyebrow">Сроки</span>
+                <div className="card stack-s" aria-label={t('Сроки письма')}>
+                  <span className="eyebrow">{t('Сроки')}</span>
                   {expl.data.deadlines.map((d) => {
                     const own = deadlineByClaim.get(d.claimId);
                     return (
@@ -502,16 +503,16 @@ export function LetterPage({ id }: { id: string }) {
               disabled={expl.isFetching || isDailyLimit(expl.error)}
               onClick={() => void expl.refetch()}
             >
-              {code === 'LLM_QUOTA' || expl.isError ? 'Попробовать ещё раз' : 'Обновить объяснение'}
+              {code === 'LLM_QUOTA' || expl.isError ? t('Попробовать ещё раз') : t('Обновить объяснение')}
             </button>
             <Link to={`/app/letters/${id}/check`} className="btn btn--ghost btn--small">
-              Проверить факты
+              {t('Проверить факты')}
             </Link>
           </div>
         </section>
         <section className="stack">
           <details className="card">
-            <summary>Текст письма</summary>
+            <summary>{t('Текст письма')}</summary>
             <pre className="small" style={{ whiteSpace: 'pre-wrap', margin: '8px 0 0' }}>
               {letter.data.letter.text}
             </pre>
@@ -532,7 +533,7 @@ function LetterTitleEditor({ letterId, title }: { letterId: string; title: strin
   if (!editing) {
     return (
       <div className="row wrap" style={{ gap: 8 }}>
-        {title && <span className="small text-2">Название предложил Ja!sno по строке письма. Его можно изменить.</span>}
+        {title && <span className="small text-2">{t('Название предложил Ja!sno по строке письма. Его можно изменить.')}</span>}
         <button
           type="button"
           className="btn btn--ghost btn--small"
@@ -542,7 +543,7 @@ function LetterTitleEditor({ letterId, title }: { letterId: string; title: strin
             setEditing(true);
           }}
         >
-          <Icon name="pen" size={16} /> {title ? 'Изменить название' : 'Дать название'}
+          <Icon name="pen" size={16} /> {title ? t('Изменить название') : t('Дать название')}
         </button>
       </div>
     );
@@ -550,7 +551,7 @@ function LetterTitleEditor({ letterId, title }: { letterId: string; title: strin
   const save = async () => {
     const next = value.trim();
     if (!next) {
-      setProblem('Введите название');
+      setProblem(t('Введите название'));
       return;
     }
     const r = await rename({ id: letterId, title: next });
@@ -566,7 +567,7 @@ function LetterTitleEditor({ letterId, title }: { letterId: string; title: strin
       }}
     >
       <div className="field">
-        <label htmlFor="letter-title">Название письма</label>
+        <label htmlFor="letter-title">{t('Название письма')}</label>
         <input
           id="letter-title"
           className="input"
@@ -579,10 +580,10 @@ function LetterTitleEditor({ letterId, title }: { letterId: string; title: strin
       </div>
       <div className="row wrap">
         <button type="submit" className="btn btn--primary btn--small" disabled={renaming.isLoading}>
-          Сохранить
+          {t('Сохранить')}
         </button>
         <button type="button" className="btn btn--ghost btn--small" onClick={() => setEditing(false)}>
-          Отмена
+          {t('Отмена')}
         </button>
       </div>
     </form>
@@ -594,11 +595,11 @@ function LetterTranslation({ letterId, text }: { letterId: string; text: string 
   const [translate, state] = useTranslateLetterMutation();
   return (
     <div className="card stack-s" data-testid="translation">
-      <span className="eyebrow">Перевод на русский</span>
+      <span className="eyebrow">{t('Перевод на русский')}</span>
       {!state.data && (
         <>
           <p className="small text-2">
-            Весь текст письма по-русски. Это машинный перевод, он не официальный: для ведомства важен немецкий оригинал.
+            {t('Весь текст письма по-русски. Это машинный перевод, он не официальный: для ведомства важен немецкий оригинал.')}
           </p>
           <button
             type="button"
@@ -607,16 +608,16 @@ function LetterTranslation({ letterId, text }: { letterId: string; text: string 
             disabled={state.isLoading || isDailyLimit(state.error)}
             onClick={() => void translate({ id: letterId, text })}
           >
-            {state.isLoading ? 'Переводим…' : state.isError ? 'Попробовать ещё раз' : 'Перевести письмо'}
+            {state.isLoading ? t('Переводим…') : state.isError ? t('Попробовать ещё раз') : t('Перевести письмо')}
           </button>
         </>
       )}
-      {state.isLoading && <Loading text="Ja!sno переводит письмо…" />}
+      {state.isLoading && <Loading text={t('Ja!sno переводит письмо…')} />}
       {state.isError && <ErrorAlert error={state.error} />}
       {state.data && (
         <>
           <span className="status status--check" data-testid="translation-note">
-            Машинный перевод, не официальный
+            {t('Машинный перевод, не официальный')}
           </span>
           <pre lang="ru" className="small" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
             {state.data.text}
@@ -630,11 +631,11 @@ function LetterTranslation({ letterId, text }: { letterId: string; text: string 
 // ---------- История ----------
 
 const GROUPS: { id: HistoryGroup | 'all'; label: string }[] = [
-  { id: 'all', label: 'Всё' },
-  { id: 'letter', label: 'Письма' },
-  { id: 'case', label: 'Дела' },
-  { id: 'question', label: 'Вопросы' },
-  { id: 'draft', label: 'Черновики' },
+  { id: 'all', label: t('Всё') },
+  { id: 'letter', label: t('Письма') },
+  { id: 'case', label: t('Дела') },
+  { id: 'question', label: t('Вопросы') },
+  { id: 'draft', label: t('Черновики') },
 ];
 
 /** История всех дел: страницы по 30. Смена фильтра сбрасывает курсор и накопленные записи. */
@@ -677,8 +678,8 @@ export function HistoryPage() {
 
   return (
     <>
-      <PageHeader title="История" subtitle="Все события по вашим делам и вопросы в чате с Ja!sno." />
-      <div className="row wrap" role="group" aria-label="Фильтр истории">
+      <PageHeader title={t('История')} subtitle={t('Все события по вашим делам и вопросы в чате с Ja!sno.')} />
+      <div className="row wrap" role="group" aria-label={t('Фильтр истории')}>
         {GROUPS.map((g) => (
           <button
             key={g.id}
@@ -692,11 +693,11 @@ export function HistoryPage() {
         ))}
       </div>
       <div className="field">
-        <label htmlFor="history-q">Поиск в загруженных событиях</label>
+        <label htmlFor="history-q">{t('Поиск в загруженных событиях')}</label>
         <input id="history-q" className="input" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <ErrorAlert error={error} />
-      <ol className="list-reset stack" aria-label="События">
+      <ol className="list-reset stack" aria-label={t('События')}>
         {shown.map((i) => (
           <li key={i.id}>
             {/* Правка 18-11: ссылка — вся карточка события, а не только название дела */}
@@ -706,20 +707,20 @@ export function HistoryPage() {
               style={{ padding: 14 }}
               data-testid="history-item"
             >
-              <span style={{ fontWeight: 600 }}>{i.title}</span>
+              <span style={{ fontWeight: 600 }}>{tMsg(i.title)}</span>
               <span className="muted">
-                {formatDateTime(i.at)} · <span className="history-case">{i.caseTitle}</span>
-                {i.subtitle ? ` · ${i.subtitle}` : ''}
+                {formatDateTime(i.at)} · <span className="history-case">{tMsg(i.caseTitle)}</span>
+                {i.subtitle ? ` · ${tMsg(i.subtitle)}` : ''}
               </span>
             </Link>
           </li>
         ))}
       </ol>
       {loading && <Loading />}
-      {!loading && items.length === 0 && !error && <p className="muted">Событий пока нет.</p>}
+      {!loading && items.length === 0 && !error && <p className="muted">{t('Событий пока нет.')}</p>}
       {!loading && cursor && (
         <button type="button" className="btn btn--secondary" onClick={() => void load(group, cursor)}>
-          Показать ещё
+          {t('Показать ещё')}
         </button>
       )}
     </>

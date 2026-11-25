@@ -60,6 +60,8 @@ import { ExplainService, type ExplainResponse } from './explain.service.js';
 import { LettersService } from './letters.service.js';
 import { TranslateService } from './translate.service.js';
 import { z } from 'zod';
+import { LanguageSchema } from '@jasno/shared';
+import type { Language } from '../common/language.js';
 
 const err = (code: string, message: string, details?: unknown) => ({
   schema: { example: { code, message, ...(details ? { details } : {}) } },
@@ -395,7 +397,7 @@ export class LettersController {
       'Сроки — все сроки письма с датой, confirmed: false у неподтверждённых. Кэш по версии фактов, языку и версии промпта. ' +
       'Факты изменились во время ответа: 409 CLAIMS_CHANGED. Даты не прошли проверку за 3 попытки: 422 DATES_NOT_VERIFIED.',
   })
-  @ApiQuery({ name: 'lang', required: false, enum: ['ru'] })
+  @ApiQuery({ name: 'lang', required: false, enum: ['ru', 'uk', 'de'], description: 'L07: по умолчанию — язык кабинета' })
   @ApiOkResponse({
     schema: {
       example: {
@@ -442,9 +444,9 @@ export class LettersController {
     @CurrentAuth() auth: AuthContext,
     @Param('id') id: string,
     @Query(
-      new ZodPipe(z.object({ lang: z.enum(['ru']).default('ru') }).strict()),
+      new ZodPipe(z.object({ lang: LanguageSchema.optional() }).strict()),
     )
-    query: { lang: 'ru' },
+    query: { lang?: Language },
   ): Promise<ExplainResponse> {
     return this.explainer.explain(auth.cabinetId, id, query.lang);
   }
@@ -475,7 +477,7 @@ export class LettersController {
       'Кэш по тексту письма, языку и версии промпта; повтор из кэша модель не вызывает и лимит не тратит. ' +
       'Нужно согласие на анализ ИИ.',
   })
-  @ApiQuery({ name: 'lang', required: false, enum: ['ru'] })
+  @ApiQuery({ name: 'lang', required: false, enum: ['ru', 'uk', 'de'], description: 'L07: по умолчанию — язык кабинета' })
   @ApiOkResponse({
     schema: {
       example: {
@@ -491,9 +493,9 @@ export class LettersController {
     @CurrentAuth() auth: AuthContext,
     @Param('id') id: string,
     @Query(
-      new ZodPipe(z.object({ lang: z.enum(['ru']).default('ru') }).strict()),
+      new ZodPipe(z.object({ lang: LanguageSchema.optional() }).strict()),
     )
-    query: { lang: 'ru' },
+    query: { lang?: Language },
   ): Promise<TranslationView> {
     return this.translator.translate(auth.cabinetId, id, query.lang);
   }

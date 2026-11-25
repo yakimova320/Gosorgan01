@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
+import { t } from '../i18n';
 
 /**
  * K10 (#135): подсказка о хранении в браузере (§ 25 TDDDG). Ja!sno хранит только технически необходимое
@@ -14,10 +15,10 @@ export function StorageNotice() {
   if (seen) return null;
   const close = () => setSeen(true);
   return (
-    <div className="storage-notice" role="region" aria-label="Cookies и хранение в браузере" data-testid="storage-notice">
+    <div className="storage-notice" role="region" aria-label={t('Cookies и хранение в браузере')} data-testid="storage-notice">
       <div className="storage-notice__text">
         <p>
-          Ja!sno не использует рекламу, аналитику и трекинг. В браузере хранится только то, что нужно для входа.
+          {t('Ja!sno не использует рекламу, аналитику и трекинг. В браузере хранится только то, что нужно для входа.')}
         </p>
         <p lang="de" className="small">
           Wir verwenden keine Tracking- oder Werbe-Cookies, nur technisch notwendige Speicherung für die Anmeldung.
@@ -28,12 +29,12 @@ export function StorageNotice() {
           </Link>
           {' · '}
           <Link to="/datenschutz#ki" className="link">
-            Анализ писем ИИ
+            {t('Анализ писем ИИ')}
           </Link>
         </p>
       </div>
       <button type="button" className="btn btn--secondary btn--small" onClick={close}>
-        Понятно
+        {t('Понятно')}
       </button>
     </div>
   );

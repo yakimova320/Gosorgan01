@@ -6,6 +6,7 @@ import { dayMonth, deadlineText, formatDate } from '../lib/dates';
 import { initials, STAGE } from '../lib/labels';
 import { Icon } from './Icon';
 import { WatercolorBlob } from './Watercolor';
+import { t } from '../i18n';
 
 export function Logo() {
   return (
@@ -16,7 +17,7 @@ export function Logo() {
 }
 
 /** Подпись для экранов и кнопок, функция которых ещё не подключена к серверу. */
-export function DemoNote({ children = 'Демонстрация: ещё не подключено' }: { children?: ReactNode }) {
+export function DemoNote({ children = t('Демонстрация: ещё не подключено') }: { children?: ReactNode }) {
   return (
     <span className="demo-note">
       <Icon name="info" size={14} width={2.2} />
@@ -37,7 +38,7 @@ export function PageHeader({ title, subtitle, back }: { title: string; subtitle?
     <div className="stack-s">
       {back && (
         <button type="button" className="btn btn--ghost btn--small" style={{ alignSelf: 'flex-start', paddingLeft: 0 }} onClick={() => goBack(back)}>
-          <Icon name="arrowLeft" size={18} /> Назад
+          <Icon name="arrowLeft" size={18} />{' '}{t('Назад')}
         </button>
       )}
       <h1>{title}</h1>
@@ -55,7 +56,7 @@ export function ErrorAlert({ error }: { error: unknown }) {
   );
 }
 
-export function Loading({ text = 'Загружаем…' }: { text?: string }) {
+export function Loading({ text = t('Загружаем…') }: { text?: string }) {
   return (
     <div className="row" role="status" style={{ padding: 24, justifyContent: 'center' }}>
       <div className="spinner" />
@@ -78,8 +79,8 @@ const BADGE_COLORS = ['#EC7A5C', '#F2B83F', '#2F8C8A', '#2E3F72'];
 
 export function CaseRow({ c, index = 0 }: { c: CaseSummary; index?: number }) {
   const s = STAGE[c.stage];
-  const who = c.origin === 'OUTGOING' ? `Своё письмо · ${c.authority ?? ''}` : (c.authority ?? '');
-  const subtitle = c.nextDeadline ? `${who} · до ${formatDate(c.nextDeadline)}` : who;
+  const who = c.origin === 'OUTGOING' ? t('Своё письмо · {v0}', { v0: c.authority ?? '' }) : (c.authority ?? '');
+  const subtitle = c.nextDeadline ? t('{v0} · до {v1}', { v0: who, v1: formatDate(c.nextDeadline) }) : who;
   return (
     <Link to={`/app/cases/${c.id}`} className="card row" data-testid="case-row" style={{ padding: '10px 14px 10px 10px', borderRadius: 20 }}>
       <AuthorityBadge name={c.authority} color={BADGE_COLORS[index % BADGE_COLORS.length]} />
@@ -100,13 +101,13 @@ export function CaseRow({ c, index = 0 }: { c: CaseSummary; index?: number }) {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={c.progress.percent}
-              aria-label={`Сделано ${c.progress.done} из ${c.progress.total} шагов`}
+              aria-label={t('Сделано {v0} из {v1} шагов', { v0: c.progress.done, v1: c.progress.total })}
               title={c.progress.steps.map((st) => `${st.done ? '✓' : '○'} ${st.label}`).join('\n')}
             >
               <span style={{ width: `${c.progress.percent}%`, background: s.bar }} />
             </div>
             <span className="muted" style={{ fontSize: 11 }}>
-              {c.progress.done} из {c.progress.total} · {c.progress.percent} %
+              {c.progress.done}{' '}{t('из')}{' '}{c.progress.total} · {c.progress.percent} %
             </span>
           </div>
         ) : (
@@ -137,9 +138,9 @@ export function NextStepCard({ to, date, title }: { to: string; date: string; ti
         </text>
       </svg>
       <div className="stack-s" style={{ flex: 1, gap: 5 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#FF9F7E' }}>Ваш следующий шаг</span>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#FF9F7E' }}>{t('Ваш следующий шаг')}</span>
         <span style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 700, lineHeight: 1.3 }}>{title}</span>
-        <span style={{ fontSize: 13, color: 'var(--c-on-navy-2)' }}>{deadlineText(date)}. Срок в деле, добавьте его в календарь.</span>
+        <span style={{ fontSize: 13, color: 'var(--c-on-navy-2)' }}>{deadlineText(date)}{t('. Срок в деле, добавьте его в календарь.')}</span>
       </div>
       <span aria-hidden="true" style={{ width: 36, height: 36, flex: '0 0 36px', borderRadius: 18, background: 'var(--c-orange)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Icon name="arrowRight" size={18} color="#FFFFFF" width={2.4} />

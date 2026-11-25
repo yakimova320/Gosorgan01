@@ -90,7 +90,7 @@ describe('LlmCall в базе', () => {
 
     const res = await llm.callWithTrace({
       prompt: 'extract',
-      variables: { letterText },
+      variables: { language: 'русский', lang: 'ru', letterText },
       schema: ExtractSchema,
       context: { cabinetId: 'cab-1', letterId: 'let-1' },
     });
@@ -103,7 +103,7 @@ describe('LlmCall в базе', () => {
       cabinetId: 'cab-1',
       letterId: 'let-1',
       promptName: 'extract',
-      promptVersion: 3, // последняя версия extract (поправка 8)
+      promptVersion: 4, // последняя версия extract (поправка 8)
       provider: 'demo',
       ok: true,
       attempts: 1,

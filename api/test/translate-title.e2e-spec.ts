@@ -72,7 +72,7 @@ describe('Перевод и название письма (e2e, поправки
     rmSync(storageDir, { recursive: true, force: true });
   });
 
-  it('название: модель предлагает по строке Betreff (extract.v3), видно в письме и во входящих', async () => {
+  it('название: модель предлагает по строке Betreff (extract.v4), видно в письме и во входящих', async () => {
     const up = await upload('01_jobcenter_request.pdf');
     expect(up.letter.title).toBe('Jobcenter: документы к заявлению');
     const inbox = await http().get('/letters?inbox=true').set(auth()).expect(200);
@@ -82,7 +82,7 @@ describe('Перевод и название письма (e2e, поправки
     const call = await db.llmCall.findFirstOrThrow({
       where: { letterId: up.letter.id, promptName: 'extract' },
     });
-    expect(call.promptVersion).toBe(3);
+    expect(call.promptVersion).toBe(4);
   });
 
   it('название можно изменить; пустое — 400; чужое письмо — 404', async () => {
@@ -136,6 +136,6 @@ describe('Перевод и название письма (e2e, поправки
       .post(`/letters/${up.letter.id}/translate`)
       .set(auth(other))
       .expect(404);
-    await http().post(`/letters/${up.letter.id}/translate?lang=de`).set(auth()).expect(400);
+    await http().post(`/letters/${up.letter.id}/translate?lang=fr`).set(auth()).expect(400);
   });
 });

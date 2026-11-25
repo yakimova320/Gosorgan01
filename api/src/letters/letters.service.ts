@@ -10,6 +10,7 @@ import { LlmService } from '../llm/llm.service.js';
 import { ExtractV3Schema } from '../llm/schemas/extract.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { assertAiConsent } from '../cabinet/ai-consent.js';
+import { cabinetLanguage, languageVariables } from '../common/language.js';
 import { buildClaims, checkUserValue, claimText } from './claims.builder.js';
 import type {
   ClaimView,
@@ -73,8 +74,8 @@ export class LettersService {
 
     const { data: extracted } = await this.llm.callWithTrace({
       prompt: 'extract',
-      version: 3,
-      variables: { letterText: doc.text },
+      version: 4, // L07: extract.v4 — название письма на языке кабинета
+      variables: { letterText: doc.text, ...languageVariables(await cabinetLanguage(this.db, cabinetId)) },
       schema: ExtractV3Schema,
       context,
       operation,

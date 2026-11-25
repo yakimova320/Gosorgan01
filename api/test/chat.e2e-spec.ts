@@ -69,7 +69,7 @@ describe('Чат-помощник (e2e, 24.11)', () => {
     ]);
     const calls = await db.llmCall.findMany({ where: { promptName: 'chat' } });
     expect(calls).toHaveLength(2);
-    expect(calls[0].promptVersion).toBe(1);
+    expect(calls[0].promptVersion).toBe(2);
   });
 
   it('пустой или слишком длинный вопрос: 400; без входа: 401', async () => {

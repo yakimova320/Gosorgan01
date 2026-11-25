@@ -18,6 +18,7 @@ import {
   useReportSentMutation,
   useTemplatesQuery,
 } from '../../store/api';
+import { getLang, t, tMsg } from '../../i18n';
 
 /*
  * Ответ ведомству (F04, B12): вид ответа → детали → черновик (копировать, править с проверкой) → «Я отправил(а)».
@@ -90,21 +91,21 @@ export function AnswerGoalPage({ caseId }: { caseId: string }) {
 
   return (
     <>
-      <PageHeader title="Чего вы хотите?" subtitle="Ja!sno соберёт черновик только из подтверждённых фактов." back={`/app/cases/${caseId}`} />
+      <PageHeader title={t('Чего вы хотите?')} subtitle={t('Ja!sno соберёт черновик только из подтверждённых фактов.')} back={`/app/cases/${caseId}`} />
       {letters.length > 1 && (
         <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend className="small text-2">На какое письмо ответить</legend>
+          <legend className="small text-2">{t('На какое письмо ответить')}</legend>
           {letters.map((l) => (
             <label key={l.id} className="checkbox">
               <input type="radio" name="letter" checked={letter === l.id} onChange={() => setChosen(l.id)} />
               <span>
-                {l.title || l.authority || 'Письмо'} · {formatDate(l.createdAt.slice(0, 10))}
+                {l.title || l.authority || t('Письмо')} · {formatDate(l.createdAt.slice(0, 10))}
               </span>
             </label>
           ))}
         </fieldset>
       )}
-      {letter && q.isFetching && <Loading text="Проверяем, какие ответы доступны…" />}
+      {letter && q.isFetching && <Loading text={t('Проверяем, какие ответы доступны…')} />}
       <ul className="list-reset stack">
         {KINDS.map((k) => {
           const d = DRAFT_KIND[k];
@@ -132,14 +133,14 @@ export function AnswerGoalPage({ caseId }: { caseId: string }) {
           <Link to="/beratung" className="card row">
             <Icon name="info" color="var(--c-orange)" />
             <span className="stack-s" style={{ flex: 1 }}>
-              <span style={{ fontWeight: 600 }}>Возражение (Widerspruch)</span>
-              <span className="muted">Ja!sno его не пишет. Где получить консультацию</span>
+              <span style={{ fontWeight: 600 }}>{t('Возражение (Widerspruch)')}</span>
+              <span className="muted">{t('Ja!sno его не пишет. Где получить консультацию')}</span>
             </span>
           </Link>
         </li>
       </ul>
       {q.error ? <ErrorAlert error={q.error} /> : null}
-      {letters.length === 0 && <div className="alert alert--info">В деле нет писем: добавьте письмо, чтобы ответить на него.</div>}
+      {letters.length === 0 && <div className="alert alert--info">{t('В деле нет писем: добавьте письмо, чтобы ответить на него.')}</div>}
     </>
   );
 }
@@ -149,11 +150,11 @@ export function DraftError({ error, caseId, letterId }: { error: unknown; caseId
   const code = errorCode(error);
   const link =
     code === 'NO_CONFIRMED_CLAIMS' && letterId
-      ? { to: `/app/letters/${letterId}/check`, text: 'Проверить факты' }
+      ? { to: `/app/letters/${letterId}/check`, text: t('Проверить факты') }
       : code === 'PROFILE_INCOMPLETE'
-        ? { to: '/app/profile', text: 'Открыть профиль' }
+        ? { to: '/app/profile', text: t('Открыть профиль') }
         : code === 'NOT_FOUND'
-          ? { to: `/app/cases/${caseId}`, text: 'К делу' }
+          ? { to: `/app/cases/${caseId}`, text: t('К делу') }
           : null;
   const failed =
     code === 'DRAFT_VERIFICATION_FAILED' && isApiError(error)
@@ -161,7 +162,7 @@ export function DraftError({ error, caseId, letterId }: { error: unknown; caseId
       : [];
   return (
     <div className="alert alert--error stack-s" role="alert" data-testid="draft-error">
-      <span>{code === 'DRAFT_SOURCES_CHANGED' ? 'Данные изменились, пока собирался черновик. Соберите заново.' : errorText(error)}</span>
+      <span>{code === 'DRAFT_SOURCES_CHANGED' ? t('Данные изменились, пока собирался черновик. Соберите заново.') : errorText(error)}</span>
       {failed.map((c) => (
         <span key={c.name} className="small">
           {c.name}: {c.details}
@@ -177,10 +178,10 @@ export function DraftError({ error, caseId, letterId }: { error: unknown; caseId
 }
 
 const DETAILS_TITLE: Record<DraftKind, { title: string; subtitle: string }> = {
-  CLARIFICATION: { title: 'Что именно непонятно?', subtitle: 'Выберите вопрос. Он войдёт в письмо на немецком.' },
-  DOCUMENTS: { title: 'Сопроводительное письмо', subtitle: 'Письмо к документам, которые просит ведомство.' },
-  EXTENSION: { title: 'Попросить продлить срок', subtitle: 'Ja!sno попросит продлить срок на две недели.' },
-  STATUS_REQUEST: { title: 'Узнать, как дела', subtitle: 'Письмо с вопросом, на каком этапе рассмотрение.' },
+  CLARIFICATION: { title: t('Что именно непонятно?'), subtitle: t('Выберите вопрос. Он войдёт в письмо на немецком.') },
+  DOCUMENTS: { title: t('Сопроводительное письмо'), subtitle: t('Письмо к документам, которые просит ведомство.') },
+  EXTENSION: { title: t('Попросить продлить срок'), subtitle: t('Ja!sno попросит продлить срок на две недели.') },
+  STATUS_REQUEST: { title: t('Узнать, как дела'), subtitle: t('Письмо с вопросом, на каком этапе рассмотрение.') },
 };
 
 /** Шаг 2: детали вида ответа. Доступные варианты проверяет сервер. */
@@ -202,7 +203,7 @@ export function AnswerDetailsPage({ caseId }: { caseId: string }) {
   if (q.error || !q.data || q.data.caseId !== caseId) {
     return (
       <>
-        <PageHeader title="Письмо не найдено в этом деле" back={`/app/cases/${caseId}`} />
+        <PageHeader title={t('Письмо не найдено в этом деле')} back={`/app/cases/${caseId}`} />
         {errorCode(q.error) !== 'NOT_FOUND' && q.error ? <ErrorAlert error={q.error} /> : null}
       </>
     );
@@ -244,29 +245,29 @@ export function AnswerDetailsPage({ caseId }: { caseId: string }) {
     }
   }
 
-  const t = DETAILS_TITLE[kind];
+  const head = DETAILS_TITLE[kind];
   return (
     <>
-      <PageHeader title={t.title} subtitle={t.subtitle} back={`/app/cases/${caseId}/answer?${qs({ letter: letterId })}`} />
+      <PageHeader title={head.title} subtitle={head.subtitle} back={`/app/cases/${caseId}/answer?${qs({ letter: letterId })}`} />
       {!kindAvailable && (
         <div className="alert alert--info">
-          {DRAFT_KIND[kind].unavailable}. <Link to={`/app/letters/${letterId}/check`}>Проверьте факты письма</Link>.
+          {DRAFT_KIND[kind].unavailable}. <Link to={`/app/letters/${letterId}/check`}>{t('Проверьте факты письма')}</Link>.
         </div>
       )}
       {kind === 'CLARIFICATION' && kindAvailable && (
         <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend className="visually-hidden">Вопрос</legend>
+          <legend className="visually-hidden">{t('Вопрос')}</legend>
           {available.map((x) => (
             <label key={x.id} className="card checkbox" data-testid="question">
               <input type="radio" name="question" checked={selected === x.id} onChange={() => setQuestion(x.id)} />
-              <span>{x.ru}</span>
+              <span>{tMsg(x.ru)}</span>
             </label>
           ))}
         </fieldset>
       )}
       {needsAmount && (
         <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend className="small text-2">О какой сумме спросить</legend>
+          <legend className="small text-2">{t('О какой сумме спросить')}</legend>
           {data.amounts.map((a) => (
             <label key={a.claimId} className="checkbox">
               <input type="radio" name="amount" checked={amount === a.claimId} onChange={() => setAmount(a.claimId)} />
@@ -277,42 +278,41 @@ export function AnswerDetailsPage({ caseId }: { caseId: string }) {
       )}
       {kind === 'DOCUMENTS' && kindAvailable && (
         <div className="alert alert--info">
-          Ja!sno напишет сопроводительное письмо со ссылкой на требование ведомства. Сами документы приложите к письму вы: Ja!sno их не
-          прикладывает и не проверяет.
+          {t('Ja!sno напишет сопроводительное письмо со ссылкой на требование ведомства. Сами документы приложите к письму вы: Ja!sno их не прикладывает и не проверяет.')}
         </div>
       )}
       {kind === 'EXTENSION' && kindAvailable && (
         <>
-          {data.deadlines.length === 1 && <p className="text-2">Срок в письме: до {formatDate(data.deadlines[0].date)}.</p>}
+          {data.deadlines.length === 1 && <p className="text-2">{t('Срок в письме: до')}{' '}{formatDate(data.deadlines[0].date)}.</p>}
           {needsDeadline && (
             <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-              <legend className="small text-2">Какой срок продлить</legend>
+              <legend className="small text-2">{t('Какой срок продлить')}</legend>
               {data.deadlines.map((d) => (
                 <label key={d.claimId} className="checkbox">
                   <input type="radio" name="deadline" checked={chosenDeadline === d.claimId} onChange={() => setDeadline(d.claimId)} />
-                  <span>до {formatDate(d.date)}</span>
+                  <span>{t('до')}{' '}{formatDate(d.date)}</span>
                 </label>
               ))}
             </fieldset>
           )}
           <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend className="small text-2">Причина (войдёт в письмо)</legend>
+            <legend className="small text-2">{t('Причина (войдёт в письмо)')}</legend>
             {data.extensionReasons.map((r) => (
               <label key={r.id} className="card checkbox" data-testid="reason">
                 <input type="radio" name="reason" checked={reason === r.id} onChange={() => setReason(r.id)} />
-                <span>{r.ru}</span>
+                <span>{tMsg(r.ru)}</span>
               </label>
             ))}
           </fieldset>
-          <p className="muted">Продление — просьба. Пока ведомство не ответило, действует прежний срок.</p>
+          <p className="muted">{t('Продление — просьба. Пока ведомство не ответило, действует прежний срок.')}</p>
         </>
       )}
       {kind === 'STATUS_REQUEST' && kindAvailable && (
-        <div className="alert alert--info">Подходит, если вы уже ответили или отправили документы, а ведомство долго молчит.</div>
+        <div className="alert alert--info">{t('Подходит, если вы уже ответили или отправили документы, а ведомство долго молчит.')}</div>
       )}
       {error ? <DraftError error={error} caseId={caseId} letterId={letterId} /> : null}
       <button type="button" className="btn btn--primary" disabled={!ready || creating.isLoading} onClick={() => void submit()}>
-        {creating.isLoading ? 'Собираем черновик…' : 'Собрать черновик'}
+        {creating.isLoading ? t('Собираем черновик…') : t('Собрать черновик')}
       </button>
     </>
   );
@@ -329,18 +329,20 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
   const templates = useTemplatesQuery();
   const navigate = useNavigate();
   const [tab, setTab] = useState<'de' | 'ru'>('de');
+  // L07: перевод черновика пока только русский. Для немецкого интерфейса он не нужен.
+  const showRu = getLang() !== 'de';
   const [copy, setCopy] = useState<CopyState>({ kind: 'idle' });
   const [rebuildError, setRebuildError] = useState<unknown>(null);
   const [checking, setChecking] = useState(false);
   const [editing, setEditing] = useState(false);
 
   if (!draftId) return <Navigate to={`/app/cases/${caseId}/answer`} replace />;
-  if (d.isLoading) return <Loading text="Загружаем черновик…" />;
+  if (d.isLoading) return <Loading text={t('Загружаем черновик…')} />;
   // Ошибка повторного чтения при уже открытом черновике не прячет текст: копирование просто закрыто.
   if (!d.data || d.data.caseId !== caseId) {
     return (
       <>
-        <PageHeader title="Черновик не найден" back={`/app/cases/${caseId}`} />
+        <PageHeader title={t('Черновик не найден')} back={`/app/cases/${caseId}`} />
         {errorCode(d.error) !== 'NOT_FOUND' && d.error ? <ErrorAlert error={d.error} /> : null}
       </>
     );
@@ -353,7 +355,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
     try {
       // Ошибка проверки актуальности — не разрешение копировать.
       const fresh = await d.refetch().unwrap();
-      if (fresh.stale) return setCopy({ kind: 'blocked', text: 'Данные изменились после сборки. Соберите черновик заново.' });
+      if (fresh.stale) return setCopy({ kind: 'blocked', text: t('Данные изменились после сборки. Соберите черновик заново.') });
       try {
         await navigator.clipboard.writeText(fresh.germanText);
         setCopy({ kind: 'copied' });
@@ -361,7 +363,7 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
         setCopy({ kind: 'manual' });
       }
     } catch (err) {
-      setCopy({ kind: 'blocked', text: `Не удалось проверить, что черновик актуален: ${errorText(err)} Копирование недоступно.` });
+      setCopy({ kind: 'blocked', text: t('Не удалось проверить, что черновик актуален: {v0} Копирование недоступно.', { v0: errorText(err) }) });
     } finally {
       setChecking(false);
     }
@@ -386,22 +388,22 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
 
   return (
     <>
-      <PageHeader title={`Черновик: ${(draft.kind === 'TEMPLATE' ? templates.data?.find((t) => t.id === draft.outgoingTemplateId)?.titleRu : DRAFT_KIND[draft.kind]?.title)?.toLowerCase() ?? 'письмо'}`} subtitle="Проверьте текст, скопируйте и отправьте сами." back={`/app/cases/${caseId}`} />
+      <PageHeader title={t('Черновик: {v0}', { v0: tMsg((draft.kind === 'TEMPLATE' ? templates.data?.find((x) => x.id === draft.outgoingTemplateId)?.titleRu : DRAFT_KIND[draft.kind]?.title) ?? 'письмо').toLowerCase() })} subtitle={t('Проверьте текст, скопируйте и отправьте сами.')} back={`/app/cases/${caseId}`} />
       {sent && (
         <div className="alert alert--info" role="status" data-testid="draft-sent">
-          Вы отметили: отправлено{draft.sentAt ? ` ${formatDate(draft.sentAt)}` : ''}. Править этот черновик больше нельзя.
+          {t('Вы отметили: отправлено')}{draft.sentAt ? ` ${formatDate(draft.sentAt)}` : ''}{t('. Править этот черновик больше нельзя.')}
         </div>
       )}
       {draft.edited && !sent && (
         <div className="alert alert--info" role="status">
-          Текст изменён вами и проверен заново: даты, числа и номер дела совпадают с подтверждёнными фактами.
+          {t('Текст изменён вами и проверен заново: даты, числа и номер дела совпадают с подтверждёнными фактами.')}
         </div>
       )}
       {stale && (
         <div className="alert alert--warn stack-s" role="alert" data-testid="draft-stale">
-          <span>{copy.kind === 'blocked' ? copy.text : 'Данные изменились после сборки. Соберите черновик заново.'}</span>
+          <span>{copy.kind === 'blocked' ? copy.text : t('Данные изменились после сборки. Соберите черновик заново.')}</span>
           <button type="button" className="btn btn--primary btn--small" disabled={rebuilding.isLoading || rebuildingOutgoing.isLoading} onClick={() => void rebuild()}>
-            Собрать заново
+            {t('Собрать заново')}
           </button>
         </div>
       )}
@@ -414,67 +416,71 @@ export function AnswerDraftPage({ caseId }: { caseId: string }) {
         />
       ) : (
       <>
-      <div className="row wrap draft-tabs" role="tablist" aria-label="Язык черновика">
+      {showRu && (
+      <div className="row wrap draft-tabs" role="tablist" aria-label={t('Язык черновика')}>
         <button type="button" role="tab" aria-selected={tab === 'de'} className={`btn btn--small ${tab === 'de' ? 'btn--navy' : 'btn--secondary'}`} onClick={() => setTab('de')}>
-          Немецкий
+          {t('Немецкий')}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'ru'} className={`btn btn--small ${tab === 'ru' ? 'btn--navy' : 'btn--secondary'}`} onClick={() => setTab('ru')}>
-          Перевод
+          {t('Перевод')}
         </button>
       </div>
+      )}
       <div className="desktop-2col stack draft-panels" data-tab={tab}>
-        <section className="card stack-s draft-panel draft-panel--de" aria-label="Текст на немецком">
+        <section className="card stack-s draft-panel draft-panel--de" aria-label={t('Текст на немецком')}>
           <span className="eyebrow">Auf Deutsch</span>
           <pre data-testid="german-text" style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit' }}>
             {draft.germanText}
           </pre>
         </section>
-        <section className="card stack-s draft-panel draft-panel--ru" aria-label="Перевод на русский">
-          <span className="eyebrow">Перевод</span>
-          <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit' }}>{draft.russianText}</pre>
+        {showRu && (
+        <section className="card stack-s draft-panel draft-panel--ru" aria-label={t('Перевод на русский')}>
+          <span className="eyebrow">{getLang() === 'ru' ? t('Перевод') : t('Перевод на русский')}</span>
+          <pre lang="ru" style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit' }}>{draft.russianText}</pre>
         </section>
+        )}
       </div>
       </>
       )}
 
       <details className="card" data-testid="draft-sources">
-        <summary>Основания (на момент сборки)</summary>
+        <summary>{t('Основания (на момент сборки)')}</summary>
         <ul className="list-reset stack-s" style={{ marginTop: 8 }}>
           {draft.verification.checklist.map((c) => (
             <li key={c.claimId} className="small">
-              {c.text}
+              {tMsg(c.text)}
               {c.quote && <span className="text-2"> · «{c.quote}»</span>}
             </li>
           ))}
         </ul>
-        <p className="small text-2">{draft.verification.note ?? 'Проверка: соответствует шаблону и фактам. Это не юридическая проверка.'}</p>
+        <p className="small text-2">{draft.verification.note ?? t('Проверка: соответствует шаблону и фактам. Это не юридическая проверка.')}</p>
       </details>
 
       <button type="button" className="btn btn--primary" disabled={stale || checking} onClick={() => void copyGerman()}>
-        <Icon name="copy" size={18} color="#FFFFFF" /> {checking ? 'Проверяем…' : 'Скопировать немецкий текст'}
+        <Icon name="copy" size={18} color="#FFFFFF" /> {checking ? t('Проверяем…') : t('Скопировать немецкий текст')}
       </button>
       <PrintPdf draftId={draft.id} disabled={stale} />
       {copy.kind === 'copied' && (
         <div className="alert alert--info" role="status">
-          Скопировано. Вставьте текст в письмо или онлайн-кабинет, проверьте и отправьте сами. Ja!sno ничего не отправляет.
+          {t('Скопировано. Вставьте текст в письмо или онлайн-кабинет, проверьте и отправьте сами. Ja!sno ничего не отправляет.')}
         </div>
       )}
       {!editing && !sent && (
         <div className="row wrap">
           <button type="button" className="btn btn--secondary btn--small" disabled={stale} onClick={() => setEditing(true)}>
-            <Icon name="edit" size={16} /> Изменить текст
+            <Icon name="edit" size={16} />{' '}{t('Изменить текст')}
           </button>
           <Link className="btn btn--secondary btn--small" to={`/app/cases/${caseId}/answer/send?${qs({ draft: draft.id })}`}>
-            <Icon name="check" size={16} /> Я отправил(а)
+            <Icon name="check" size={16} />{' '}{t('Я отправил(а)')}
           </Link>
         </div>
       )}
       {copy.kind === 'manual' && (
         <div className="stack-s" data-testid="manual-copy">
           <div className="alert alert--info" role="status">
-            Браузер не дал скопировать автоматически. Выделите текст ниже и скопируйте вручную.
+            {t('Браузер не дал скопировать автоматически. Выделите текст ниже и скопируйте вручную.')}
           </div>
-          <textarea className="textarea" readOnly value={draft.germanText} onFocus={(e) => e.currentTarget.select()} aria-label="Текст для ручного копирования" />
+          <textarea className="textarea" readOnly value={draft.germanText} onFocus={(e) => e.currentTarget.select()} aria-label={t('Текст для ручного копирования')} />
         </div>
       )}
     </>
@@ -508,9 +514,9 @@ function PrintPdf({ draftId, disabled }: { draftId: string; disabled: boolean })
   return (
     <div className="stack-s">
       <button type="button" className="btn btn--secondary" disabled={disabled || loading.isLoading} onClick={() => void download()}>
-        <Icon name="doc" size={18} /> {loading.isLoading ? 'Готовим PDF…' : 'PDF для печати'}
+        <Icon name="doc" size={18} /> {loading.isLoading ? t('Готовим PDF…') : t('PDF для печати')}
       </button>
-      <span className="muted">Немецкий текст на листе A4 с местом для подписи. Распечатайте, подпишите и отправьте сами.</span>
+      <span className="muted">{t('Немецкий текст на листе A4 с местом для подписи. Распечатайте, подпишите и отправьте сами.')}</span>
       <ErrorAlert error={error} />
     </div>
   );
@@ -540,26 +546,25 @@ function DraftEditor({ draft, onDone }: { draft: ApiDraft; onDone: () => void })
   return (
     <div className="stack" data-testid="draft-editor">
       <div className="alert alert--info">
-        Можно поправить формулировки. Даты, суммы и номер дела должны совпадать с подтверждёнными фактами: Ja!sno проверит оба текста
-        заново перед сохранением.
+        {t('Можно поправить формулировки. Даты, суммы и номер дела должны совпадать с подтверждёнными фактами: Ja!sno проверит оба текста заново перед сохранением.')}
       </div>
       <div className="desktop-2col stack">
         <div className="field">
-          <label htmlFor="edit-de">Текст на немецком</label>
+          <label htmlFor="edit-de">{t('Текст на немецком')}</label>
           <textarea id="edit-de" className="textarea draft-textarea" value={germanText} onChange={(e) => setGerman(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="edit-ru">Перевод</label>
+          <label htmlFor="edit-ru">{t('Перевод')}</label>
           <textarea id="edit-ru" className="textarea draft-textarea" value={russianText} onChange={(e) => setRussian(e.target.value)} />
         </div>
       </div>
       {error ? <DraftError error={error} caseId={draft.caseId} letterId={draft.letterId ?? ''} /> : null}
       <div className="row wrap">
         <button type="button" className="btn btn--primary btn--small" disabled={!changed || saving.isLoading} onClick={() => void save()}>
-          {saving.isLoading ? 'Проверяем…' : 'Проверить и сохранить'}
+          {saving.isLoading ? t('Проверяем…') : t('Проверить и сохранить')}
         </button>
         <button type="button" className="btn btn--ghost btn--small" disabled={saving.isLoading} onClick={onDone}>
-          Отменить правку
+          {t('Отменить правку')}
         </button>
       </div>
     </div>
@@ -567,22 +572,22 @@ function DraftEditor({ draft, onDone }: { draft: ApiDraft; onDone: () => void })
 }
 
 const VIA: { id: SentVia; ru: string }[] = [
-  { id: 'post', ru: 'Почтой' },
-  { id: 'online', ru: 'Через онлайн-кабинет ведомства' },
-  { id: 'email', ru: 'По e-mail' },
-  { id: 'in_person', ru: 'Лично в ведомстве' },
-  { id: 'other', ru: 'Другим способом' },
+  { id: 'post', ru: t('Почтой') },
+  { id: 'online', ru: t('Через онлайн-кабинет ведомства') },
+  { id: 'email', ru: t('По e-mail') },
+  { id: 'in_person', ru: t('Лично в ведомстве') },
+  { id: 'other', ru: t('Другим способом') },
 ];
 
 /** ДД.ММ.ГГГГ (точки или запятые с клавиатуры iPhone) → ГГГГ-ММ-ДД; существующая дата не позже сегодня. */
 function parseSentDate(raw: string, today: string): { value: string } | { error: string } {
   const m = /^(\d{1,2})[.,](\d{1,2})[.,](\d{4})$/.exec(raw.trim());
-  if (!m) return { error: 'Дата в формате ТТ.ММ.ГГГГ' };
+  if (!m) return { error: t('Дата в формате ТТ.ММ.ГГГГ') };
   const [d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const date = new Date(Date.UTC(y, mo - 1, d));
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return { error: 'Такой даты нет' };
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return { error: t('Такой даты нет') };
   const value = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  if (value > today) return { error: 'Дата отправки не может быть в будущем' };
+  if (value > today) return { error: t('Дата отправки не может быть в будущем') };
   return { value };
 }
 
@@ -610,7 +615,7 @@ export function AnswerSendPage({ caseId }: { caseId: string }) {
   const open = c.data.deadlines.filter((x) => x.active && !x.done);
   const parsed = parseSentDate(rawDate, today);
   const dateError = (dateTouched || submitted) && 'error' in parsed ? parsed.error : null;
-  const viaError = submitted && !via ? 'Выберите, как вы отправили' : null;
+  const viaError = submitted && !via ? t('Выберите, как вы отправили') : null;
   const back = draft ? draftUrl(caseId, draft) : `/app/cases/${caseId}`;
 
   async function submit(e: React.FormEvent) {
@@ -634,30 +639,30 @@ export function AnswerSendPage({ caseId }: { caseId: string }) {
 
   return (
     <>
-      <PageHeader title="Отправьте ответ сами" back={back} />
+      <PageHeader title={t('Отправьте ответ сами')} back={back} />
       <div className="card stack">
-        <span className="eyebrow">Как можно отправить</span>
+        <span className="eyebrow">{t('Как можно отправить')}</span>
         <ul style={{ margin: 0, paddingLeft: 20 }} className="stack-s">
-          <li>Почтой: распечатайте, подпишите и отправьте на адрес из письма.</li>
-          <li>Через онлайн-кабинет ведомства, если он у вас есть.</li>
-          <li>Лично: отнесите в ведомство и попросите отметку о получении.</li>
+          <li>{t('Почтой: распечатайте, подпишите и отправьте на адрес из письма.')}</li>
+          <li>{t('Через онлайн-кабинет ведомства, если он у вас есть.')}</li>
+          <li>{t('Лично: отнесите в ведомство и попросите отметку о получении.')}</li>
         </ul>
-        <p className="muted">Сохраните копию и дату отправки.</p>
+        <p className="muted">{t('Сохраните копию и дату отправки.')}</p>
       </div>
       {draft?.status === 'SENT' && (
         <div className="alert alert--info" role="status">
-          Этот черновик уже отмечен как отправленный{draft.sentAt ? ` ${formatDate(draft.sentAt)}` : ''}.
+          {t('Этот черновик уже отмечен как отправленный')}{draft.sentAt ? ` ${formatDate(draft.sentAt)}` : ''}.
         </div>
       )}
       <form className="card stack" onSubmit={(e) => void submit(e)} noValidate data-testid="sent-form">
-        <h2 style={{ fontSize: 19 }}>Я отправил(а)</h2>
-        <p className="small text-2">Это ваша отметка для дела. Ja!sno не знает, дошло ли письмо до ведомства.</p>
+        <h2 style={{ fontSize: 19 }}>{t('Я отправил(а)')}</h2>
+        <p className="small text-2">{t('Это ваша отметка для дела. Ja!sno не знает, дошло ли письмо до ведомства.')}</p>
         <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }} aria-describedby={viaError ? 'via-error' : undefined} aria-invalid={viaError ? true : undefined}>
-          <legend className="small" style={{ fontWeight: 600 }}>Как отправили</legend>
+          <legend className="small" style={{ fontWeight: 600 }}>{t('Как отправили')}</legend>
           {VIA.map((v) => (
             <label key={v.id} className="checkbox">
               <input type="radio" name="via" checked={via === v.id} onChange={() => setVia(v.id)} />
-              <span>{v.ru}</span>
+              <span>{tMsg(v.ru)}</span>
             </label>
           ))}
           {viaError && (
@@ -667,7 +672,7 @@ export function AnswerSendPage({ caseId }: { caseId: string }) {
           )}
         </fieldset>
         <div className="field">
-          <label htmlFor="sent-date">Когда (ТТ.ММ.ГГГГ)</label>
+          <label htmlFor="sent-date">{t('Когда (ТТ.ММ.ГГГГ)')}</label>
           <input
             id="sent-date"
             className="input"
@@ -687,26 +692,26 @@ export function AnswerSendPage({ caseId }: { caseId: string }) {
         </div>
         {open.length > 0 && (
           <fieldset className="stack-s" style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend className="small" style={{ fontWeight: 600 }}>Отметить срок выполненным?</legend>
+            <legend className="small" style={{ fontWeight: 600 }}>{t('Отметить срок выполненным?')}</legend>
             <label className="checkbox">
               <input type="radio" name="close" checked={closeId === ''} onChange={() => setCloseId('')} />
-              <span>Нет, срок не закрывать</span>
+              <span>{t('Нет, срок не закрывать')}</span>
             </label>
             {open.map((x) => (
               <label key={x.id} className="checkbox">
                 <input type="radio" name="close" checked={closeId === x.id} onChange={() => setCloseId(x.id)} />
-                <span>Срок до {formatDate(x.date)} выполнен</span>
+                <span>{t('Срок до')}{' '}{formatDate(x.date)}{' '}{t('выполнен')}</span>
               </label>
             ))}
           </fieldset>
         )}
         <ErrorAlert error={error} />
         <button type="submit" className="btn btn--primary" disabled={sending.isLoading}>
-          <Icon name="check" size={18} color="#FFFFFF" /> {sending.isLoading ? 'Сохраняем…' : 'Я отправил(а)'}
+          <Icon name="check" size={18} color="#FFFFFF" /> {sending.isLoading ? t('Сохраняем…') : t('Я отправил(а)')}
         </button>
       </form>
       <Link to={`/app/cases/${caseId}`} className="btn btn--secondary">
-        Пока не отправил(а)
+        {t('Пока не отправил(а)')}
       </Link>
     </>
   );
@@ -715,11 +720,11 @@ export function AnswerSendPage({ caseId }: { caseId: string }) {
 export function DonePage() {
   return (
     <div className="card stack" style={{ alignItems: 'center', textAlign: 'center' }}>
-      <Illustration name="relief" height={220} blob="#DDEFEC" alt="Человек с облегчением выдыхает" />
-      <h1 style={{ fontSize: 26 }}>Выдохните</h1>
-      <p className="text-2">Всё нужное лежит в деле. Если придёт новое письмо, добавьте его туда же.</p>
+      <Illustration name="relief" height={220} blob="#DDEFEC" alt={t('Человек с облегчением выдыхает')} />
+      <h1 style={{ fontSize: 26 }}>{t('Выдохните')}</h1>
+      <p className="text-2">{t('Всё нужное лежит в деле. Если придёт новое письмо, добавьте его туда же.')}</p>
       <Link to="/app" className="btn btn--primary">
-        В кабинет
+        {t('В кабинет')}
       </Link>
     </div>
   );

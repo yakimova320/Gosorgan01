@@ -11,6 +11,7 @@ import { applyServerError } from '../../forms/serverErrors';
 import { formatDate } from '../../lib/dates';
 import { useCabinetQuery, useCreateOutgoingMutation, useTemplatesQuery } from '../../store/api';
 import { DraftError } from './AnswerPages';
+import { t, tMsg } from '../../i18n';
 
 /*
  * B16: своё письмо по шаблону (макет, экраны 22–25): каталог → адресат → детали → проверка.
@@ -22,34 +23,34 @@ import { DraftError } from './AnswerPages';
 type Step = 'recipient' | 'details' | 'check';
 const STEPS: Step[] = ['recipient', 'details', 'check'];
 const STEP_TITLE: Record<Step, string> = {
-  recipient: 'Кому пишете',
-  details: 'Что написать',
-  check: 'Проверьте данные',
+  recipient: t('Кому пишете'),
+  details: t('Что написать'),
+  check: t('Проверьте данные'),
 };
 
 /** Экран 22: каталог шаблонов. */
 export function WritePage() {
-  const t = useTemplatesQuery();
+  const tq = useTemplatesQuery();
   return (
     <>
-      <PageHeader title="Написать письмо" subtitle="Письмо в ведомство по готовому шаблону: Ja!sno соберёт текст на немецком и перевод." />
-      {t.isLoading && <Loading text="Загружаем шаблоны…" />}
-      <ErrorAlert error={t.error} />
-      <ul className="list-reset grid-2" aria-label="Шаблоны писем">
-        {(t.data ?? []).map((tpl) => (
+      <PageHeader title={t('Написать письмо')} subtitle={t('Письмо в ведомство по готовому шаблону: Ja!sno соберёт текст на немецком и перевод.')} />
+      {tq.isLoading && <Loading text={t('Загружаем шаблоны…')} />}
+      <ErrorAlert error={tq.error} />
+      <ul className="list-reset grid-2" aria-label={t('Шаблоны писем')}>
+        {(tq.data ?? []).map((tpl) => (
           <li key={tpl.id}>
             <Link to={`/app/write/${tpl.id}`} className="card stack-s" data-testid="template-card" style={{ height: '100%' }}>
               <Icon name="doc" color="var(--c-teal)" />
-              <span style={{ fontWeight: 600 }}>{tpl.titleRu}</span>
+              <span style={{ fontWeight: 600 }}>{tMsg(tpl.titleRu)}</span>
               <span className="muted small">
-                {tpl.titleDe} · {tpl.descriptionRu}
+                {tpl.titleDe} · {tMsg(tpl.descriptionRu)}
               </span>
             </Link>
           </li>
         ))}
       </ul>
       <p className="muted small">
-        Письмо в ответ на полученное письмо удобнее готовить из дела: там Ja!sno возьмёт номер дела и даты из самого письма.
+        {t('Письмо в ответ на полученное письмо удобнее готовить из дела: там Ja!sno возьмёт номер дела и даты из самого письма.')}
       </p>
     </>
   );
@@ -66,14 +67,14 @@ function shown(tpl: OutgoingTemplate, key: string, value: string): string {
 
 /** Экраны 23–25: адресат, детали, проверка одного шаблона. */
 export function WriteTemplatePage({ templateId }: { templateId: string }) {
-  const t = useTemplatesQuery();
-  if (t.isLoading) return <Loading text="Загружаем шаблон…" />;
-  const tpl = t.data?.find((x) => x.id === templateId);
+  const tq = useTemplatesQuery();
+  if (tq.isLoading) return <Loading text={t('Загружаем шаблон…')} />;
+  const tpl = tq.data?.find((x) => x.id === templateId);
   if (!tpl)
     return (
       <>
-        <PageHeader title="Шаблон не найден" back="/app/write" />
-        <ErrorAlert error={t.error} />
+        <PageHeader title={t('Шаблон не найден')} back="/app/write" />
+        <ErrorAlert error={tq.error} />
       </>
     );
   return <WriteForm key={tpl.id} tpl={tpl} />;
@@ -143,26 +144,26 @@ function WriteForm({ tpl }: { tpl: OutgoingTemplate }) {
 
   return (
     <>
-      <PageHeader title={`${tpl.titleRu}: ${STEP_TITLE[step].toLowerCase()}`} subtitle={`${tpl.titleDe} · шаг ${stepIndex + 1} из 3`} back={back} />
+      <PageHeader title={`${tMsg(tpl.titleRu)}: ${STEP_TITLE[step].toLowerCase()}`} subtitle={t('{v0} · шаг {v1} из 3', { v0: tpl.titleDe, v1: stepIndex + 1 })} back={back} />
 
       {step === 'recipient' && (
         <form className="card stack" noValidate onSubmit={(e) => { e.preventDefault(); void next(recipientFields, 'details'); }}>
           <TextField
             id="w-recipient-name"
-            label="Ведомство или организация"
-            hint="Как в его письмах, латиницей. Например: Jobcenter Berlin Mitte"
+            label={t('Ведомство или организация')}
+            hint={t('Как в его письмах, латиницей. Например: Jobcenter Berlin Mitte')}
             registration={register('recipient.name')}
             error={errors.recipient?.name}
           />
           <TextAreaField
             id="w-recipient-address"
-            label="Адрес"
-            hint="Улица или Postfach, индекс и город — с конверта или из письма ведомства"
+            label={t('Адрес')}
+            hint={t('Улица или Postfach, индекс и город — с конверта или из письма ведомства')}
             registration={register('recipient.address')}
             error={errors.recipient?.address}
           />
           <button type="submit" className="btn btn--primary">
-            Дальше
+            {t('Дальше')}
           </button>
         </form>
       )}
@@ -172,17 +173,17 @@ function WriteForm({ tpl }: { tpl: OutgoingTemplate }) {
           {tpl.noteRu && <div className="alert alert--info">{tpl.noteRu}</div>}
           {tpl.fields.map((f) => {
             const id = `w-${f.key}`;
-            const label = f.required ? f.labelRu : `${f.labelRu} (необязательно)`;
+            const label = f.required ? tMsg(f.labelRu) : t('{v0} (необязательно)', { v0: tMsg(f.labelRu) });
             const registration = register(`fields.${f.key}`);
             const error = errors.fields?.[f.key];
             if (f.type === 'select')
-              return <SelectField key={f.key} id={id} label={label} hint={f.hintRu} options={f.options ?? []} registration={registration} error={error} />;
+              return <SelectField key={f.key} id={id} label={label} hint={f.hintRu ? tMsg(f.hintRu) : undefined} options={f.options ?? []} registration={registration} error={error} />;
             return (
               <TextField
                 key={f.key}
                 id={id}
                 label={label}
-                hint={f.hintRu}
+                hint={f.hintRu ? tMsg(f.hintRu) : undefined}
                 type={f.type === 'date' ? 'date' : 'text'}
                 autoCapitalize={f.type === 'iban' ? 'characters' : undefined}
                 autoComplete="off"
@@ -193,52 +194,51 @@ function WriteForm({ tpl }: { tpl: OutgoingTemplate }) {
           })}
           {tpl.id === 'AENDERUNG' && values.fields.change === 'ADDRESS' && (
             <div className="alert alert--info" role="status">
-              Новый адрес возьмётся из профиля: {profile?.address ?? '…'}. Если там ещё старый, сначала <Link to="/app/profile">измените профиль</Link>.
+              {t('Новый адрес возьмётся из профиля:')}{' '}{profile?.address ?? '…'}{t('. Если там ещё старый, сначала')}{' '}<Link to="/app/profile">{t('измените профиль')}</Link>.
             </div>
           )}
           <button type="submit" className="btn btn--primary">
-            Дальше
+            {t('Дальше')}
           </button>
         </form>
       )}
 
       {step === 'check' && (
         <>
-          <section className="card stack-s" aria-label="Данные письма" data-testid="write-check">
-            <span className="eyebrow">Отправитель (из профиля)</span>
+          <section className="card stack-s" aria-label={t('Данные письма')} data-testid="write-check">
+            <span className="eyebrow">{t('Отправитель (из профиля)')}</span>
             <span>
               {profile ? `${profile.firstName} ${profile.lastName}, ${profile.address}` : '…'}
             </span>
-            <span className="eyebrow">Кому</span>
+            <span className="eyebrow">{t('Кому')}</span>
             <span style={{ whiteSpace: 'pre-wrap' }}>
               {values.recipient.name}
               {'\n'}
               {values.recipient.address}
             </span>
-            <span className="eyebrow">Что войдёт в письмо</span>
+            <span className="eyebrow">{t('Что войдёт в письмо')}</span>
             <dl className="stack-s" style={{ margin: 0 }}>
               {tpl.fields
                 .filter((f) => values.fields[f.key]?.trim())
                 .map((f) => (
                   <div key={f.key}>
-                    <dt className="muted small">{f.labelRu}</dt>
+                    <dt className="muted small">{tMsg(f.labelRu)}</dt>
                     <dd style={{ margin: 0, fontWeight: 600 }}>{shown(tpl, f.key, values.fields[f.key].trim())}</dd>
                   </div>
                 ))}
             </dl>
             <Link to={`/app/write/${tpl.id}?step=details`} className="link small">
-              Изменить
+              {t('Изменить')}
             </Link>
           </section>
           <div className="alert alert--info">
-            Нажимая «Всё верно», вы подтверждаете эти данные. Ja!sno соберёт письмо только из них и профиля, без догадок, и
-            заведёт для него дело. Отправляете вы сами.
+            {t('Нажимая «Всё верно», вы подтверждаете эти данные. Ja!sno соберёт письмо только из них и профиля, без догадок, и заведёт для него дело. Отправляете вы сами.')}
           </div>
           <FormError message={formError} />
           {error ? <DraftError error={error} caseId="" /> : null}
           <form noValidate onSubmit={(e) => { e.preventDefault(); void submit(); }}>
-            <SubmitButton submitting={creating.isLoading} busyText="Собираем письмо…">
-              Всё верно, собрать письмо
+            <SubmitButton submitting={creating.isLoading} busyText={t('Собираем письмо…')}>
+              {t('Всё верно, собрать письмо')}
             </SubmitButton>
           </form>
         </>

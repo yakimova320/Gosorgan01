@@ -5,13 +5,16 @@ import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
 import {
-  DEADLINE_CHECK_NOTE,
+  calendarName,
+  caseLine,
+  deadlineCheckNote,
   deadlineLink,
   deadlineSummary,
 } from '../deadlines/deadline-text.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { buildFeed } from './calendar-feed.js';
+import { toLanguage } from '../common/language.js';
 
 export interface CalendarView {
   /** /calendar/<токен>.ics или null, если подписки нет */
@@ -110,9 +113,10 @@ export class CalendarService {
     if (!TOKEN_RE.test(token)) throw new ApiError('NOT_FOUND');
     const cabinet = await this.db.cabinet.findFirst({
       where: { calendarToken: token, deletingAt: null },
-      select: { id: true },
+      select: { id: true, language: true },
     });
     if (!cabinet) throw new ApiError('NOT_FOUND');
+    const lang = toLanguage(cabinet.language);
     const from = berlinToday(now);
     from.setUTCDate(from.getUTCDate() - PAST_DAYS);
     const rows = await this.db.deadline.findMany({
@@ -125,14 +129,15 @@ export class CalendarService {
       rows.map((d) => ({
         id: d.id,
         date: toIsoDate(d.date),
-        summary: deadlineSummary(d.kind, d.letter.claims[0]?.value),
-        description: [d.case?.title ? `Дело: ${d.case.title}` : null, DEADLINE_CHECK_NOTE]
+        summary: deadlineSummary(d.kind, d.letter.claims[0]?.value, lang),
+        description: [d.case?.title ? caseLine(d.case.title, lang) : null, deadlineCheckNote(lang)]
           .filter(Boolean)
           .join('\n'),
         url: deadlineLink(this.config.APP_PUBLIC_URL, d),
         remindDaysBefore: d.remindDaysBefore,
       })),
       now,
+      calendarName(lang),
     );
   }
 }

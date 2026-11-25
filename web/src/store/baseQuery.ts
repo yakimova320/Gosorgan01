@@ -2,6 +2,7 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import { API_URL, REQUEST_TIMEOUT_MS } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import { sessionExpired, type SessionState } from './session';
+import { t } from '../i18n';
 
 export type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -75,7 +76,7 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
   } catch {
     if (timedOut) return { error: apiError('TIMEOUT') };
     if (controller.signal.aborted)
-      return { error: apiError('CANCELLED', undefined, 'Запрос отменён') };
+      return { error: apiError('CANCELLED', undefined, t('Запрос отменён')) };
     return { error: apiError('NETWORK') };
   } finally {
     clearTimeout(timer);

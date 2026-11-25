@@ -5,11 +5,12 @@ import { Illustration } from '../../components/Watercolor';
 import { PageHeader } from '../../components/ui';
 import { CARDS, FAQ, FAQ_CONSULTATIONS, TOPICS, type Card, type Consultation } from '../../content';
 import { formatDate } from '../../lib/dates';
+import { t } from '../../i18n';
 
 export function FaqPage() {
   return (
     <>
-      <PageHeader title="Частые вопросы" subtitle="Ответы команды Ja!sno. Если ответа нет, спросите в чате помощника." />
+      <PageHeader title={t('Частые вопросы')} subtitle={t('Ответы команды Ja!sno. Если ответа нет, спросите в чате помощника.')} />
       {FAQ.map((section) => (
         <section key={section.title} className="stack">
           <h2>{section.title}</h2>
@@ -48,10 +49,10 @@ function CardView({ card }: { card: Card }) {
     return (
       <article className="card stack-s" style={{ gap: 8 }} data-testid="card-draft">
         <h3>{card.title}</h3>
-        <p className="muted">Раздел готовится. Текст пишет команда.</p>
+        <p className="muted">{t('Раздел готовится. Текст пишет команда.')}</p>
         {card.german.length > 0 && (
           <p className="small">
-            <span className="muted">По-немецки: </span>
+            <span className="muted">{t('По-немецки:')}{' '}</span>
             {card.german.join(', ')}
           </p>
         )}
@@ -66,12 +67,12 @@ function CardView({ card }: { card: Card }) {
       </p>
       {card.german.length > 0 && (
         <p className="small">
-          <span className="muted">По-немецки: </span>
+          <span className="muted">{t('По-немецки:')}{' '}</span>
           {card.german.join(', ')}
         </p>
       )}
       <p className="muted" style={{ fontSize: 12 }}>
-        {card.sources.length > 0 ? 'Источник: ' : ''}
+        {card.sources.length > 0 ? t('Источник: ') : ''}
         {card.sources.map((s, i) => (
           <span key={s.url}>
             {i > 0 && ', '}
@@ -80,7 +81,7 @@ function CardView({ card }: { card: Card }) {
             </a>
           </span>
         ))}
-        {card.note && <> {card.note}</>} · проверено {formatDate(card.checkedAt)}
+        {card.note && <> {card.note}</>}{' '}{t('· проверено')}{' '}{formatDate(card.checkedAt)}
       </p>
     </article>
   );
@@ -109,15 +110,15 @@ export function WissenPage() {
 
   return (
     <>
-      <PageHeader title="Блог" subtitle="Короткие проверенные советы о жизни в Германии: что новоприбывшие часто упускают. Это не юридическая консультация." />
+      <PageHeader title={t('Блог')} subtitle={t('Короткие проверенные советы о жизни в Германии: что новоприбывшие часто упускают. Это не юридическая консультация.')} />
       <div className="field">
         <label htmlFor="w-search" className="visually-hidden">
-          Поиск по советам
+          {t('Поиск по советам')}
         </label>
-        <input id="w-search" className="input" type="search" placeholder="Поиск: квартира, страховка, срок…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input id="w-search" className="input" type="search" placeholder={t('Поиск: квартира, страховка, срок…')} value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
       {!query && (
-        <div className="tabs" role="tablist" aria-label="Темы">
+        <div className="tabs" role="tablist" aria-label={t('Темы')}>
           {TOPICS.map((t) => (
             <button key={t.id} type="button" role="tab" className="tab" aria-selected={t.id === topic} onClick={() => setTopic(t.id)}>
               {t.title}
@@ -129,12 +130,12 @@ export function WissenPage() {
         {shown.map((c) => (
           <CardView key={c.id} card={c} />
         ))}
-        {shown.length === 0 && <p className="muted">Ничего не нашлось. Попробуйте другое слово.</p>}
+        {shown.length === 0 && <p className="muted">{t('Ничего не нашлось. Попробуйте другое слово.')}</p>}
       </div>
       <p className="muted">
-        Нужен разбор конкретного договора или решения?{' '}
+        {t('Нужен разбор конкретного договора или решения?')}{' '}
         <Link to="/beratung" className="link">
-          Где получить консультацию
+          {t('Где получить консультацию')}
         </Link>
       </p>
     </>
@@ -147,7 +148,7 @@ const CONSULTATIONS: Consultation[] = FAQ_CONSULTATIONS.places;
 export function BeratungPage() {
   return (
     <>
-      <PageHeader title="Найти консультацию" subtitle="Возражение (Widerspruch) и юридические вопросы Ja!sno не пишет. По закону о правовых услугах (RDG) такие советы дают юристы и уполномоченные консультации." />
+      <PageHeader title={t('Найти консультацию')} subtitle={t('Возражение (Widerspruch) и юридические вопросы Ja!sno не пишет. По закону о правовых услугах (RDG) такие советы дают юристы и уполномоченные консультации.')} />
       <div className="card card--teal">
         <Illustration name="consult" height={170} blob="#BFE0DB" alt="" />
       </div>
@@ -175,9 +176,9 @@ export function NotFoundPage() {
   return (
     <div className="card stack" style={{ textAlign: 'center', alignItems: 'center' }}>
       <Illustration name="mailbox" height={160} blob="#FCEFC9" />
-      <h1 style={{ fontSize: 24 }}>Такой страницы нет</h1>
+      <h1 style={{ fontSize: 24 }}>{t('Такой страницы нет')}</h1>
       <Link to="/" className="btn btn--secondary">
-        На главную
+        {t('На главную')}
       </Link>
     </div>
   );

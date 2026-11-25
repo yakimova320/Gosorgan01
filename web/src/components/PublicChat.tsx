@@ -4,14 +4,15 @@ import { errorText } from '../api/errors';
 import { useSession } from '../store';
 import { useAskPublicChatMutation } from '../store/api';
 import { Icon } from './Icon';
+import { getLang, t, tMsg } from '../i18n';
 
 const MAX_CHARS = 1000;
 /** Сколько прошлых реплик уходит на сервер как контекст (сервер принимает до 6). */
 const HISTORY = 6;
 const EXAMPLES = [
-  'Нужно ли продлевать ВНЖ по § 24?',
-  'Что такое Anmeldung?',
-  'Как подтвердить диплом?',
+  t('Нужно ли продлевать ВНЖ по § 24?'),
+  t('Что такое Anmeldung?'),
+  t('Как подтвердить диплом?'),
 ];
 
 type Line = { id: number; role: 'USER' | 'ASSISTANT'; text: string };
@@ -36,7 +37,7 @@ export function PublicChat() {
     const history = lines.slice(-HISTORY).map(({ role, text: t }) => ({ role, text: t }));
     setLines((old) => [...old, { id: Date.now(), role: 'USER', text: q }]);
     try {
-      const r = await ask({ text: q, history }).unwrap();
+      const r = await ask({ text: q, history, language: getLang() }).unwrap();
       setDisclaimer(r.disclaimer);
       setLines((old) => [...old, { id: Date.now() + 1, role: 'ASSISTANT', text: r.answer }]);
     } catch (e) {
@@ -51,12 +52,11 @@ export function PublicChat() {
       <div className="row" style={{ gap: 10 }}>
         <Icon name="chat" color="var(--c-teal)" />
         <h2 id="public-chat-title" style={{ fontSize: 20 }}>
-          Спросите Ja!sno
+          {t('Спросите Ja!sno')}
         </h2>
       </div>
       <p className="small text-2">
-        Вопросы о ведомствах, документах и сроках в Германии. Без регистрации. Не пишите имя, адрес и номера
-        документов: вопрос уходит модели ИИ (
+        {t('Вопросы о ведомствах, документах и сроках в Германии. Без регистрации. Не пишите имя, адрес и номера документов: вопрос уходит модели ИИ (')}
         <Link to="/datenschutz" className="link small">
           Datenschutz
         </Link>
@@ -81,13 +81,13 @@ export function PublicChat() {
           ) : (
             <div key={m.id} className="chat-bubble chat-bubble--bot stack-s" data-testid="public-chat-answer">
               <span style={{ whiteSpace: 'pre-wrap' }}>{m.text}</span>
-              <span className="chat-disclaimer">{disclaimer}</span>
+              <span className="chat-disclaimer">{tMsg(disclaimer)}</span>
             </div>
           ),
         )}
         {asking.isLoading && (
           <div className="chat-bubble chat-bubble--bot" role="status">
-            Ja!sno думает…
+            {t('Ja!sno думает…')}
           </div>
         )}
       </div>
@@ -110,8 +110,8 @@ export function PublicChat() {
           rows={2}
           maxLength={MAX_CHARS}
           value={text}
-          placeholder="Ваш вопрос…"
-          aria-label="Ваш вопрос Ja!sno"
+          placeholder={t('Ваш вопрос…')}
+          aria-label={t('Ваш вопрос Ja!sno')}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -124,7 +124,7 @@ export function PublicChat() {
           type="submit"
           className="btn btn--primary btn--small"
           disabled={!text.trim() || asking.isLoading}
-          aria-label="Отправить вопрос"
+          aria-label={t('Отправить вопрос')}
         >
           <Icon name="send" size={18} color="#FFFFFF" />
         </button>
@@ -134,19 +134,19 @@ export function PublicChat() {
         <p className="small text-2">
           {token ? (
             <>
-              Разговор с сохранением —{' '}
+              {t('Разговор с сохранением —')}{' '}
               <Link to="/app/ask" className="link small">
-                в кабинете
+                {t('в кабинете')}
               </Link>
               .
             </>
           ) : (
             <>
-              Пришло письмо от ведомства?{' '}
+              {t('Пришло письмо от ведомства?')}{' '}
               <Link to="/register" className="link small">
-                Зарегистрируйтесь
+                {t('Зарегистрируйтесь')}
               </Link>
-              : Ja!sno разберёт его по фактам и напомнит о сроке.
+              {t(': Ja!sno разберёт его по фактам и напомнит о сроке.')}
             </>
           )}
         </p>

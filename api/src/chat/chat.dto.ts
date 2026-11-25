@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LanguageSchema } from '@jasno/shared';
 
 /** Пометка под каждым ответом чата: ставит код, не модель (решение 24.11). */
 export const CHAT_DISCLAIMER =
@@ -36,6 +37,8 @@ export const PublicAskSchema = z
       )
       .max(6)
       .default([]),
+    /** L07: язык сайта гостя */
+    language: LanguageSchema.default('ru'),
   })
   .strict();
 export type PublicAskInput = z.infer<typeof PublicAskSchema>;

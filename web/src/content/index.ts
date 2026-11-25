@@ -1,10 +1,21 @@
-import cardsData from '../../../content/important/cards.ru.json';
-import faqRaw from '../../../content/faq.ru.md?raw';
+import cardsRu from '../../../content/important/cards.ru.json';
+import cardsUk from '../../../content/important/cards.uk.json';
+import cardsDe from '../../../content/important/cards.de.json';
+import faqRu from '../../../content/faq.ru.md?raw';
+import faqUk from '../../../content/faq.uk.md?raw';
+import faqDe from '../../../content/faq.de.md?raw';
+import { getLang, type Lang } from '../i18n';
 
 /*
  * FAQ и карточки блога (раньше «Важно знать») берутся из папки content/ в корне репозитория.
  * Их пишут и проверяют люди; здесь только чтение и разбор.
+ * L07: у каждого файла есть версии .uk и .de, берётся версия языка сайта.
  */
+
+const LANG: Lang = getLang();
+const CARDS_BY_LANG = { ru: cardsRu, uk: cardsUk, de: cardsDe };
+const FAQ_BY_LANG: Record<Lang, string> = { ru: faqRu, uk: faqUk, de: faqDe };
+const cardsData = CARDS_BY_LANG[LANG] ?? cardsRu;
 
 export interface Card {
   id: string;
@@ -73,7 +84,7 @@ export function parseFaq(md: string): FaqSection[] {
   return sections;
 }
 
-export const FAQ: FaqSection[] = parseFaq(faqRaw);
+export const FAQ: FaqSection[] = parseFaq(FAQ_BY_LANG[LANG] ?? faqRu);
 
 export interface Consultation {
   name: string;
@@ -81,14 +92,22 @@ export interface Consultation {
 }
 
 /** Вопрос FAQ со списком консультаций: экран «Найти консультацию» берёт тексты отсюда (F05). */
-export const CONSULTATION_QUESTION = 'Куда обратиться, если нужен юридический совет?';
+export const CONSULTATION_QUESTIONS: Record<Lang, string> = {
+  ru: 'Куда обратиться, если нужен юридический совет?',
+  uk: 'Куди звернутися, якщо потрібна юридична порада?',
+  de: 'Wohin kann ich gehen, wenn ich Rechtsrat brauche?',
+};
+export const CONSULTATION_QUESTION = CONSULTATION_QUESTIONS[LANG];
 
 /**
  * Консультации из FAQ: пункты списка «Название: текст» и абзацы после него.
  * Тексты не меняются, только делятся на название и описание.
  */
-export function consultationsFromFaq(sections: FaqSection[]): { places: Consultation[]; notes: string[] } {
-  const item = sections.flatMap((s) => s.items).find((i) => i.question === CONSULTATION_QUESTION);
+export function consultationsFromFaq(
+  sections: FaqSection[],
+  question: string = CONSULTATION_QUESTION,
+): { places: Consultation[]; notes: string[] } {
+  const item = sections.flatMap((s) => s.items).find((i) => i.question === question);
   const places: Consultation[] = [];
   const notes: string[] = [];
   for (const block of item?.blocks ?? []) {

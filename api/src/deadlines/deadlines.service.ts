@@ -2,7 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/api-error.js';
 import { toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DEADLINE_CHECK_NOTE, deadlineSummary } from './deadline-text.js';
+import { cabinetLanguage } from '../common/language.js';
+import { caseLine, deadlineCheckNote, deadlineSummary } from './deadline-text.js';
 import { buildIcs } from './ics.js';
 
 export interface DeadlineState {
@@ -79,13 +80,14 @@ export class DeadlinesService {
     const d = await this.own(cabinetId, id);
     if (d.claim.status !== 'CONFIRMED')
       throw new ApiError('DEADLINE_NOT_CONFIRMED');
+    const lang = await cabinetLanguage(this.db, cabinetId);
     return buildIcs({
       id: d.id,
       date: toIsoDate(d.date),
-      summary: deadlineSummary(d.kind, d.letter.claims[0]?.value),
+      summary: deadlineSummary(d.kind, d.letter.claims[0]?.value, lang),
       description: [
-        d.case?.title ? `Дело: ${d.case.title}` : null,
-        DEADLINE_CHECK_NOTE,
+        d.case?.title ? caseLine(d.case.title, lang) : null,
+        deadlineCheckNote(lang),
       ]
         .filter(Boolean)
         .join('\n'),

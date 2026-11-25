@@ -1,8 +1,9 @@
+import { locale, t, tn } from '../i18n';
 /*
  * Даты сроков: календарные дни без часового пояса. «Сегодня» считается по Europe/Berlin (ТЗ v3 раздел 6.4).
  */
 
-const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'нояб', 'дек'];
+const MONTHS = [t('янв'), t('фев'), t('мар'), t('апр'), t('мая'), t('июн'), t('июл'), t('авг'), t('сен'), t('окт'), t('нояб'), t('дек')];
 
 /** Сегодняшняя дата в Германии в виде ГГГГ-ММ-ДД. */
 export function todayBerlin(now: Date = new Date()): string {
@@ -31,28 +32,20 @@ export function dayMonth(iso: string): { day: string; month: string } {
   return { day: String(Number(d)), month: MONTHS[Number(m) - 1] };
 }
 
-function plural(n: number, one: string, few: string, many: string): string {
-  const a = Math.abs(n) % 100;
-  const b = a % 10;
-  if (a > 10 && a < 20) return many;
-  if (b === 1) return one;
-  if (b >= 2 && b <= 4) return few;
-  return many;
-}
 
 /** «Ещё 14 дней», «Сегодня последний день», «Срок прошёл 2 дня назад» */
 export function deadlineText(iso: string, today?: string): string {
   const n = daysUntil(iso, today);
-  if (n > 1) return `Ещё ${n} ${plural(n, 'день', 'дня', 'дней')}`;
-  if (n === 1) return 'Завтра последний день';
-  if (n === 0) return 'Сегодня последний день';
+  if (n > 1) return tn('Ещё {n} день|Ещё {n} дня|Ещё {n} дней', n);
+  if (n === 1) return t('Завтра последний день');
+  if (n === 0) return t('Сегодня последний день');
   const p = -n;
-  return `Срок прошёл ${p} ${plural(p, 'день', 'дня', 'дней')} назад`;
+  return tn('Срок прошёл {n} день назад|Срок прошёл {n} дня назад|Срок прошёл {n} дней назад', p);
 }
 
 /** Время события для истории: 14.11.2026, 11:00 по Берлину */
 export function formatDateTime(isoDateTime: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+  return new Intl.DateTimeFormat(locale(), {
     timeZone: 'Europe/Berlin',
     day: '2-digit',
     month: '2-digit',

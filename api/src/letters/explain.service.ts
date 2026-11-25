@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/api-error.js';
+import { cabinetLanguage, languageVariables, type Language } from '../common/language.js';
 import { LlmService } from '../llm/llm.service.js';
 import { ExplainV2Schema } from '../llm/schemas/explain.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -14,10 +15,10 @@ import {
 } from './explain.logic.js';
 
 /** Версия промпта объяснения: входит в ключ кэша. */
-export const EXPLAIN_PROMPT_VERSION = 2;
+export const EXPLAIN_PROMPT_VERSION = 3; // L07: explain.v3 — ответ на языке кабинета
 
 interface CachedExplanation {
-  lang: 'ru';
+  lang: Language;
   promptVersion: number;
   factsVersion: string;
   explanation: ExplanationView;
@@ -40,7 +41,7 @@ export class ExplainService {
   async explain(
     cabinetId: string,
     letterId: string,
-    lang: 'ru',
+    requested?: Language,
   ): Promise<ExplainResponse> {
     const letter = await this.db.letter.findFirst({
       where: { id: letterId, cabinetId },
@@ -49,6 +50,7 @@ export class ExplainService {
     if (!letter) throw new ApiError('NOT_FOUND');
     // K11: объяснение отправляет текст письма модели — нужно действующее согласие (кэш тоже не отдаём)
     await assertAiConsent(this.db, cabinetId);
+    const lang = requested ?? (await cabinetLanguage(this.db, cabinetId));
 
     const facts = await this.facts(letterId);
     if (facts.length === 0) throw new ApiError('NO_CLAIMS');
@@ -68,7 +70,11 @@ export class ExplainService {
       result = await this.llm.call({
         prompt: 'explain',
         version: EXPLAIN_PROMPT_VERSION,
-        variables: { facts: factsForPrompt(facts), letterText: letter.rawText },
+        variables: {
+          facts: factsForPrompt(facts),
+          letterText: letter.rawText,
+          ...languageVariables(lang),
+        },
         schema: ExplainV2Schema,
         check: (r) => {
           const problem = checkExplanation(r, facts);
@@ -88,7 +94,7 @@ export class ExplainService {
         throw new ApiError('DATES_NOT_VERIFIED');
       throw e;
     }
-    const explanation = finalizeExplanation(result, facts);
+    const explanation = finalizeExplanation(result, facts, lang);
 
     await this.db.$transaction(async (tx) => {
       const now = await this.facts(letterId, tx);

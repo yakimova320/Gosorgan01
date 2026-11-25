@@ -14,6 +14,7 @@ import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailTransport, mailErrorCode, type MailMessage } from './mail-transport.js';
+import { toLanguage } from '../common/language.js';
 import { resetMail } from './reset-mail.template.js';
 
 /** Аренда задания: пока она действует, второй обработчик его не берёт. */
@@ -193,7 +194,7 @@ export class ResetMailOutbox
             return { kind: 'skip' };
           const cabinet = await tx.cabinet.findUniqueOrThrow({
             where: { id: job.cabinetId },
-            select: { email: true },
+            select: { email: true, language: true },
           });
           if (fresh.tokenId)
             await tx.passwordResetToken.deleteMany({ where: { id: fresh.tokenId } });
@@ -212,6 +213,7 @@ export class ResetMailOutbox
             appUrl: this.config.APP_PUBLIC_URL,
             token: raw,
             ttlMin: this.config.RESET_TOKEN_TTL_MIN,
+            lang: toLanguage(cabinet.language),
           });
           if (this.transport.mode === 'file') {
             written.push(

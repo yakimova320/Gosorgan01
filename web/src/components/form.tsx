@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Icon } from './Icon';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
+import { t, tMsg } from '../i18n';
 
 /*
  * Поля форм (TechBriefing v5, раздел 5.3). Значения, ref, onChange и onBlur приходят из react-hook-form (register).
@@ -40,7 +41,7 @@ function FieldMessages({
     <>
       {error?.message && (
         <span id={`${id}-error`} className="field-error">
-          {error.message}
+          {tMsg(error.message)}
         </span>
       )}
       {hint && !error && (
@@ -153,10 +154,10 @@ export function SelectField({
         aria-describedby={describedBy(id, error, hint)}
         {...registration}
       >
-        <option value="">Выберите…</option>
+        <option value="">{t('Выберите…')}</option>
         {options.map((o) => (
           <option key={o.id} value={o.id}>
-            {o.ru}
+            {tMsg(o.ru)}
           </option>
         ))}
       </select>
@@ -195,7 +196,7 @@ export function PasswordField({
         <button
           type="button"
           className="password-toggle"
-          aria-label={shown ? 'Скрыть пароль' : 'Показать пароль'}
+          aria-label={shown ? t('Скрыть пароль') : t('Показать пароль')}
           aria-pressed={shown}
           aria-controls={id}
           onClick={() => setShown((v) => !v)}
@@ -236,7 +237,7 @@ export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <div className="alert alert--error" role="alert">
-      {message}
+      {tMsg(message)}
     </div>
   );
 }

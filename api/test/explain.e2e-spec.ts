@@ -227,7 +227,7 @@ describe('Объяснение письма (e2e, B08)', () => {
     expect(log).toMatchObject({ ok: false, attempts: 3 });
   });
 
-  it('квота: LLM_QUOTA; нет действующих фактов: NO_CLAIMS; lang=de: 400; чужое: 404', async () => {
+  it('квота: LLM_QUOTA; нет действующих фактов: NO_CLAIMS; lang=fr: 400; чужое: 404', async () => {
     const up = await upload('01_jobcenter_request.pdf');
     scriptExplain(async () => new AdapterError('QUOTA', '429', 60_000));
     expect(
@@ -241,7 +241,7 @@ describe('Объяснение письма (e2e, B08)', () => {
     vi.restoreAllMocks();
 
     await http()
-      .post(`/letters/${up.letter.id}/explain?lang=de`)
+      .post(`/letters/${up.letter.id}/explain?lang=fr`)
       .set(auth())
       .expect(400);
     await http()

@@ -75,7 +75,7 @@ describe('письмо-напоминание (K12)', () => {
     expect(m.text).toContain('Срок: ответить — Jobcenter');
     expect(m.text).toContain('Дело: Jobcenter, документы');
     expect(m.text).toContain('http://localhost:5173/app/cases/c1');
-    expect(m.text).toContain('http://localhost:5173/app/profile');
+    expect(m.text).toContain('http://localhost:5173/app#calendar');
   });
 
   it('час по Берлину', () => {

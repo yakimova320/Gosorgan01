@@ -120,6 +120,8 @@ export const api = createApi({
         password: string;
         consent: boolean;
         aiConsent?: boolean;
+        /** L07: язык сайта при регистрации становится языком кабинета */
+        language?: 'ru' | 'uk' | 'de';
         firstName: string;
         lastName: string;
         address: string;
@@ -255,6 +257,18 @@ export const api = createApi({
           path: '/cabinet',
           body: { profile },
         }) as Promise<Result<Cabinet>>;
+      },
+      invalidatesTags: ['Cabinet'],
+    }),
+
+    /** L07: язык кабинета (письма, ответы ИИ). */
+    setLanguage: b.mutation<Cabinet, 'ru' | 'uk' | 'de'>({
+      queryFn: async (language, _api, _x, base) => {
+        if (isMock) {
+          await wait();
+          return ok({ ...MOCK_CABINET, language });
+        }
+        return base({ method: 'PATCH', path: '/cabinet', body: { language } }) as Promise<Result<Cabinet>>;
       },
       invalidatesTags: ['Cabinet'],
     }),
@@ -506,7 +520,7 @@ export const api = createApi({
     /** KORR 25.11: вопрос с главной без входа. Прошлые реплики присылает сайт, сервер ничего не хранит. */
     askPublicChat: b.mutation<
       PublicChatReply,
-      { text: string; history: { role: 'USER' | 'ASSISTANT'; text: string }[] }
+      { text: string; history: { role: 'USER' | 'ASSISTANT'; text: string }[]; language?: string }
     >({
       queryFn: async (body, _api, _x, base) => {
         if (isMock) {
@@ -945,6 +959,7 @@ export const {
   useTranslateLetterMutation,
   useUpdateProfileMutation,
   useSetAiConsentMutation,
+  useSetLanguageMutation,
   useCalendarSettingsQuery,
   useResetCalendarLinkMutation,
   useRemoveCalendarLinkMutation,

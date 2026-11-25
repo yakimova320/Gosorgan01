@@ -1,3 +1,4 @@
+import type { Language } from '../common/language.js';
 import { z } from 'zod';
 
 /** Письмо в ответе API. Без путей и ключей хранения файлов. */
@@ -121,7 +122,7 @@ export type RenameLetterInput = z.infer<typeof RenameLetterSchema>;
 
 /** Поправка 7 (23.11): машинный перевод письма. */
 export interface TranslationView {
-  lang: 'ru';
+  lang: Language;
   text: string;
   /** Всегда true: перевод машинный и не официальный */
   machine: true;
