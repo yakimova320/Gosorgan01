@@ -16,9 +16,9 @@ import {
   useTranslateLetterMutation,
   useUpdateCaseMutation,
   useSetDeadlineDoneMutation,
-  useDeadlineIcsMutation,
 } from '../../store/api';
 import { LetterOriginals } from '../../components/LetterOriginals';
+import { deadlineEvent, GoogleEventButton } from '../../components/calendar';
 import { getLang, t, tMsg } from '../../i18n';
 
 /*
@@ -74,34 +74,27 @@ function DeadlineRow({ d }: { d: { date: string; kind: string; active: boolean; 
 }
 
 /**
- * B12: действия с подтверждённым сроком — отметить выполненным (или открыть снова) и скачать .ics.
- * Файл календаря загружается с токеном; временный адрес освобождается сразу после скачивания.
+ * B12: действия с подтверждённым сроком — отметить выполненным (или открыть снова) и добавить в Google Календарь.
+ * Поправка 26.11: вместо файла .ics — ссылка на готовое событие в Google Календаре.
  */
-function DeadlineActions({ caseId, d }: { caseId: string; d: { id: string; date: string; done: boolean } }) {
+function DeadlineActions({
+  caseId,
+  d,
+  caseTitle,
+  authority,
+}: {
+  caseId: string;
+  d: { id: string; date: string; kind: string; done: boolean };
+  caseTitle: string;
+  authority: string | null;
+}) {
   const [setDone, saving] = useSetDeadlineDoneMutation();
-  const [loadIcs, loading] = useDeadlineIcsMutation();
   const [error, setError] = useState<unknown>(null);
 
   async function toggle() {
     setError(null);
     try {
       await setDone({ id: d.id, caseId, done: !d.done }).unwrap();
-    } catch (err) {
-      setError(err);
-    }
-  }
-
-  async function calendar() {
-    setError(null);
-    try {
-      const url = await loadIcs(d.id).unwrap();
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `jasno-srok-${d.date}.ics`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch (err) {
       setError(err);
     }
@@ -114,9 +107,7 @@ function DeadlineActions({ caseId, d }: { caseId: string; d: { id: string; date:
           <Icon name="check" size={16} /> {d.done ? t('Открыть срок снова') : t('Выполнено')}
         </button>
         {!d.done && (
-          <button type="button" className="btn btn--ghost btn--small" disabled={loading.isLoading} onClick={() => void calendar()}>
-            <Icon name="calendar" size={16} />{' '}{t('В календарь')}
-          </button>
+          <GoogleEventButton event={deadlineEvent({ date: d.date, kind: d.kind, authority, caseTitle, caseId })} />
         )}
       </div>
       <ErrorAlert error={error} />
@@ -255,7 +246,7 @@ export function CasePage({ id }: { id: string }) {
               {cs.deadlines.map((d) => (
                 <div key={d.id} className="stack-s deadline-item">
                   <DeadlineRow d={d} />
-                  {d.active && <DeadlineActions caseId={id} d={d} />}
+                  {d.active && <DeadlineActions caseId={id} d={d} caseTitle={cs.title} authority={cs.authority} />}
                 </div>
               ))}
             </div>

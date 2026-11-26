@@ -1,41 +1,89 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router';
-import { API_URL } from '../api/config';
-import { errorText } from '../api/errors';
+import { errorCode, errorText } from '../api/errors';
 import {
   useCalendarSettingsQuery,
+  useCasesQuery,
   useRemoveCalendarLinkMutation,
-  useResetCalendarLinkMutation,
   useSetReminderEmailMutation,
 } from '../store/api';
+import { daysUntil, deadlineText, formatDate, todayBerlin } from '../lib/dates';
+import { Icon } from './Icon';
 import { t } from '../i18n';
 
-/** Полный адрес ленты: адрес API (абсолютный или относительный) + /calendar/<токен>.ics */
-export function feedUrl(feedPath: string, apiUrl: string = API_URL, origin: string = window.location.origin): string {
-  return new URL(`${apiUrl.replace(/\/+$/, '')}${feedPath}`, origin).toString();
+/** Следующий день ГГГГ-ММ-ДД: у события на весь день в Google конец не включается. */
+function nextDay(iso: string): string {
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
 }
 
-/** webcal:// — так подписку открывают календари iPhone и Mac. */
-export function webcalUrl(url: string): string {
-  return url.replace(/^https?:\/\//, 'webcal://');
-}
-
-/** Google Календарь: «Добавить календарь по URL» через параметр cid. */
-export function googleCalendarUrl(url: string): string {
-  return `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl(url))}`;
+export interface GoogleEvent {
+  /** ГГГГ-ММ-ДД */
+  date: string;
+  title: string;
+  details: string;
 }
 
 /**
- * K12: блок «Календарь и напоминания». KORR 25.11: стоит в кабинете (/app#calendar), не в профиле.
- * Ссылка-подписка со всеми действующими сроками и выключатель письма за 3 дня до срока.
+ * Google Календарь: открыть новое событие на весь день, уже заполненное.
+ * Человеку остаётся нажать «Сохранить». Нашему серверу не нужно быть доступным из интернета.
+ */
+export function googleEventUrl(e: GoogleEvent): string {
+  const compact = (iso: string) => iso.replace(/-/g, '');
+  return (
+    'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    `&text=${encodeURIComponent(e.title)}` +
+    `&dates=${compact(e.date)}/${compact(nextDay(e.date))}` +
+    `&details=${encodeURIComponent(e.details)}`
+  );
+}
+
+/**
+ * Текст события срока: как в ленте и письме-напоминании (вид срока, ведомство, дело, ссылка).
+ * Текста письма и личных номеров здесь нет.
+ */
+export function deadlineEvent(
+  d: { date: string; kind?: string | null; authority?: string | null; caseTitle: string; caseId: string },
+  origin: string = window.location.origin,
+): GoogleEvent {
+  const what = d.kind ? (DEADLINE_WHAT[d.kind] ?? t('срок')) : null;
+  const title = [t('Срок'), what ? `: ${what}` : '', d.authority ? ` — ${d.authority}` : ''].join('');
+  const details = [
+    t('Дело: {v0}', { v0: d.caseTitle }),
+    t('Срок из письма, подтверждённый в Ja!sno. Проверьте дату по оригиналу письма.'),
+    `${origin.replace(/\/+$/, '')}/app/cases/${d.caseId}`,
+  ].join('\n');
+  return { date: d.date, title, details };
+}
+
+const DEADLINE_WHAT: Record<string, string> = {
+  REPLY: t('ответить'),
+  DOCUMENTS: t('прислать документы'),
+  OBJECTION: t('возражение'),
+  FOLLOW_UP: t('напоминание'),
+};
+
+/** Кнопка «В Google Календарь»: новая вкладка с готовым событием. */
+export function GoogleEventButton({ event, label }: { event: GoogleEvent; label?: string }) {
+  return (
+    <a className="btn btn--ghost btn--small" href={googleEventUrl(event)} target="_blank" rel="noreferrer">
+      <Icon name="calendar" size={16} />{' '}{label ?? t('В Google Календарь')}
+    </a>
+  );
+}
+
+/**
+ * K12, поправка 26.11: блок «Календарь и напоминания» в кабинете (/app#calendar).
+ * Ближайшие сроки дел с кнопкой «В Google Календарь» и выключатель письма за 3 дня до срока.
+ * Подписка-лента .ics с сайта убрана: Google не может скачать её с локального адреса
+ * и обновляет её часами. Старую ссылку, если она была, можно отключить.
  */
 export function CalendarSection() {
   const settings = useCalendarSettingsQuery();
-  const [resetLink, resetState] = useResetCalendarLinkMutation();
+  const cases = useCasesQuery();
   const [removeLink, removeState] = useRemoveCalendarLinkMutation();
   const [setReminder, reminderState] = useSetReminderEmailMutation();
-  const [copied, setCopied] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const { hash } = useLocation();
   const data = settings.data;
@@ -44,26 +92,19 @@ export function CalendarSection() {
   useEffect(() => {
     if (hash === '#calendar' && data) document.getElementById('calendar')?.scrollIntoView?.({ block: 'start' });
   }, [hash, data]);
-  const url = data?.feedPath ? feedUrl(data.feedPath) : null;
-  const busy = resetState.isLoading || removeState.isLoading;
-  const error = settings.error ?? resetState.error ?? removeState.error ?? reminderState.error;
 
-  const copy = async () => {
-    if (!url) return;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setCopied(false);
-    }
-  };
+  const today = todayBerlin();
+  const upcoming = (cases.data ?? [])
+    .filter((c) => c.stage !== 'CLOSED' && c.nextDeadline && daysUntil(c.nextDeadline, today) >= 0)
+    .sort((a, b) => (a.nextDeadline! < b.nextDeadline! ? -1 : 1));
+  const casesError = errorCode(cases.error) === 'NOT_CONNECTED' ? null : cases.error;
+  const error = settings.error ?? casesError ?? removeState.error ?? reminderState.error;
 
   return (
     <div id="calendar" className="card stack-s" role="group" aria-labelledby="calendar-title" data-testid="calendar-profile">
       <h3 id="calendar-title">{t('Календарь и напоминания')}</h3>
       <p className="small text-2">
-        {t('Сроки из ваших писем появятся в календаре телефона: Google, iPhone или Outlook. В календаре только дата, вид срока, ведомство и название дела, без текста письма.')}
+        {t('Нажмите «В Google Календарь» у срока: откроется Google Календарь с готовым событием, останется нажать «Сохранить». В событии только дата, вид срока, ведомство и название дела, без текста письма.')}
       </p>
 
       {error && (
@@ -72,87 +113,49 @@ export function CalendarSection() {
         </div>
       )}
 
-      {data && !url && (
-        <button
-          type="button"
-          className="btn btn--primary btn--small"
-          disabled={busy}
-          onClick={() => void resetLink()}
-        >
-          {resetState.isLoading ? t('Создаём…') : t('Создать ссылку для календаря')}
-        </button>
+      {cases.data && upcoming.length === 0 && <p className="small muted">{t('Ближайших сроков пока нет.')}</p>}
+
+      {upcoming.length > 0 && (
+        <ul className="list-reset stack-s" aria-label={t('Ближайшие сроки')}>
+          {upcoming.map((c) => (
+            <li key={c.id} className="row-between wrap deadline-item" data-testid="calendar-deadline">
+              <span className="stack-s" style={{ gap: 2 }}>
+                <span style={{ fontWeight: 700 }}>
+                  {t('до')}{' '}{formatDate(c.nextDeadline!)}
+                </span>
+                <span className="small text-2">
+                  {c.title} · {deadlineText(c.nextDeadline!, today)}
+                </span>
+              </span>
+              <GoogleEventButton
+                event={deadlineEvent({
+                  date: c.nextDeadline!,
+                  authority: c.authority,
+                  caseTitle: c.title,
+                  caseId: c.id,
+                })}
+              />
+            </li>
+          ))}
+        </ul>
       )}
 
-      {url && (
-        <>
-          <div className="field">
-            <label htmlFor="calendar-url">{t('Ваша ссылка на календарь')}</label>
-            <input
-              id="calendar-url"
-              className="input"
-              value={url}
-              readOnly
-              onFocus={(e) => e.currentTarget.select()}
-              aria-describedby="calendar-url-hint"
-            />
-            <span id="calendar-url-hint" className="muted small">
-              {t('Ссылка личная: кто её знает, видит ваши сроки. Не пересылайте её.')}
-            </span>
-          </div>
-          <div className="row wrap">
-            <a className="btn btn--primary btn--small" href={googleCalendarUrl(url)} target="_blank" rel="noreferrer">
-              {t('Добавить в Google Календарь')}
-            </a>
-            <a className="btn btn--secondary btn--small" href={webcalUrl(url)}>
-              {t('Календарь iPhone или Mac')}
-            </a>
-            <button type="button" className="btn btn--ghost btn--small" onClick={() => void copy()}>
-              {copied ? t('Скопировано') : t('Скопировать ссылку')}
+      {data?.feedPath && (
+        <div className="alert alert--info stack-s" role="status">
+          <span className="small">
+            {t('Раньше вы создали ссылку-подписку на календарь. Она больше не нужна, её лучше отключить.')}
+          </span>
+          <div>
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              disabled={removeState.isLoading}
+              onClick={() => void removeLink()}
+            >
+              {t('Отключить старую ссылку')}
             </button>
           </div>
-          <p className="small text-2">
-            {t('Google Календарь обновляет подписку сам, обычно раз в несколько часов. Новый срок появится не сразу.')}
-          </p>
-          {!confirmReset ? (
-            <div className="row wrap">
-              <button
-                type="button"
-                className="btn btn--ghost btn--small"
-                disabled={busy}
-                onClick={() => setConfirmReset(true)}
-              >
-                {t('Новая ссылка')}
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost btn--small"
-                disabled={busy}
-                onClick={() => void removeLink()}
-              >
-                {t('Отключить календарь')}
-              </button>
-            </div>
-          ) : (
-            <div className="stack-s">
-              <div className="alert alert--info" role="status">
-                {t('Старая ссылка перестанет работать. Календарь нужно будет добавить заново.')}
-              </div>
-              <div className="row wrap">
-                <button
-                  type="button"
-                  className="btn btn--navy btn--small"
-                  disabled={busy}
-                  onClick={() => void resetLink().then(() => setConfirmReset(false))}
-                >
-                  {t('Создать новую ссылку')}
-                </button>
-                <button type="button" className="btn btn--ghost btn--small" onClick={() => setConfirmReset(false)}>
-                  {t('Отмена')}
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       )}
 
       {data && (

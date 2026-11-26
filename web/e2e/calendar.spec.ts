@@ -2,8 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { API_URL, createUser, letters } from './helpers';
 
 /*
- * K12: кабинет (KORR 25.11, раньше профиль), блок «Календарь и напоминания». Настоящий API (demo).
- * Ссылка создаётся, лента открывается, новая ссылка заменяет старую, письма можно выключить.
+ * K12, поправка 26.11: блок «Календарь и напоминания» в кабинете. Настоящий API (demo).
+ * Подписки .ics на сайте нет. Старую ссылку (создана раньше) можно отключить, письма за 3 дня — выключить.
+ * Сроки с кнопкой «В Google Календарь» проверяет send.spec.ts.
  */
 
 async function signedIn(page: Page, token: string) {
@@ -11,37 +12,24 @@ async function signedIn(page: Page, token: string) {
   await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
 }
 
-test('календарь: создать ссылку, лента .ics, новая ссылка, выключить письма', async ({ page, request }) => {
+test('календарь: без сроков, отключить старую ссылку, выключить письма', async ({ page, request }) => {
   const u = await createUser(request, 'calendar', `Anna${letters()}`);
+  const h = { Authorization: `Bearer ${u.token}` };
+  // ссылка-подписка, созданная до поправки 26.11
+  const created = await (await request.post(`${API_URL}/cabinet/calendar/token`, { headers: h })).json();
+  expect(created.feedPath).toMatch(/^\/calendar\/[A-Za-z0-9_-]{43}\.ics$/);
+
   await signedIn(page, u.token);
   await page.goto('/app');
-
   const block = page.getByTestId('calendar-profile');
   await expect(block.getByRole('heading', { name: 'Календарь и напоминания' })).toBeVisible();
-  await block.getByRole('button', { name: 'Создать ссылку для календаря' }).click();
+  await expect(block.getByText('Ближайших сроков пока нет.')).toBeVisible();
+  await expect(block.getByRole('link', { name: 'Календарь iPhone или Mac' })).toHaveCount(0);
+  await expect(block.getByLabel('Ваша ссылка на календарь')).toHaveCount(0);
 
-  const field = block.getByLabel('Ваша ссылка на календарь');
-  await expect(field).toHaveValue(new RegExp(`^${API_URL}/calendar/[A-Za-z0-9_-]{43}\\.ics$`));
-  const first = await field.inputValue();
-  await expect(block.getByRole('link', { name: 'Добавить в Google Календарь' })).toHaveAttribute(
-    'href',
-    `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(first.replace(/^http:\/\//, 'webcal://'))}`,
-  );
-  await expect(block.getByRole('link', { name: 'Календарь iPhone или Mac' })).toHaveAttribute(
-    'href',
-    first.replace(/^http:\/\//, 'webcal://'),
-  );
-
-  const feed = await request.get(first);
-  expect(feed.status()).toBe(200);
-  expect(feed.headers()['content-type']).toBe('text/calendar; charset=utf-8');
-  expect(await feed.text()).toContain('BEGIN:VCALENDAR');
-
-  await block.getByRole('button', { name: 'Новая ссылка' }).click();
-  await expect(block.getByRole('status')).toContainText('Старая ссылка перестанет работать');
-  await block.getByRole('button', { name: 'Создать новую ссылку' }).click();
-  await expect(field).not.toHaveValue(first);
-  expect((await request.get(first)).status()).toBe(404);
+  await block.getByRole('button', { name: 'Отключить старую ссылку' }).click();
+  await expect(block.getByRole('button', { name: 'Отключить старую ссылку' })).toHaveCount(0);
+  expect((await request.get(`${API_URL}${created.feedPath}`)).status()).toBe(404);
 
   const reminder = block.getByLabel('Напоминать письмом за 3 дня до срока');
   await expect(reminder).toBeChecked();
@@ -49,9 +37,4 @@ test('календарь: создать ссылку, лента .ics, нова
   await expect(reminder).not.toBeChecked();
   await page.reload();
   await expect(page.getByTestId('calendar-profile').getByLabel('Напоминать письмом за 3 дня до срока')).not.toBeChecked();
-
-  await page.getByTestId('calendar-profile').getByRole('button', { name: 'Отключить календарь' }).click();
-  await expect(
-    page.getByTestId('calendar-profile').getByRole('button', { name: 'Создать ссылку для календаря' }),
-  ).toBeVisible();
 });
