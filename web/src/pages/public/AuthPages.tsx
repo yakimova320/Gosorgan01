@@ -161,6 +161,10 @@ export function RegisterPage() {
           <Link to="/datenschutz" className="link" target="_blank">
             Datenschutz
           </Link>
+          {t(' и с условиями')}{' '}
+          <Link to="/agb" className="link" target="_blank">
+            AGB
+          </Link>
           {t('. В тестовой версии загружайте только примеры писем.')}
         </CheckboxField>
         {/* K11 (#134): отдельное согласие на анализ ИИ, не отмечено заранее; можно дать позже */}

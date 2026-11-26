@@ -3,13 +3,14 @@ import { test } from './fixtures';
 import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
- * KORR 25.11: чат и «Горячие темы» на главной, вопросы из чата в истории,
+ * KORR 25.11: чат и «А вы знали, что…?» (UX 26.11) на главной, вопросы из чата в истории,
  * календарь в кабинете (не в профиле). Настоящий API (demo).
  */
 
 
-test('главная: чат без входа отвечает, ничего не просит; ссылка на регистрацию', async ({ page }) => {
+test('чат без входа (плавающая кнопка) отвечает, ничего не просит; ссылка на регистрацию', async ({ page }) => {
   await page.goto('/');
+  await page.getByTestId('chat-launcher').click();
   const chat = page.getByTestId('public-chat');
   await expect(chat.getByRole('heading', { name: 'Спросите Ja!sno' })).toBeVisible();
   await chat.getByLabel('Ваш вопрос Ja!sno').fill('Что такое Anmeldung?');
@@ -24,14 +25,14 @@ test('главная: чат без входа отвечает, ничего н
   await expect(chat.getByTestId('public-chat-answer')).toHaveCount(2);
 });
 
-test('главная: «Горячие темы» рядом с консультацией, ссылка ведёт в блог на карточку', async ({ page }) => {
+test('главная: «А вы знали, что…?» в блоге, ссылка ведёт в блог на карточку', async ({ page }) => {
   await page.goto('/');
   const hot = page.getByTestId('hot-topics');
-  await expect(hot.getByRole('heading', { name: 'Горячие темы: что важно сейчас' })).toBeVisible();
+  await expect(hot.getByRole('heading', { name: 'А вы знали, что…?' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Найти консультацию' })).toBeVisible();
   await hot.getByRole('link', { name: /§ 24 продлён до 4 марта 2027/ }).click();
   await expect(page).toHaveURL(/\/blog\?topic=hot#hot-24-extension$/);
-  await expect(page.getByRole('tab', { name: 'Горячие темы' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Актуальные темы' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#hot-24-extension')).toBeInViewport();
   await expect(page.locator('#hot-24-extension')).toContainText('проверено');
 });

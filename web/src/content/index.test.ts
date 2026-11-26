@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { CONSULTATION_QUESTION, FAQ, FAQ_CONSULTATIONS, consultationsFromFaq, parseFaq } from './index';
+import { CONSULTATION_QUESTION, FAQ, FAQ_CONSULTATIONS, HOME_FAQ_QUESTIONS, consultationsFromFaq, homeFaq, parseFaq } from './index';
+
+describe('главные вопросы FAQ на главной (UX 26.11)', () => {
+  it('в каждом языке все 4 вопроса есть в FAQ, у каждого есть ответ', () => {
+    for (const [lang, md] of [['ru', faqRu], ['uk', faqUk], ['de', faqDe]] as const) {
+      const items = homeFaq(parseFaq(md), HOME_FAQ_QUESTIONS[lang]);
+      expect([lang, items.map((i) => i.question)]).toEqual([lang, HOME_FAQ_QUESTIONS[lang]]);
+      for (const i of items) expect(i.blocks.length).toBeGreaterThan(0);
+    }
+  });
+});
 
 describe('консультации из FAQ (F05)', () => {
   it('вопрос о консультациях есть в FAQ, каждый пункт попадает на экран без изменений текста', () => {

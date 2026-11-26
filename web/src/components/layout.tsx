@@ -7,6 +7,8 @@ import { greeting } from '../lib/greeting';
 import { Icon } from './Icon';
 import { Logo } from './ui';
 import { LanguageSwitcher, useCabinetLanguageSync } from './LanguageSwitcher';
+import { ChatLauncher } from './ChatLauncher';
+import { setChatOpen, useDisclosure } from '../lib/disclosure';
 import { t } from '../i18n';
 
 /** Видно только в разработке: какой режим данных сейчас (mock или api). */
@@ -28,43 +30,114 @@ export function MockBanner() {
   );
 }
 
+/** UX 26.11: ссылка на блок «Как это работает» на главной (/#how). */
+const HOW = { pathname: '/', hash: '#how' } as const;
+
+function BurgerIcon({ open }: { open: boolean }) {
+  return open ? <Icon name="x" size={22} /> : <Icon name="menu" size={22} />;
+}
+
+/**
+ * UX 26.11 (#168): бургер-меню на публичных страницах, на всех ширинах.
+ * «Задать вопрос» открывает плавающий чат.
+ */
+function PublicMenu() {
+  const { token } = useSession();
+  const d = useDisclosure();
+  return (
+    <div className="menu">
+      <button
+        ref={d.buttonRef}
+        type="button"
+        className="icon-btn menu__button"
+        {...d.buttonProps}
+        aria-label={t('Меню')}
+        onClick={d.toggle}
+        data-testid="public-menu-button"
+      >
+        <BurgerIcon open={d.open} />
+      </button>
+      {d.open && (
+        <nav id={d.panelId} ref={d.panelRef} className="menu__panel" aria-label={t('Меню')} data-testid="public-menu">
+          <Link to="/" onClick={() => d.close(false)}>
+            <Icon name="home" size={20} /> {t('Главная страница')}
+          </Link>
+          <Link to={token ? '/app' : '/login'} onClick={() => d.close(false)}>
+            <Icon name="user" size={20} /> {t('Кабинет')}
+          </Link>
+          <Link to={HOW} onClick={() => d.close(false)}>
+            <Icon name="help" size={20} /> {t('Как это работает?')}
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              d.close(false);
+              setChatOpen(true);
+            }}
+          >
+            <Icon name="chat" size={20} /> {t('Задать вопрос')}
+          </button>
+          <Link to="/blog" onClick={() => d.close(false)}>
+            <Icon name="book" size={20} /> {t('Блог')}
+          </Link>
+          <Link to="/faq" onClick={() => d.close(false)}>
+            <Icon name="info" size={20} /> FAQ
+          </Link>
+        </nav>
+      )}
+    </div>
+  );
+}
+
 export function PublicLayout({ children }: { children: ReactNode }) {
   const { token } = useSession();
   return (
     <>
       <header className="topbar">
-        <Link to="/" aria-label={t('Ja!sno, на главную')}>
-          <Logo />
-        </Link>
+        <div className="row" style={{ gap: 6 }}>
+          <PublicMenu />
+          <Link to="/" aria-label={t('Ja!sno, на главную')}>
+            <Logo />
+          </Link>
+        </div>
         <div className="row" style={{ gap: 8 }}>
           <LanguageSwitcher />
-          <Link to={token ? '/app' : '/login'} className="btn btn--navy btn--small" style={{ minHeight: 36, borderRadius: 12 }}>
+          <Link to={token ? '/app' : '/login'} className="btn btn--navy btn--small" style={{ minHeight: 44, borderRadius: 12 }}>
             {token ? t('Кабинет') : t('Войти')}
           </Link>
         </div>
       </header>
       <main className="page page--public">{children}</main>
       <SiteFooter />
+      <ChatLauncher />
     </>
   );
 }
 
 /**
- * Поправки 3 и 7 (23.11): один подвал на всех страницах — публичных и в кабинете.
- * Поправка 3: «Частые вопросы» в подвале называются FAQ.
+ * UX 26.11 (#168): тёмный подвал, ссылки группами. Один подвал на всех страницах — публичных и в кабинете.
+ * Поправка 3 (23.11): «Частые вопросы» в подвале называются FAQ.
  */
 export function SiteFooter() {
   return (
     <footer className="footer" data-testid="site-footer">
-      <Link to="/">{t('На главную Ja!sno')}</Link>
-      <Link to="/blog">{t('Блог')}</Link>
-      <Link to="/faq">FAQ</Link>
-      <Link to="/glossary">{t('Термины')}</Link>
-      <Link to="/impressum">Impressum</Link>
-      <Link to="/datenschutz">Datenschutz</Link>
-      <span style={{ flexBasis: '100%', lineHeight: 1.5 }}>
-        {t('Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.')}
-      </span>
+      <div className="footer__inner">
+        <nav className="footer__group" aria-label={t('Правовая информация')}>
+          <Link to="/impressum">Impressum</Link>
+          <Link to="/datenschutz">Datenschutz</Link>
+          <Link to="/agb">AGB</Link>
+        </nav>
+        <nav className="footer__group" aria-label={t('Разделы сайта')}>
+          <Link to="/">{t('Главная страница')}</Link>
+          <Link to="/blog">{t('Блог')}</Link>
+          <Link to="/faq">FAQ</Link>
+          <Link to="/glossary">{t('Глоссарий')}</Link>
+          <Link to={HOW}>{t('Как это работает?')}</Link>
+        </nav>
+        <p className="footer__note">
+          {t('Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.')}
+        </p>
+      </div>
     </footer>
   );
 }
@@ -91,6 +164,8 @@ const MAIN_NAV = [
   { to: '/app/ask', label: t('Спросить Ja!sno'), icon: 'chat', exact: false },
   { to: '/app/write', label: t('Написать письмо'), icon: 'pen', exact: false },
   { to: '/blog', label: t('Блог'), icon: 'book', exact: false },
+  // UX 26.11: Glossar в меню кабинета (боковое на компьютере, бургер на телефоне)
+  { to: '/glossary', label: t('Глоссарий'), icon: 'search', exact: false },
   { to: '/app/profile', label: t('Профиль'), icon: 'user', exact: false },
 ] as const;
 
@@ -117,20 +192,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </nav>
 
       <div className="app-main">
-        {/* Поправка 4: на телефоне логотип и «Главная» над страницей кабинета */}
+        {/* UX 26.11: на телефоне в шапке только логотип, остальное в меню снизу */}
         <header className="app-topbar">
           <Link to="/" aria-label={t('Ja!sno, на главную')}>
             <Logo />
           </Link>
-          <div className="row" style={{ gap: 4 }}>
-            <LanguageSwitcher />
-            <Link to="/app/ask" className="btn btn--ghost btn--small" data-testid="ask-link" aria-label={t('Спросить')}>
-              <Icon name="chat" size={18} /><span className="hide-narrow">{' '}{t('Спросить')}</span>
-            </Link>
-            <Link to="/" className="btn btn--ghost btn--small" data-testid="home-link" aria-label={t('Главная')}>
-              <Icon name="home" size={18} /><span className="hide-narrow">{' '}{t('Главная')}</span>
-            </Link>
-          </div>
         </header>
         <main className="page">{children}</main>
         <div className="app-footer">
@@ -138,23 +204,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
+      <ChatLauncher inCabinet />
+
+      {/* UX 26.11 (#168): Меню · Кабинет · камера · Мои дела · Профиль. История и блог в меню. */}
       <nav className="bottom-nav" aria-label={t('Главное меню')}>
+        <CabinetMenu />
         <NavLink to="/app" end>
           <Icon name="doc" />
           {t('Кабинет')}
-        </NavLink>
-        <NavLink to="/app/history">
-          <Icon name="history" />
-          {t('История')}
         </NavLink>
         <Link to="/app/scan" aria-label={t('Сфотографировать письмо')} style={{ justifyContent: 'center' }}>
           <span className="fab">
             <Icon name="scan" size={24} color="#FFFFFF" width={2.2} />
           </span>
         </Link>
-        <NavLink to="/blog">
-          <Icon name="book" />
-          {t('Блог')}
+        <NavLink to="/app/cases">
+          <Icon name="folder" />
+          {t('Мои дела')}
         </NavLink>
         <NavLink to="/app/profile">
           <Icon name="user" />
@@ -162,5 +228,40 @@ export function AppShell({ children }: { children: ReactNode }) {
         </NavLink>
       </nav>
     </div>
+  );
+}
+
+/** UX 26.11 (#168): бургер в нижней панели кабинета, меню раскрывается снизу вверх. Пункты из MAIN_NAV. */
+function CabinetMenu() {
+  const d = useDisclosure();
+  return (
+    <>
+      <button
+        ref={d.buttonRef}
+        type="button"
+        className="bottom-nav__menu"
+        {...d.buttonProps}
+        onClick={d.toggle}
+        data-testid="cabinet-menu-button"
+      >
+        <BurgerIcon open={d.open} />
+        {t('Меню')}
+      </button>
+      {d.open && (
+        <div id={d.panelId} ref={d.panelRef} className="menu__panel menu__panel--sheet" data-testid="cabinet-menu">
+          <nav aria-label={t('Меню')} className="stack-s" style={{ gap: 2 }}>
+            {MAIN_NAV.filter((n) => n.to !== '/app').map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.exact} onClick={() => d.close(false)}>
+                <Icon name={n.icon} size={20} /> {n.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="menu__lang">
+            <span className="muted">{t('Язык')}</span>
+            <LanguageSwitcher placement="up" />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

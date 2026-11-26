@@ -126,3 +126,9 @@ export async function openArchive(page: Page, token?: string): Promise<string | 
   if (secret && pageToken) await adoptVault(page.request, pageToken, secret);
   return secret;
 }
+
+/** UX 26.11 (#168): выбрать язык в своём выпадающем списке (не select). */
+export async function chooseLang(page: Page, code: 'ru' | 'uk' | 'de') {
+  await page.getByTestId('lang-switcher').first().click();
+  await page.getByTestId('lang-list').locator(`[data-lang="${code}"]`).click();
+}

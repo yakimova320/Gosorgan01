@@ -61,7 +61,7 @@ test('справочник терминов: поиск, черновики в �
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/faq');
-    await page.getByTestId('site-footer').getByRole('link', { name: 'Термины' }).click();
+    await page.getByTestId('site-footer').getByRole('link', { name: 'Глоссарий' }).click();
     await expect(page).toHaveURL(/\/glossary$/);
     await expect(page.getByRole('heading', { name: 'Справочник терминов' })).toBeVisible();
     await expect(page.getByTestId('glossary')).toContainText('Widerspruch');

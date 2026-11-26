@@ -1,9 +1,9 @@
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useSession } from '../../store';
-import { CARDS, TOPICS } from '../../content';
-import { PublicChat } from '../../components/PublicChat';
+import { CARDS, HOME_FAQ, TOPICS, type FaqItem } from '../../content';
 import { t } from '../../i18n';
 
 const STEPS = [
@@ -30,8 +30,10 @@ const STEPS = [
   },
 ] as const;
 
-/** KORR 25.11: карточки «Горячие темы» (content/important/cards.ru.json, тема hot) */
-const HOT = CARDS.filter((c) => c.topic === 'hot' && !c.draft);
+/** UX 26.11: карточки «А вы знали, что…?» (content/important/cards.*.json, внутренний id темы hot) */
+const FACTS = CARDS.filter((c) => c.topic === 'hot' && !c.draft);
+/** Сколько тем видно сразу, остальные по кнопке «Ещё актуальные темы». */
+const FACTS_SHOWN = 4;
 
 const TOPIC_BLOBS = [
   '#FBE3D6',
@@ -47,9 +49,16 @@ export function StartPage() {
   // Решение 16.3: письма разбираются только после регистрации.
   const start = token ? '/app/scan' : '/register';
   // A01: сообщение после удаления аккаунта (state из формы удаления)
+  const location = useLocation();
   const deleted = (
-    useLocation().state as { accountDeleted?: 'done' | 'pending' } | null
+    location.state as { accountDeleted?: 'done' | 'pending' } | null
   )?.accountDeleted;
+
+  // UX 26.11: пункт меню и ссылка в подвале «Как это работает?» ведут на /#how
+  useEffect(() => {
+    const id = location.hash.slice(1);
+    if (id) document.getElementById(id)?.scrollIntoView?.({ block: 'start' });
+  }, [location.hash, location.key]);
 
   return (
     <>
@@ -150,8 +159,8 @@ export function StartPage() {
         ))}
       </div>
 
-      <section className="stack" style={{ paddingTop: 12 }}>
-        <h2>{t('Три шага до спокойствия')}</h2>
+      <section id="how" className="stack" style={{ paddingTop: 12, scrollMarginTop: 16 }} aria-labelledby="how-title">
+        <h2 id="how-title">{t('Как это работает в 3 шага?')}</h2>
         <div className="steps-grid stack">
           {STEPS.map((s) => (
             <div
@@ -172,16 +181,22 @@ export function StartPage() {
         </div>
       </section>
 
-      {/* KORR 25.11: чат-помощник на главной, без входа */}
-      <PublicChat />
-
-      <section className="stack" style={{ paddingTop: 12 }}>
+      {/* UX 26.11: блог, первым «А вы знали, что…?», потом категории */}
+      <section className="stack" style={{ paddingTop: 12 }} aria-labelledby="blog-title">
         <div className="row-between">
-          <h2>{t('Блог')}</h2>
+          <div className="stack-s">
+            <h2 id="blog-title">{t('Блог')}</h2>
+            <p className="text-2" style={{ margin: 0 }}>
+              {t('Важное о жизни в Германии — просто и понятно')}
+            </p>
+          </div>
           <Link to="/blog" className="link">
             {t('Все темы')}
           </Link>
         </div>
+
+        <FactsBlock />
+
         <div className="grid-2 cards-4">
           {TOPICS.filter((t) => t.id !== 'hot').slice(0, 4).map((t, i) => {
             const first = CARDS.find((c) => c.topic === t.id);
@@ -210,30 +225,7 @@ export function StartPage() {
         </div>
       </section>
 
-      {/* KORR 25.11: «Горячие темы» рядом с консультацией, те же карточки в блоге */}
-      <div className="desktop-2col stack" style={{ marginTop: 12 }}>
-        <section className="card card--green stack" style={{ borderRadius: 28 }} aria-labelledby="hot-title" data-testid="hot-topics">
-          <div className="row" style={{ gap: 10 }}>
-            <Icon name="flame" color="var(--c-green)" />
-            <h2 id="hot-title" style={{ fontSize: 20 }}>
-              {t('Горячие темы: что важно сейчас')}
-            </h2>
-          </div>
-          <p className="small" style={{ color: '#2F4A2A' }}>
-            {t('Продление § 24, работа и диплом, Jobcenter, жильё, садик. Коротко, с источниками и датой проверки.')}
-          </p>
-          <ul className="list-reset stack-s hot-list">
-            {HOT.slice(0, 6).map((c) => (
-              <li key={c.id}>
-                <Link to={`/blog?topic=hot#${c.id}`}>{c.title}</Link>
-              </li>
-            ))}
-          </ul>
-          <Link to="/blog?topic=hot" className="btn btn--green btn--small" style={{ alignSelf: 'flex-start' }}>
-            {t('Все горячие темы')}
-          </Link>
-        </section>
-
+      <div style={{ marginTop: 12 }}>
         <section
           className="card card--teal stack"
           style={{ borderRadius: 28 }}
@@ -259,6 +251,110 @@ export function StartPage() {
           </Link>
         </section>
       </div>
+
+      <GoodToKnow />
     </>
+  );
+}
+
+/** UX 26.11 (#168): «А вы знали, что…?»: 4 темы сразу, остальные по кнопке. */
+function FactsBlock() {
+  const [all, setAll] = useState(false);
+  const shown = all ? FACTS : FACTS.slice(0, FACTS_SHOWN);
+  return (
+    <section className="card card--green stack" style={{ borderRadius: 28 }} aria-labelledby="facts-title" data-testid="hot-topics">
+      <div className="row" style={{ gap: 10 }}>
+        <Icon name="info" color="var(--c-green)" />
+        <h3 id="facts-title" style={{ fontSize: 20 }}>
+          {t('А вы знали, что…?')}
+        </h3>
+      </div>
+      <ul id="facts-list" className="list-reset facts-list" data-testid="facts-list">
+        {shown.map((c) => (
+          <li key={c.id}>
+            <Link to={`/blog?topic=hot#${c.id}`}>
+              <span>{c.title}</span>
+              <Icon name="arrowRight" size={18} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {FACTS.length > FACTS_SHOWN && (
+        <button
+          type="button"
+          className="btn btn--green btn--small"
+          style={{ alignSelf: 'flex-start' }}
+          aria-expanded={all}
+          aria-controls="facts-list"
+          onClick={() => setAll((v) => !v)}
+        >
+          {all ? t('Свернуть') : t('Ещё актуальные темы')}
+        </button>
+      )}
+    </section>
+  );
+}
+
+function FaqAnswer({ item }: { item: FaqItem }) {
+  return (
+    <div className="faq-body">
+      {item.blocks.map((b, i) =>
+        b.kind === 'p' ? (
+          <p key={i}>{b.text}</p>
+        ) : b.kind === 'ul' ? (
+          <ul key={i}>
+            {b.items.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        ) : (
+          <ol key={i}>
+            {b.items.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ol>
+        ),
+      )}
+    </div>
+  );
+}
+
+/** UX 26.11 (#168): «Полезно знать»: сначала глоссарий, потом главные вопросы FAQ (тексты из content/faq.*.md). */
+function GoodToKnow() {
+  return (
+    <section className="stack" style={{ paddingTop: 12 }} aria-labelledby="good-title" data-testid="good-to-know">
+      <h2 id="good-title">{t('Полезно знать')}</h2>
+      <div className="desktop-2col stack">
+        <div className="card stack">
+          <div className="row" style={{ gap: 10 }}>
+            <Icon name="book" color="var(--c-teal)" />
+            <h3 style={{ fontSize: 19 }}>{t('Глоссарий')}</h3>
+          </div>
+          <p className="small text-2">
+            {t('Слова из писем ведомств простыми словами: Bescheid, Frist, Widerspruch и другие.')}
+          </p>
+          <Link to="/glossary" className="btn btn--secondary btn--small" style={{ alignSelf: 'flex-start' }}>
+            {t('К глоссарию')}
+          </Link>
+        </div>
+        <div className="card stack">
+          <div className="row" style={{ gap: 10 }}>
+            <Icon name="help" color="var(--c-teal)" />
+            <h3 style={{ fontSize: 19 }}>FAQ</h3>
+          </div>
+          <div className="stack-s" data-testid="home-faq">
+            {HOME_FAQ.map((item) => (
+              <details key={item.question} className="faq">
+                <summary>{item.question}</summary>
+                <FaqAnswer item={item} />
+              </details>
+            ))}
+          </div>
+          <Link to="/faq" className="btn btn--secondary btn--small" style={{ alignSelf: 'flex-start' }}>
+            {t('Все вопросы FAQ')}
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }

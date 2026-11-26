@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures';
-import { API_URL, ADDRESS, PASSWORD, createUser, letters, uniqueEmail, openArchive } from './helpers';
+import { API_URL, ADDRESS, PASSWORD, chooseLang, createUser, letters, uniqueEmail, openArchive } from './helpers';
 
 /*
  * L07 (#83): языки сайта RU / UA / DE. Настоящий API (demo).
@@ -9,18 +9,23 @@ import { API_URL, ADDRESS, PASSWORD, createUser, letters, uniqueEmail, openArchi
 test('гость: переключатель в шапке, язык запоминается, «скоро» выбрать нельзя', async ({ page }) => {
   await page.goto('/');
   const sw = page.getByTestId('lang-switcher');
-  await expect(sw).toHaveValue('ru');
+  await expect(sw).toHaveAttribute('data-value', 'ru');
   await expect(page.getByRole('heading', { name: 'Письмо из ведомства?' })).toBeVisible();
-  await expect(sw.locator('option[value="tr"]')).toBeDisabled();
-  await expect(sw.locator('option[value="ar"]')).toBeDisabled();
+  await sw.click();
+  const list = page.getByTestId('lang-list');
+  await expect(list.locator('[data-lang="tr"]')).toHaveAttribute('aria-disabled', 'true');
+  await expect(list.locator('[data-lang="ar"]')).toHaveAttribute('aria-disabled', 'true');
+  await list.locator('[data-lang="ar"]').click({ force: true }); // «скоро»: ничего не происходит
+  await expect(list).toBeVisible();
+  await page.keyboard.press('Escape');
 
-  await sw.selectOption('uk');
+  await chooseLang(page, 'uk');
   await expect(page.getByRole('heading', { name: 'Лист від відомства?' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'uk');
   await page.reload();
-  await expect(page.getByTestId('lang-switcher')).toHaveValue('uk');
+  await expect(page.getByTestId('lang-switcher')).toHaveAttribute('data-value', 'uk');
 
-  await page.getByTestId('lang-switcher').selectOption('de');
+  await chooseLang(page, 'de');
   await expect(page.getByRole('heading', { name: 'Ein Brief vom Amt?' })).toBeVisible();
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Anmelden' })).toBeVisible();
@@ -33,14 +38,14 @@ test('язык браузера: немецкий браузер открыва�
   const context = await browser.newContext({ locale: 'de-DE' });
   const page = await context.newPage();
   await page.goto('/');
-  await expect(page.getByTestId('lang-switcher')).toHaveValue('de');
+  await expect(page.getByTestId('lang-switcher')).toHaveAttribute('data-value', 'de');
   await expect(page.getByRole('heading', { name: 'Ein Brief vom Amt?' })).toBeVisible();
   await context.close();
 });
 
 test('регистрация на украинском: язык сохраняется в кабинете, смена в профиле', async ({ page, request }) => {
   await page.goto('/');
-  await page.getByTestId('lang-switcher').selectOption('uk');
+  await chooseLang(page, 'uk');
   await page.goto('/register');
   const email = uniqueEmail('lang');
   await page.getByLabel("Ім'я").fill(`Anna${letters()}`);
@@ -73,24 +78,25 @@ test('вход: язык кабинета главнее языка браузе
     data: { language: 'de' },
   });
   await page.goto('/');
-  await expect(page.getByTestId('lang-switcher')).toHaveValue('ru');
+  await expect(page.getByTestId('lang-switcher')).toHaveAttribute('data-value', 'ru');
   await page.evaluate((t) => localStorage.setItem('jasno.session', t), u.token);
   await page.goto('/app');
   await openArchive(page, u.token); // E01: экран ключа архива (на немецком)
-  await expect(page.getByTestId('lang-switcher').first()).toHaveValue('de');
+  await expect(page.getByTestId('lang-switcher').first()).toHaveAttribute('data-value', 'de');
   await expect(page.getByRole('heading', { name: 'Hier ist es noch ruhig' })).toBeVisible();
 });
 
-test('FAQ, блог и горячие темы на языке сайта', async ({ browser }) => {
+test('FAQ, блог и «А вы знали, что…?» на языке сайта', async ({ browser }) => {
   const context = await browser.newContext({ locale: 'uk-UA' });
   const page = await context.newPage();
   await page.goto('/faq');
   await expect(page.getByText('Чи можна увійти через Google або Apple?')).toBeVisible();
   await page.goto('/blog');
   await expect(page.getByText('Поїздка в Україну: спершу попередьте Jobcenter').first()).toBeVisible();
-  await page.getByTestId('lang-switcher').selectOption('de');
+  await chooseLang(page, 'de');
   await expect(page.getByText('Reise in die Ukraine: Sagen Sie zuerst dem Jobcenter Bescheid').first()).toBeVisible();
   await page.goto('/');
+  await page.getByRole('button', { name: 'Weitere aktuelle Themen' }).click();
   await expect(page.getByText('Aus Bürgergeld wird Grundsicherungsgeld: Was ist neu?').first()).toBeVisible();
   await context.close();
 });

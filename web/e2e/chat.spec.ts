@@ -33,12 +33,13 @@ test('чат: вопрос, ответ с пометкой, история по�
   await expect(page.getByRole('button', { name: 'Что такое Anmeldung и как её сделать?' })).toBeVisible();
 });
 
-test('390 px: чат открывается из шапки кабинета, без горизонтальной прокрутки', async ({ page, request }) => {
+test('390 px: чат открывается из меню кабинета, без горизонтальной прокрутки', async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const u = await createUser(request, 'chat-m', `Anna${letters()}`);
   await signedIn(page, u.token);
   await page.goto('/app');
-  await page.getByTestId('ask-link').click();
+  await page.getByTestId('cabinet-menu-button').click();
+  await page.getByTestId('cabinet-menu').getByRole('link', { name: 'Спросить Ja!sno' }).click();
   await expect(page).toHaveURL(/\/app\/ask$/);
   await page.getByRole('button', { name: 'Где получить бесплатную консультацию?' }).click();
   await expect(page.getByTestId('chat-answer')).toHaveCount(1);

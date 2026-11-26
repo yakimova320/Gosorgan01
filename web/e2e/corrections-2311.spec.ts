@@ -11,19 +11,20 @@ test('кабинет: общий подвал, «Главная» и приве�
   await signedIn(page, u.token);
   await page.goto('/app');
   const footer = page.getByTestId('site-footer');
-  for (const link of ['На главную Ja!sno', 'Блог', 'FAQ', 'Impressum', 'Datenschutz'])
+  for (const link of ['Главная страница', 'Блог', 'FAQ', 'Глоссарий', 'Как это работает?', 'Impressum', 'Datenschutz', 'AGB'])
     await expect(footer.getByRole('link', { name: link })).toBeVisible();
   await expect(page.getByTestId('side-nav-user')).toContainText(name);
   await page.getByRole('navigation', { name: 'Главное меню' }).first().getByRole('link', { name: 'Главная' }).click();
   await expect(page).toHaveURL(/\/$/);
 });
 
-test('390 px: в кабинете кнопка «Главная» над страницей', async ({ page, request }) => {
+test('390 px: в кабинете «Главная» в меню снизу', async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const u = await createUser(request, 'home', `Anna${letters()}`);
   await signedIn(page, u.token);
   await page.goto('/app/history');
-  await page.getByTestId('home-link').click();
+  await page.getByTestId('cabinet-menu-button').click();
+  await page.getByTestId('cabinet-menu').getByRole('link', { name: 'Главная' }).click();
   await expect(page).toHaveURL(/\/$/);
 });
 
