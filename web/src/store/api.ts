@@ -22,10 +22,11 @@ import {
   mockTranslate,
   mockUpload,
 } from '../mocks/letters';
-import { mockChat } from '../mocks/chat';
+import { mockArchive, mockChat } from '../mocks/chat';
 import { DATA_MODE } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import type {
+  ArchiveReply,
   ApiCaseDetail,
   ApiDraft,
   ApiExplanation,
@@ -536,6 +537,25 @@ export const api = createApi({
       },
     }),
 
+    /**
+     * L05: вопрос к своим письмам. Ответ не сохраняется на сервере: показывается из состояния
+     * этой мутации (последний вопрос и ответ). Данные кэша он не меняет, поэтому без invalidatesTags.
+     */
+    askArchive: b.mutation<ArchiveReply, string>({
+      queryFn: async (text, _api, _x, base) => {
+        if (isMock) {
+          await wait(700);
+          return ok(mockArchive());
+        }
+        return base({
+          method: 'POST',
+          path: '/archive/ask',
+          body: { text },
+          timeoutMs: UPLOAD_TIMEOUT_MS,
+        }) as Promise<Result<ArchiveReply>>;
+      },
+    }),
+
     clearChat: b.mutation<void, void>({
       queryFn: (_a, _api, _x, base) => {
         if (isMock) {
@@ -956,6 +976,7 @@ export const {
   useAskChatMutation,
   useAskPublicChatMutation,
   useClearChatMutation,
+  useAskArchiveMutation,
   useTranslateLetterMutation,
   useUpdateProfileMutation,
   useSetAiConsentMutation,

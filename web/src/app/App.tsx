@@ -23,7 +23,7 @@ import {
 import { CabinetPage, CasesPage } from '../pages/app/CabinetPages';
 import { CasePage, HistoryPage, LetterPage } from '../pages/app/CasePages';
 import { ProfilePage } from '../pages/app/MorePages';
-import { AskPage } from '../pages/app/ChatPage';
+import { AskLettersPage, AskPage } from '../pages/app/ChatPage';
 import { WritePage, WriteTemplatePage } from '../pages/app/WritePages';
 import {
   LetterCheckPage,
@@ -40,6 +40,7 @@ import {
 import {
   BeratungPage,
   FaqPage,
+  GlossaryPage,
   NotFoundPage,
   WissenPage,
 } from '../pages/public/InfoPages';
@@ -69,6 +70,8 @@ export const ROUTES: Route[] = [
   { path: '/forgot', area: 'public', render: () => <ForgotPage /> },
   { path: '/reset', area: 'public', render: () => <ResetPage /> },
   { path: '/faq', area: 'public', render: () => <FaqPage /> },
+  // L05 (#81): справочник терминов ведомств
+  { path: '/glossary', area: 'public', render: () => <GlossaryPage /> },
   { path: '/blog', area: 'public', render: () => <WissenPage /> },
   // старый адрес раздела «Важно знать» продолжает работать (поправка 4, 23.11)
   { path: '/wissen', area: 'public', render: () => <WissenPage /> },
@@ -122,6 +125,8 @@ export const ROUTES: Route[] = [
   },
   { path: '/app/history', area: 'cabinet', render: () => <HistoryPage /> },
   { path: '/app/ask', area: 'cabinet', render: () => <AskPage /> },
+  // L05 (#81): вопросы к своим письмам
+  { path: '/app/ask/letters', area: 'cabinet', render: () => <AskLettersPage /> },
   { path: '/app/write', area: 'cabinet', render: () => <WritePage /> },
   {
     path: '/app/write/:id',

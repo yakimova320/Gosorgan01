@@ -23,11 +23,29 @@ export interface AdapterResponse {
   tokensOut?: number;
 }
 
+/** L05 (#81): длина вектора в LetterChunk.embedding (vector(768)). */
+export const EMBEDDING_DIM = 768;
+
+export interface EmbedRequest {
+  /** Уже замаскированные тексты: куски писем и вопрос. */
+  texts: string[];
+}
+
+export interface EmbedResponse {
+  /** По вектору длины EMBEDDING_DIM на каждый текст, в том же порядке, длина 1. */
+  vectors: number[][];
+  tokensIn?: number;
+}
+
 /** Адаптер к модели. Импорт SDK и сетевые вызовы к модели только в api/src/llm. */
 export interface LlmAdapter {
   readonly provider: string;
   readonly model: string;
   complete(request: AdapterRequest): Promise<AdapterResponse>;
+  /** L05: модель векторов для журнала LlmCall. */
+  readonly embedModel?: string;
+  /** L05: векторы текстов для поиска по архиву. Нет — у адаптера поиска нет (тестовые адаптеры). */
+  embed?(request: EmbedRequest): Promise<EmbedResponse>;
 }
 
 export const LLM_ADAPTER = Symbol('LLM_ADAPTER');

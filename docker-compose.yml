@@ -8,7 +8,7 @@ name: gosorgan01
 
 services:
   db:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17 # L05: PostgreSQL 17 с расширением pgvector
     environment:
       # действует только при первом создании тома; потом пароль меняется в самой базе (docs/deploy.md)
       POSTGRES_USER: ${POSTGRES_USER:-jasno}

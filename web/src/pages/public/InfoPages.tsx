@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { Illustration } from '../../components/Watercolor';
 import { PageHeader } from '../../components/ui';
-import { CARDS, FAQ, FAQ_CONSULTATIONS, TOPICS, type Card, type Consultation } from '../../content';
+import { CARDS, FAQ, FAQ_CONSULTATIONS, TOPICS, glossaryTerms, type Card, type Consultation } from '../../content';
 import { formatDate } from '../../lib/dates';
 import { t } from '../../i18n';
 
@@ -144,6 +144,55 @@ export function WissenPage() {
 
 /** Список консультаций (F05): названия и тексты из FAQ (content/faq.ru.md, вопрос «Куда обратиться…»), без адресов и цен. */
 const CONSULTATIONS: Consultation[] = FAQ_CONSULTATIONS.places;
+
+/** L05 (#81): справочник терминов ведомств: немецкое слово и простое объяснение. */
+export function GlossaryPage() {
+  const [query, setQuery] = useState('');
+  const terms = useMemo(() => glossaryTerms(), []);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? terms.filter((g) => `${g.term} ${g.text}`.toLowerCase().includes(q)) : terms;
+  }, [terms, query]);
+
+  return (
+    <>
+      <PageHeader
+        title={t('Справочник терминов')}
+        subtitle={t('Немецкие слова из писем ведомств простыми словами. Это не юридическая консультация.')}
+      />
+      <div className="field">
+        <label htmlFor="g-search" className="visually-hidden">
+          {t('Поиск по терминам')}
+        </label>
+        <input id="g-search" className="input" type="search" placeholder={t('Поиск: Bescheid, срок…')} value={query} onChange={(e) => setQuery(e.target.value)} />
+      </div>
+      {terms.length === 0 && <p className="muted">{t('Справочник готовится. Тексты пишет и проверяет команда.')}</p>}
+      <dl className="stack desktop-2col" data-testid="glossary">
+        {shown.map((g) => (
+          <div key={g.id} id={g.id} className="card stack-s" style={{ gap: 6 }}>
+            <dt>
+              <strong lang="de">{g.term}</strong>
+              {g.draft && (
+                <span className="chip" style={{ marginLeft: 8 }} data-testid="glossary-draft">
+                  {t('черновик, не проверено')}
+                </span>
+              )}
+            </dt>
+            <dd className="text-2" style={{ margin: 0, fontSize: 15 }}>
+              {g.text}
+              {!g.draft && g.checkedAt && (
+                <span className="muted" style={{ display: 'block', fontSize: 12 }}>
+                  {t('· проверено')}{' '}{formatDate(g.checkedAt)}
+                </span>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {terms.length > 0 && shown.length === 0 && <p className="muted">{t('Ничего не нашлось. Попробуйте другое слово.')}</p>}
+    </>
+  );
+}
 
 export function BeratungPage() {
   return (

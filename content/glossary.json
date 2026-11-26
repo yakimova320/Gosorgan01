@@ -1,0 +1,115 @@
+{
+  "source": "L05 (#81): справочник терминов ведомств. Первые 10 терминов — черновик Claude Code от 26.11.2026, их проверяет и правит команда. Пока у термина draft: true, на опубликованном сайте его не видно и ИИ его не использует. После проверки: draft убрать, checkedAt поставить дату проверки.",
+  "terms": [
+    {
+      "id": "antrag",
+      "term": "Antrag",
+      "text": {
+        "ru": "Заявление. Вы просите ведомство о чём-то: пособие, разрешение, документ. Обычно подаётся на бланке ведомства или онлайн.",
+        "uk": "Заява. Ви просите відомство про щось: допомогу, дозвіл, документ. Зазвичай подається на бланку відомства або онлайн.",
+        "de": "Sie bitten das Amt um etwas: Geld, eine Erlaubnis oder ein Dokument. Meistens mit einem Formular vom Amt oder online."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "bescheid",
+      "term": "Bescheid",
+      "text": {
+        "ru": "Решение ведомства по вашему делу, обычно письмом. В конце часто написано, как и в какой срок его можно оспорить.",
+        "uk": "Рішення відомства у вашій справі, зазвичай листом. Наприкінці часто написано, як і в який строк його можна оскаржити.",
+        "de": "Die Entscheidung vom Amt zu Ihrer Sache, meistens als Brief. Am Ende steht oft, wie und bis wann Sie widersprechen können."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "widerspruch",
+      "term": "Widerspruch",
+      "text": {
+        "ru": "Возражение против решения ведомства (Bescheid). Подаётся письменно в срок, указанный в самом решении.",
+        "uk": "Заперечення проти рішення відомства (Bescheid). Подається письмово у строк, зазначений у самому рішенні.",
+        "de": "Sie sind mit der Entscheidung vom Amt (Bescheid) nicht einverstanden. Sie schreiben das dem Amt bis zur Frist im Bescheid."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "frist",
+      "term": "Frist",
+      "text": {
+        "ru": "Срок, до которого нужно что-то сделать: ответить, прислать документы, подать возражение.",
+        "uk": "Строк, до якого потрібно щось зробити: відповісти, надіслати документи, подати заперечення.",
+        "de": "Bis zu diesem Tag müssen Sie etwas tun: antworten, Unterlagen schicken oder widersprechen."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "aktenzeichen",
+      "term": "Aktenzeichen",
+      "text": {
+        "ru": "Номер вашего дела в ведомстве. Указывайте его в каждом ответе, чтобы письмо попало к нужному сотруднику.",
+        "uk": "Номер вашої справи у відомстві. Вказуйте його в кожній відповіді, щоб лист потрапив до потрібного працівника.",
+        "de": "Die Nummer von Ihrer Akte beim Amt. Schreiben Sie sie in jede Antwort. So kommt der Brief zur richtigen Person."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "anhoerung",
+      "term": "Anhörung",
+      "text": {
+        "ru": "Ведомство собирается принять невыгодное для вас решение и сначала даёт вам высказаться. Ответить можно письменно до указанного срока.",
+        "uk": "Відомство збирається ухвалити невигідне для вас рішення і спершу дає вам висловитися. Відповісти можна письмово до вказаного строку.",
+        "de": "Das Amt will etwas entscheiden, das schlecht für Sie sein kann. Vorher dürfen Sie Ihre Sicht schreiben, bis zur Frist im Brief."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "mitwirkungspflicht",
+      "term": "Mitwirkungspflicht",
+      "text": {
+        "ru": "Обязанность помогать ведомству: давать сведения и присылать документы. Если не сделать этого в срок, выплату могут уменьшить или остановить.",
+        "uk": "Обов'язок допомагати відомству: надавати відомості й надсилати документи. Якщо не зробити цього вчасно, виплату можуть зменшити або зупинити.",
+        "de": "Sie müssen dem Amt helfen: Angaben machen und Unterlagen schicken. Kommt das nicht rechtzeitig, kann das Amt weniger oder kein Geld zahlen."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "rechtsbehelfsbelehrung",
+      "term": "Rechtsbehelfsbelehrung",
+      "text": {
+        "ru": "Абзац в конце решения: как, куда и в какой срок можно его оспорить.",
+        "uk": "Абзац наприкінці рішення: як, куди і в який строк його можна оскаржити.",
+        "de": "Ein Teil am Ende vom Bescheid. Dort steht, wie, wo und bis wann Sie widersprechen können."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "nachweis",
+      "term": "Nachweis",
+      "text": {
+        "ru": "Подтверждение, документ-доказательство: справка, выписка, договор, квитанция.",
+        "uk": "Підтвердження, документ-доказ: довідка, виписка, договір, квитанція.",
+        "de": "Ein Papier, das etwas zeigt oder beweist: Bescheinigung, Kontoauszug, Vertrag, Quittung."
+      },
+      "checkedAt": "",
+      "draft": true
+    },
+    {
+      "id": "mahnung",
+      "term": "Mahnung",
+      "text": {
+        "ru": "Напоминание об оплате, которая уже просрочена. Часто с новым сроком и иногда с дополнительной платой.",
+        "uk": "Нагадування про оплату, яку вже прострочено. Часто з новим строком і іноді з додатковою платою.",
+        "de": "Erinnerung: Eine Zahlung ist zu spät. Oft mit einer neuen Frist und manchmal mit einer Gebühr."
+      },
+      "checkedAt": "",
+      "draft": true
+    }
+  ]
+}

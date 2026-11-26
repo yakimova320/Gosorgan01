@@ -59,6 +59,7 @@ export function SiteFooter() {
       <Link to="/">{t('На главную Ja!sno')}</Link>
       <Link to="/blog">{t('Блог')}</Link>
       <Link to="/faq">FAQ</Link>
+      <Link to="/glossary">{t('Термины')}</Link>
       <Link to="/impressum">Impressum</Link>
       <Link to="/datenschutz">Datenschutz</Link>
       <span style={{ flexBasis: '100%', lineHeight: 1.5 }}>

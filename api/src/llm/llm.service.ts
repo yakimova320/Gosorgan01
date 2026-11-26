@@ -43,6 +43,15 @@ export interface LlmCallOptions<S extends z.ZodType> {
   model?: string;
 }
 
+export interface LlmEmbedOptions {
+  /** Тексты без маскирования: маскирует LlmService. */
+  texts: string[];
+  context: LlmContext;
+  operation?: LlmOperationHandle;
+  /** Сколько обращений можно потратить (не больше остатка операции). */
+  maxAttempts?: number;
+}
+
 export interface LlmCallResult<T> {
   data: T;
   attempts: number;
@@ -249,6 +258,98 @@ export class LlmService {
     this.logger.warn(
       `${prompt.name}.v${prompt.version}: нет верного ответа за ${limit} попытки`,
     );
+    await finish(false);
+    throw new ApiError('LLM_FAILED');
+  }
+
+  /**
+   * L05 (#81): векторы текстов для вопросов к архиву. Тексты маскируются перед отправкой.
+   * Запись в LlmCall (promptName embed): без самих текстов, только их число и длина. Один вызов
+   * собирает куски разных писем, а журнал по письму удаляется вместе с письмом (letterId).
+   * Обращения входят в общий предел операции (MAX_ATTEMPTS) и в лимиты B18.
+   */
+  async embed(options: LlmEmbedOptions): Promise<number[][]> {
+    if (options.texts.length === 0) return [];
+    const embedFn = this.adapter.embed?.bind(this.adapter);
+    if (!embedFn) throw new ApiError('LLM_FAILED');
+    const texts = options.texts.map((t) => this.masking.mask(t, new Map()));
+    const chars = texts.reduce((n, t) => n + t.length, 0);
+    const op =
+      options.operation ??
+      new LlmOperationHandle(options.context.cabinetId, 'OTHER');
+    const limit = Math.min(options.maxAttempts ?? MAX_ATTEMPTS, op.remaining);
+    if (limit < 1) throw new ApiError('LLM_FAILED');
+    const started = Date.now();
+    let attempts = 0;
+    let lastError: string | null = null;
+    let tokensIn = 0;
+    const finish = (ok: boolean) =>
+      this.trace.record({
+        context: options.context,
+        promptName: 'embed',
+        promptVersion: 1,
+        provider: this.adapter.provider,
+        model: this.adapter.embedModel ?? this.adapter.model,
+        input: `embed: ${texts.length} texts, ${chars} chars`,
+        output: ok ? `${texts.length} vectors` : null,
+        ok,
+        error: ok ? null : lastError,
+        attempts,
+        durationMs: Date.now() - started,
+        tokensIn: tokensIn || null,
+        tokensOut: null,
+        operationId: op.id,
+      });
+
+    while (attempts < limit) {
+      try {
+        await this.limits?.reserve(op);
+        await this.limits?.checkBudget(this.adapter.provider);
+      } catch (e) {
+        if (attempts > 0) await finish(false);
+        throw e;
+      }
+      attempts++;
+      op.used++;
+      try {
+        const res = await embedFn({ texts });
+        tokensIn += res.tokensIn ?? 0;
+        await this.recordUsage({
+          provider: this.adapter.provider,
+          failed: false,
+          tokensIn: res.tokensIn,
+          tokensOut: 0,
+          inputChars: chars,
+          outputChars: 0,
+          images: 0,
+        });
+        if (res.vectors.length !== texts.length) {
+          lastError = 'число векторов не совпадает с числом текстов';
+          continue;
+        }
+        await finish(true);
+        return res.vectors;
+      } catch (e) {
+        if (!(e instanceof AdapterError)) throw e;
+        await this.recordUsage({
+          provider: this.adapter.provider,
+          failed: true,
+          inputChars: 0,
+          outputChars: 0,
+          images: 0,
+        });
+        lastError = e.message;
+        if (e.kind === 'QUOTA') {
+          await finish(false);
+          throw new ApiError('LLM_QUOTA');
+        }
+        if (!e.retryable) {
+          this.logger.error(`embed: ${e.kind}, без повтора`);
+          await finish(false);
+          throw new ApiError('LLM_FAILED');
+        }
+      }
+    }
     await finish(false);
     throw new ApiError('LLM_FAILED');
   }

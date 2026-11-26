@@ -4,6 +4,7 @@ import cardsDe from '../../../content/important/cards.de.json';
 import faqRu from '../../../content/faq.ru.md?raw';
 import faqUk from '../../../content/faq.uk.md?raw';
 import faqDe from '../../../content/faq.de.md?raw';
+import glossaryData from '../../../content/glossary.json';
 import { getLang, type Lang } from '../i18n';
 
 /*
@@ -126,3 +127,24 @@ export function consultationsFromFaq(
 }
 
 export const FAQ_CONSULTATIONS = consultationsFromFaq(FAQ);
+
+/** L05 (#81): термин справочника content/glossary.json. Тексты пишут и проверяют люди. */
+export interface GlossaryTerm {
+  id: string;
+  term: string;
+  text: string;
+  checkedAt: string;
+  /** Черновик: ещё не проверен командой */
+  draft: boolean;
+}
+
+/**
+ * Термины на языке сайта, по алфавиту. Черновики видны только в разработке (pnpm dev, e2e) с пометкой;
+ * на опубликованном сайте (pnpm build) их нет, пока команда не снимет draft.
+ */
+export function glossaryTerms(showDrafts: boolean = import.meta.env.DEV): GlossaryTerm[] {
+  return (glossaryData.terms as { id: string; term: string; text: Record<string, string>; checkedAt: string; draft?: boolean }[])
+    .filter((g) => showDrafts || !g.draft)
+    .map((g) => ({ id: g.id, term: g.term, text: g.text[LANG] || g.text.ru, checkedAt: g.checkedAt, draft: Boolean(g.draft) }))
+    .sort((a, b) => a.term.localeCompare(b.term, 'de'));
+}

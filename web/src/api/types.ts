@@ -303,6 +303,26 @@ export interface ChatReply {
   answer: ChatMessage;
 }
 
+/** L05: POST /archive/ask — вопрос к своим письмам. Источник: письмо и точная цитата из него */
+export interface ArchiveSource {
+  letterId: string;
+  letterTitle: string | null;
+  letterCreatedAt: string;
+  caseId: string | null;
+  caseTitle: string | null;
+  quote: string;
+}
+
+export interface ArchiveReply {
+  disclaimer: string;
+  answer: string;
+  sources: ArchiveSource[];
+  /** проверенные термины справочника из вопроса и найденных писем */
+  terms: { term: string; text: string }[];
+  /** писем, ещё не готовых к поиску */
+  pendingLetters: number;
+}
+
 /** Ответ POST /letters/:id/translate (поправка 7): машинный перевод, не официальный */
 export interface ApiTranslation {
   lang: 'ru';

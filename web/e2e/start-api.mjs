@@ -20,6 +20,7 @@ const MODEL_KEYS = [
   'LLM_BASE_URL',
   'LLM_API_KEY',
   'LLM_MODEL',
+  'LLM_EMBED_MODEL',
   'LLM_TIMEOUT_MS',
 ];
 let model = { LLM_MODE: 'demo' };
