@@ -87,6 +87,23 @@ export function parseFaq(md: string): FaqSection[] {
 
 export const FAQ: FaqSection[] = parseFaq(FAQ_BY_LANG[LANG] ?? faqRu);
 
+/**
+ * UX 26.11 (#168): главные вопросы FAQ для блока «Полезно знать» на главной.
+ * Тексты вопросов дословно из content/faq.{lang}.md; ответы берутся оттуда же.
+ */
+export const HOME_FAQ_QUESTIONS: Record<Lang, string[]> = {
+  ru: ['Для чего нужен Ja!sno?', 'Может ли Ja!sno ошибиться?', 'Ja!sno сам отправит ответ в ведомство?', 'Кто видит мои письма?'],
+  uk: ['Для чого потрібен Ja!sno?', 'Чи може Ja!sno помилитися?', 'Ja!sno сам надішле відповідь до відомства?', 'Хто бачить мої листи?'],
+  de: ['Wofür ist Ja!sno da?', 'Kann Ja!sno sich irren?', 'Schickt Ja!sno die Antwort selbst an das Amt?', 'Wer sieht meine Briefe?'],
+};
+
+export function homeFaq(sections: FaqSection[], questions: string[]): FaqItem[] {
+  const all = sections.flatMap((s) => s.items);
+  return questions.map((q) => all.find((i) => i.question === q)).filter((i): i is FaqItem => i !== undefined);
+}
+
+export const HOME_FAQ: FaqItem[] = homeFaq(FAQ, HOME_FAQ_QUESTIONS[LANG] ?? HOME_FAQ_QUESTIONS.ru);
+
 export interface Consultation {
   name: string;
   text: string;

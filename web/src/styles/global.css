@@ -154,16 +154,6 @@ textarea {
   background: var(--c-teal-light);
   box-shadow: none;
 }
-select.lang-select {
-  width: auto;
-  max-width: 96px;
-  flex: 0 0 auto;
-  min-height: 36px;
-  padding: 4px 28px 4px 10px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
-}
 .card--green {
   background: var(--c-green-light);
   box-shadow: none;
@@ -715,15 +705,49 @@ details.faq .faq-body {
   margin: 0;
   padding-left: 20px;
 }
+/* UX 26.11 (#168): тёмный подвал, ссылки группами друг под другом */
 .footer {
+  background: var(--c-navy);
+  color: var(--c-white);
+  margin-top: 24px;
+  /* место под плавающую кнопку чата, чтобы она не закрывала последние ссылки */
+  padding: 28px 20px calc(88px + env(safe-area-inset-bottom));
+}
+.footer__inner {
   max-width: var(--content-w);
   margin: 0 auto;
-  padding: 24px 20px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.footer__group {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: 4px 20px;
+}
+.footer__group + .footer__group {
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  padding-top: 12px;
+}
+.footer a {
+  color: var(--c-white);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+.footer a:focus-visible {
+  outline-color: var(--c-mustard);
+}
+.footer__note {
+  margin: 0;
   font-size: 12px;
-  color: var(--c-text-3);
+  line-height: 1.5;
+  color: #d5dae6;
 }
 .thumbs {
   display: grid;
@@ -936,7 +960,7 @@ fieldset.stack-s > legend {
   }
 }
 .app-footer {
-  padding-bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
+  padding-bottom: var(--nav-h);
 }
 .app-shell .page {
   padding-bottom: 16px;
@@ -979,4 +1003,312 @@ fieldset.stack-s > legend {
   min-height: 360px;
   font-family: inherit;
   line-height: 1.45;
+}
+
+/* ---------- UX 26.11 (#168): меню, язык, плавающий чат ---------- */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c-navy);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: var(--c-sand);
+}
+
+.menu {
+  position: relative;
+}
+.menu__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--c-white);
+  border: 1px solid var(--c-line);
+  border-radius: 18px;
+  box-shadow: 0 14px 32px rgba(30, 42, 74, 0.16);
+}
+.menu__panel a,
+.menu__panel > button,
+.menu__panel nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c-navy);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.menu__panel a:hover,
+.menu__panel > button:hover {
+  background: var(--c-sand);
+}
+.menu__panel a[aria-current='page'] {
+  background: var(--c-teal-light);
+  font-weight: 700;
+}
+/* в кабинете: лист над нижней панелью, раскрывается снизу слева вверх */
+.menu__panel--sheet {
+  position: fixed;
+  top: auto;
+  left: 8px;
+  right: auto;
+  bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+  max-height: calc(100vh - var(--nav-h) - 32px);
+  overflow-y: auto;
+  width: min(300px, calc(100vw - 16px));
+  transform-origin: bottom left;
+  animation: sheet-up 0.16s ease-out;
+}
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+.menu__lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--c-line);
+}
+
+.bottom-nav__menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-height: var(--tap);
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+.bottom-nav__menu[aria-expanded='true'] {
+  color: var(--c-navy);
+  font-weight: 700;
+}
+
+.lang-menu {
+  position: relative;
+}
+.lang-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 1.5px solid var(--c-line-strong);
+  border-radius: 12px;
+  background: var(--c-white);
+  color: var(--c-navy);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.lang-menu__chevron {
+  color: var(--c-text-3);
+}
+.lang-menu__list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 70;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 220px;
+  background: var(--c-white);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  box-shadow: 0 14px 32px rgba(30, 42, 74, 0.16);
+}
+.lang-menu--up .lang-menu__list {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+.lang-menu__list:focus-visible {
+  outline: none;
+}
+.lang-menu__option {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.lang-menu__option[aria-selected='true'] {
+  font-weight: 700;
+}
+.lang-menu__option.is-active {
+  background: var(--c-teal-light);
+  outline: 2px solid var(--c-teal);
+  outline-offset: -2px;
+}
+.lang-menu__option[aria-disabled='true'] {
+  cursor: default;
+  color: var(--c-text-3);
+}
+.lang-menu__code {
+  font-weight: 700;
+}
+.lang-menu__error {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  width: 220px;
+}
+.flag {
+  display: block;
+  flex: 0 0 auto;
+  border-radius: 2px;
+}
+
+.chat-launcher {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+/* в кабинете на телефоне над нижней панелью и не на месте кнопки камеры */
+.chat-launcher--cabinet {
+  bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+}
+.chat-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 18px 0 14px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--c-teal-dark);
+  color: var(--c-white);
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 10px 24px rgba(30, 42, 74, 0.28);
+  cursor: pointer;
+}
+.chat-fab:hover {
+  background: var(--c-navy);
+}
+.chat-panel {
+  width: 380px;
+  height: min(560px, calc(100vh - 32px));
+  display: flex;
+  background: var(--c-white);
+  border: 1px solid var(--c-line);
+  border-radius: 22px;
+  box-shadow: 0 18px 44px rgba(30, 42, 74, 0.24);
+  overflow: hidden;
+}
+.chat-panel[hidden] {
+  display: none;
+}
+.public-chat--panel {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+}
+.public-chat--panel .chat-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.chat-launcher--cabinet .chat-panel {
+  height: min(560px, calc(100vh - var(--nav-h) - 40px));
+}
+@media (max-width: 600px) {
+  .chat-launcher:has(.chat-panel:not([hidden])) {
+    inset: 0;
+    z-index: 80;
+  }
+  .chat-panel {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .chat-launcher--cabinet .chat-panel {
+    height: 100%;
+  }
+}
+@media (min-width: 1024px) {
+  .chat-launcher--cabinet {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+/* «Wussten Sie, dass…?» и «Gut zu wissen» на главной */
+.facts-list {
+  display: grid;
+  gap: 10px;
+}
+.facts-list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--c-white);
+  color: var(--c-green-dark);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.facts-list a:hover {
+  background: #f4f9ef;
+}
+@media (min-width: 900px) {
+  .facts-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu__panel--sheet {
+    animation: none;
+  }
+}
+button.chip {
+  min-height: var(--tap);
+  border: 1.5px solid var(--c-line-strong);
+  cursor: pointer;
+}
+button.chip[aria-pressed='true'] {
+  background: var(--c-navy);
+  border-color: var(--c-navy);
+  color: var(--c-white);
 }

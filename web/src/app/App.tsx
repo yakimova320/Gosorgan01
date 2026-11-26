@@ -45,7 +45,7 @@ import {
   NotFoundPage,
   WissenPage,
 } from '../pages/public/InfoPages';
-import { ImpressumPage, PrivacyPage } from '../pages/public/PrivacyPage';
+import { AgbPage, ImpressumPage, PrivacyPage } from '../pages/public/PrivacyPage';
 import { StartPage } from '../pages/public/StartPage';
 import { FlowProvider } from './flow';
 import { createStore, useSession } from '../store';
@@ -79,6 +79,8 @@ export const ROUTES: Route[] = [
   { path: '/beratung', area: 'public', render: () => <BeratungPage /> },
   { path: '/datenschutz', area: 'public', render: () => <PrivacyPage /> },
   { path: '/impressum', area: 'public', render: () => <ImpressumPage /> },
+  // UX 26.11 (#168): условия использования
+  { path: '/agb', area: 'public', render: () => <AgbPage /> },
 
   { path: '/app', area: 'cabinet', render: () => <CabinetPage /> },
   { path: '/app/cases', area: 'cabinet', render: () => <CasesPage /> },

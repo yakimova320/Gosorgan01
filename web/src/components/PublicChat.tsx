@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { errorText } from '../api/errors';
 import { useSession } from '../store';
@@ -18,16 +18,30 @@ const EXAMPLES = [
 type Line = { id: number; role: 'USER' | 'ASSISTANT'; text: string };
 
 /**
+ * UX 26.11: чат живёт в плавающем окне (ChatLauncher); onClose рисует кнопку «Закрыть», titleId — заголовок окна.
  * KORR 25.11: чат на главной. Тот же помощник, что «Спросить Ja!sno» в кабинете, но без входа:
  * разговор живёт только в этой вкладке, сервер ничего не сохраняет.
  */
-export function PublicChat() {
+export function PublicChat({ onClose, titleId = 'public-chat-title' }: { onClose?: () => void; titleId?: string } = {}) {
   const { token } = useSession();
   const [ask, asking] = useAskPublicChatMutation();
   const [lines, setLines] = useState<Line[]>([]);
   const [text, setText] = useState('');
   const [disclaimer, setDisclaimer] = useState('');
   const [error, setError] = useState<unknown>(null);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+
+  // в окне: фокус сразу в поле вопроса
+  useEffect(() => {
+    if (onClose) boxRef.current?.focus();
+  }, [onClose]);
+
+  // новая реплика видна без прокрутки руками
+  useEffect(() => {
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [lines, asking.isLoading]);
 
   const send = async (value: string) => {
     const q = value.trim();
@@ -48,12 +62,17 @@ export function PublicChat() {
   };
 
   return (
-    <section className="card stack" aria-labelledby="public-chat-title" data-testid="public-chat">
+    <section className={onClose ? 'public-chat public-chat--panel stack' : 'card stack'} aria-labelledby={titleId} data-testid="public-chat">
       <div className="row" style={{ gap: 10 }}>
         <Icon name="chat" color="var(--c-teal)" />
-        <h2 id="public-chat-title" style={{ fontSize: 20 }}>
+        <h2 id={titleId} style={{ fontSize: 20, flex: 1 }}>
           {t('Спросите Ja!sno')}
         </h2>
+        {onClose && (
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={t('Закрыть чат')} data-testid="chat-close">
+            <Icon name="x" size={20} />
+          </button>
+        )}
       </div>
       <p className="small text-2">
         {t('Вопросы о ведомствах, документах и сроках в Германии. Без регистрации. Не пишите имя, адрес и номера документов: вопрос уходит модели ИИ (')}
@@ -63,7 +82,7 @@ export function PublicChat() {
         ).
       </p>
 
-      <div className="stack chat-log" aria-live="polite">
+      <div className="stack chat-log" aria-live="polite" ref={logRef}>
         {lines.length === 0 && (
           <div className="row wrap" style={{ gap: 8 }}>
             {EXAMPLES.map((ex) => (
@@ -106,6 +125,7 @@ export function PublicChat() {
         }}
       >
         <textarea
+          ref={boxRef}
           className="input"
           rows={2}
           maxLength={MAX_CHARS}

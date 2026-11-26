@@ -14,7 +14,7 @@ test('подсказка о хранении: видна при запуске, 
 
   await notice.getByRole('link', { name: 'Datenschutz' }).click();
   await expect(page).toHaveURL(/\/datenschutz#cookies$/);
-  await expect(page.getByRole('heading', { name: /Cookies и хранение/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Хранение в браузере/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Понятно' }).click();
   await expect(notice).toHaveCount(0);
@@ -45,6 +45,9 @@ test('поправки 2–5: Impressum в подвале, раздел «Бло
   await page.goto('/');
   await page.getByRole('contentinfo').getByRole('link', { name: 'Impressum' }).click();
   await expect(page).toHaveURL(/\/impressum$/);
+  await expect(page.getByText('Сведения по § 5 DDG')).toBeVisible();
+  await expect(page.getByText('Maßgeblich ist die deutsche Fassung.')).toBeVisible();
+  await page.getByRole('button', { name: 'Deutsch (maßgeblich)' }).click();
   await expect(page.getByText('Angaben gemäß § 5 DDG')).toBeVisible();
   await page.goto('/blog?topic=children');
   await expect(page.getByRole('heading', { name: 'Блог', level: 1 })).toBeVisible();
