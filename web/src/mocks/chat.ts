@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatReply, ChatView } from '../api/types';
+import type { ArchiveReply, ChatMessage, ChatReply, ChatView } from '../api/types';
 
 /** Примерные данные (VITE_DATA_MODE=mock): чат без сервера, только в этой вкладке. */
 export const CHAT_DISCLAIMER =
@@ -39,3 +39,15 @@ export const mockChat = {
     messages = [];
   },
 };
+
+/** L05: вопрос к своим письмам без сервера */
+export function mockArchive(): ArchiveReply {
+  return {
+    disclaimer: CHAT_DISCLAIMER,
+    answer:
+      'Примерные данные: настоящего поиска нет. С сервером Ja!sno найдёт ответ в ваших письмах и покажет цитаты.',
+    sources: [],
+    terms: [],
+    pendingLetters: 0,
+  };
+}

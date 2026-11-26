@@ -17,6 +17,7 @@ export function createAdapter(config: Env): LlmAdapter {
       baseUrl: config.LLM_BASE_URL as string,
       apiKey: config.LLM_API_KEY as string,
       model: config.LLM_MODEL as string,
+      embedModel: config.LLM_EMBED_MODEL,
       timeoutMs: config.LLM_TIMEOUT_MS,
     });
   }

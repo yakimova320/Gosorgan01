@@ -194,7 +194,8 @@ Supabase здесь — PostgreSQL в облаке и, по желанию, ба
    - `sslcert` — путь от папки `api` (так считает Prisma CLI); сервер Ja!sno считает так же. Можно и полный путь. `sslaccept=strict` — сертификат сервера проверяется.
    - `connection_limit=5` — у бесплатного пулера мало соединений.
    - `TEST_DATABASE_URL` обязателен: тесты и `pnpm eval` создают и удаляют схемы и **отказываются работать** с нелокальной базой.
-5. **Таблицы из миграций.**
+5. **Расширение pgvector (L05, вопросы к архиву).** Dashboard → Database → Extensions → `vector` → *Enable* (схема по умолчанию `extensions` подходит). Если не включить, миграция `20261126100000_archive_rag` сама включит расширение в схеме `public`.
+6. **Таблицы из миграций.**
 
    **На Mac `pnpm --filter jasno-api db:deploy` с Supabase не работает** (как и `db:studio`, `db:migrate`): ошибка `P1011 ... The certificate was not trusted`. Причина — macOS: у сертификата пулера Supabase срок 5 лет и нет пометки «для сервера» (Extended Key Usage), а macOS такие сертификаты от собственных центров не принимает; Prisma CLI на Mac проверяет сертификат средствами macOS. Отключать проверку (`sslaccept=accept_invalid_certs`) не нужно: миграции запускаются в Linux-контейнере, там сертификат проверяется через OpenSSL и проходит.
 

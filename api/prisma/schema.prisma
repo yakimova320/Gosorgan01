@@ -127,6 +127,7 @@ model Cabinet {
   chatMessages        ChatMessage[]
   cases               Case[]
   letters             Letter[]
+  letterChunks        LetterChunk[]
 }
 
 model Session {
@@ -222,9 +223,30 @@ model Letter {
   createdAt   DateTime   @default(now())
   claims      Claim[]
   deadlines   Deadline[]
+  chunks      LetterChunk[]
 
   @@index([cabinetId])
   @@index([caseId])
+}
+
+// L05 (#81): куски текста письма с векторами для вопросов к архиву (RAG, pgvector).
+// Поиск только по cabinetId самого пользователя, отбор делает код (WHERE cabinetId).
+// Удаляются вместе с письмом и кабинетом (каскад). textHash: если текст письма изменился, куски пересчитываются.
+// Вектор пишется и читается только сырым SQL (api/src/archive/archive.repository.ts).
+model LetterChunk {
+  id        String                     @id @default(cuid())
+  cabinetId String
+  cabinet   Cabinet                    @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  letterId  String
+  letter    Letter                     @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  n         Int // номер куска в письме, с 0
+  text      String // кусок rawText без маскирования (как и сам rawText)
+  textHash  String // sha256 всего rawText на момент расчёта
+  embedding Unsupported("vector(768)")
+  createdAt DateTime                   @default(now())
+
+  @@unique([letterId, n])
+  @@index([cabinetId])
 }
 
 model Claim {

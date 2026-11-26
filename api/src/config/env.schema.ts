@@ -63,6 +63,8 @@ export const envSchema = z
     LLM_API_KEY: z.string().optional(),
     LLM_MODEL: z.string().optional(),
     LLM_MODEL_ASSISTANT: z.string().optional(),
+    // L05 (#81): модель векторов для вопросов к архиву (OpenAI-совместимый /embeddings, бесплатная у Gemini)
+    LLM_EMBED_MODEL: z.string().min(1).default('gemini-embedding-001'),
     LLM_TIMEOUT_MS: int(60000),
 
     STORAGE_DIR: z.string().min(1).default('./storage'),

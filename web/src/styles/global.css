@@ -669,7 +669,15 @@ select.lang-select {
   cursor: pointer;
   white-space: nowrap;
 }
-.tab[aria-selected='true'] {
+/* L05: вкладки-ссылки («Общий вопрос» / «По моим письмам») */
+a.tab {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+.tab[aria-selected='true'],
+a.tab[aria-current='page'] {
   background: var(--c-navy);
   border-color: var(--c-navy);
   color: var(--c-white);
@@ -770,6 +778,10 @@ details.faq .faq-body {
 }
 .chat-log {
   gap: 10px;
+}
+.archive-source {
+  padding: 10px 12px;
+  gap: 6px;
 }
 .chat-disclaimer {
   font-size: 12px;

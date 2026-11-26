@@ -5703,6 +5703,182 @@
           ]
         }
       ]
+    },
+    {
+      "name": "15 Вопросы к архиву (L05)",
+      "description": "Вопрос к своим письмам: поиск по векторам (pgvector) только в письмах своего кабинета, ответ с цитатами. Кабинет из папки 02 (в нём письмо 01 Jobcenter). В режиме demo ответ — строка письма с общими словами.",
+      "item": [
+        {
+          "name": "POST /archive/ask: вопрос к своим письмам",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/archive/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "archive",
+                "ask"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Welche Kontoauszüge soll ich einreichen?\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('пометка под ответом', () => pm.expect(b.disclaimer).to.include('не юридическая консультация'));",
+                  "pm.test('есть ответ', () => pm.expect(b.answer).to.be.a('string').and.not.empty);",
+                  "pm.test('источник: письмо 01 с цитатой', () => {",
+                  "  pm.expect(b.sources.length).to.be.above(0);",
+                  "  pm.expect(b.sources[0].letterId).to.be.a('string');",
+                  "  pm.expect(b.sources[0].quote).to.include('Kontoauszüge');",
+                  "});",
+                  "pm.test('термины — список', () => pm.expect(b.terms).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /archive/ask: вопрос не по письмам",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/archive/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "archive",
+                "ask"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Wie wird das Wetter morgen?\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "pm.test('без источников (demo)', () => pm.expect(pm.response.json().sources).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /archive/ask: пустой вопрос → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/archive/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "archive",
+                "ask"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"   \"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /archive/ask: без входа → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/archive/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "archive",
+                "ask"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Frist\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

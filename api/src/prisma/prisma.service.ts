@@ -12,6 +12,9 @@ import { parseDatabaseUrl } from './database-url.js';
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
+  /** Схема таблиц (параметр schema в DATABASE_URL). Нужна сырому SQL: L05, archive.repository.ts. */
+  readonly dbSchema: string;
+
   constructor(@Inject(APP_CONFIG) config: Pick<Env, 'DATABASE_URL'>) {
     // относительный sslcert — от папки api, как у Prisma CLI (проверено 23.11 с Supabase)
     const { connectionString, schema, ssl, max } = parseDatabaseUrl(
@@ -24,6 +27,7 @@ export class PrismaService extends PrismaClient implements OnModuleDestroy {
         { schema },
       ),
     });
+    this.dbSchema = schema ?? 'public';
   }
 
   async onModuleDestroy(): Promise<void> {

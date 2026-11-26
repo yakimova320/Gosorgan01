@@ -1,14 +1,20 @@
 import {
   AdapterError,
+  EMBEDDING_DIM,
   type AdapterRequest,
   type AdapterResponse,
+  type EmbedRequest,
+  type EmbedResponse,
   type LlmAdapter,
 } from '../llm.types.js';
+import { fitVector } from '../vector.js';
 
 export interface OpenAiAdapterOptions {
   baseUrl: string;
   apiKey: string;
   model: string;
+  /** L05: модель векторов (LLM_EMBED_MODEL). */
+  embedModel?: string;
   timeoutMs: number;
   /** Подменяется в тестах. */
   fetchFn?: typeof fetch;
@@ -29,10 +35,12 @@ type Content =
 export class OpenAiAdapter implements LlmAdapter {
   readonly provider = 'openai';
   readonly model: string;
+  readonly embedModel: string;
   private readonly fetchFn: typeof fetch;
 
   constructor(private readonly options: OpenAiAdapterOptions) {
     this.model = options.model;
+    this.embedModel = options.embedModel ?? 'gemini-embedding-001';
     this.fetchFn = options.fetchFn ?? fetch;
   }
 
@@ -96,6 +104,52 @@ export class OpenAiAdapter implements LlmAdapter {
       tokensIn: body?.usage?.prompt_tokens,
       tokensOut: body?.usage?.completion_tokens,
     };
+  }
+
+  /** L05: векторы через OpenAI-совместимый /embeddings (у Gemini есть тот же адрес). */
+  async embed(request: EmbedRequest): Promise<EmbedResponse> {
+    let res: Response;
+    try {
+      res = await this.fetchFn(
+        `${this.options.baseUrl.replace(/\/$/, '')}/embeddings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.options.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: this.embedModel,
+            input: request.texts,
+            dimensions: EMBEDDING_DIM,
+          }),
+          signal: AbortSignal.timeout(this.options.timeoutMs),
+        },
+      );
+    } catch (e) {
+      const timeout =
+        e instanceof Error &&
+        (e.name === 'TimeoutError' || e.name === 'AbortError');
+      throw new AdapterError(
+        timeout ? 'TIMEOUT' : 'NETWORK',
+        timeout ? 'Модель не ответила вовремя' : 'Нет связи с моделью',
+      );
+    }
+    if (!res.ok) throw await toAdapterError(res);
+    const body = (await res.json().catch(() => null)) as {
+      data?: { index?: number; embedding?: unknown }[];
+      usage?: { prompt_tokens?: number };
+    } | null;
+    const rows = [...(body?.data ?? [])].sort(
+      (a, b) => (a.index ?? 0) - (b.index ?? 0),
+    );
+    const vectors = rows.map((r) => fitVector(r.embedding));
+    if (
+      vectors.length !== request.texts.length ||
+      vectors.some((v) => v === null)
+    )
+      throw new AdapterError('SERVER', 'Векторы не подходят');
+    return { vectors: vectors as number[][], tokensIn: body?.usage?.prompt_tokens };
   }
 }
 

@@ -6,8 +6,11 @@ import {
   AdapterError,
   type AdapterRequest,
   type AdapterResponse,
+  type EmbedRequest,
+  type EmbedResponse,
   type LlmAdapter,
 } from '../llm.types.js';
+import { demoArchive, demoEmbed } from './demo-archive.js';
 
 /**
  * Режим без настоящей модели: простые правила, без сети.
@@ -31,6 +34,7 @@ export class DemoAdapter implements LlmAdapter {
     },
     translate: (v) => demoTranslate(v.letterText ?? '', demoLang(v.lang)),
     chat: (v) => demoChat(v.question ?? '', v.faq ?? '', demoLang(v.lang)),
+    archive: (v) => demoArchive(v.question ?? '', v.fragments ?? '', demoLang(v.lang)),
     explain: (v) => demoExplain(v.facts ?? '[]', demoLang(v.lang)),
     transcribe: (_v, request) =>
       request.promptVersion === 2
@@ -47,6 +51,11 @@ export class DemoAdapter implements LlmAdapter {
       );
     if (request.promptName === 'transcribe') await loadScanPages();
     return { text: JSON.stringify(handler(request.variables, request)) };
+  }
+
+  /** L05: векторы по общим словам (demo-archive.ts), без сети. */
+  async embed(request: EmbedRequest): Promise<EmbedResponse> {
+    return { vectors: request.texts.map(demoEmbed) };
   }
 }
 
@@ -254,7 +263,7 @@ export function loadScanPages(): Promise<void> {
 }
 
 /** explain в режиме demo: короткое объяснение из фактов, каждое утверждение со ссылкой на факты. */
-type DemoLang = 'ru' | 'uk' | 'de';
+export type DemoLang = 'ru' | 'uk' | 'de';
 /** L07: код языка из переменной lang; старые версии промптов без неё — русский. */
 export function demoLang(v: string | undefined): DemoLang {
   return v === 'uk' || v === 'de' ? v : 'ru';

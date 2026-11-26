@@ -477,3 +477,96 @@ it('схема Zod отклоняет придуманный формат дат
   expect(ExtractSchema.safeParse(bad).success).toBe(false);
   expect(z.string().safeParse('x').success).toBe(true);
 });
+
+describe('L05: LlmService.embed и адаптер openai /embeddings', () => {
+  const vec = (x: number) => Array.from({ length: 1024 }, () => x);
+
+  it('openai: /embeddings с dimensions 768, порядок по index, обрезка до 768', async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              { index: 1, embedding: vec(2) },
+              { index: 0, embedding: vec(1) },
+            ],
+            usage: { prompt_tokens: 12 },
+          }),
+          { status: 200 },
+        ),
+    );
+    const adapter = new OpenAiAdapter({
+      baseUrl: 'https://llm.example/v1',
+      apiKey: 'k',
+      model: 'm',
+      embedModel: 'emb',
+      timeoutMs: 1000,
+      fetchFn,
+    });
+    const res = await adapter.embed({ texts: ['a', 'b'] });
+    expect(res.tokensIn).toBe(12);
+    expect(res.vectors).toHaveLength(2);
+    expect(res.vectors[0]).toHaveLength(768);
+    const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://llm.example/v1/embeddings');
+    expect(JSON.parse(init.body as string)).toEqual({ model: 'emb', input: ['a', 'b'], dimensions: 768 });
+  });
+
+  it('openai: векторов меньше, чем текстов — SERVER (можно повторить)', async () => {
+    const adapter = new OpenAiAdapter({
+      baseUrl: 'https://llm.example/v1',
+      apiKey: 'k',
+      model: 'm',
+      timeoutMs: 1000,
+      fetchFn: vi.fn(async () => new Response(JSON.stringify({ data: [{ index: 0, embedding: vec(1) }] }), { status: 200 })),
+    });
+    const err = (await adapter.embed({ texts: ['a', 'b'] }).catch((e) => e)) as AdapterError;
+    expect(err.kind).toBe('SERVER');
+  });
+
+  it('маскирует тексты, пишет журнал без текстов, тратит попытки операции', async () => {
+    const adapter = new DemoAdapter();
+    const spy = vi.spyOn(adapter, 'embed');
+    const traces: TraceEntry[] = [];
+    const service = new LlmService(
+      adapter,
+      new PromptRegistry(),
+      new MaskingService(),
+      { record: vi.fn(async (e: TraceEntry) => (traces.push(e), 'id')) } as unknown as TraceService,
+    );
+    const op = service.operation(null, 'CHAT');
+    const vectors = await service.embed({
+      texts: ['IBAN DE89 3704 0044 0532 0130 00 bitte', 'zweiter Text'],
+      context: { cabinetId: null },
+      operation: op,
+    });
+    expect(vectors).toHaveLength(2);
+    expect(spy.mock.calls[0][0].texts[0]).not.toContain('DE89');
+    expect(traces[0]).toMatchObject({ promptName: 'embed', ok: true, attempts: 1, output: '2 vectors' });
+    expect(traces[0].input).toBe(`embed: 2 texts, ${spy.mock.calls[0][0].texts.join('').length} chars`);
+    expect(op.remaining).toBe(MAX_ATTEMPTS - 1);
+    expect(await service.embed({ texts: [], context: { cabinetId: null } })).toEqual([]);
+  });
+
+  it('адаптер без embed — LLM_FAILED; ошибка связи повторяется в пределах maxAttempts', async () => {
+    const { service } = setup([]);
+    await expect(service.embed({ texts: ['a'], context: { cabinetId: null } })).rejects.toMatchObject({
+      code: 'LLM_FAILED',
+    });
+
+    const adapter = new DemoAdapter();
+    const embed = vi
+      .spyOn(adapter, 'embed')
+      .mockRejectedValueOnce(new AdapterError('NETWORK', 'нет связи'))
+      .mockRejectedValueOnce(new AdapterError('NETWORK', 'нет связи'));
+    const traces: TraceEntry[] = [];
+    const s2 = new LlmService(adapter, new PromptRegistry(), new MaskingService(), {
+      record: vi.fn(async (e: TraceEntry) => (traces.push(e), 'id')),
+    } as unknown as TraceService);
+    await expect(s2.embed({ texts: ['a'], context: { cabinetId: null }, maxAttempts: 2 })).rejects.toMatchObject({
+      code: 'LLM_FAILED',
+    });
+    expect(embed).toHaveBeenCalledTimes(2);
+    expect(traces[0]).toMatchObject({ ok: false, attempts: 2, error: 'нет связи' });
+  });
+});

@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        image: pgvector/pgvector:pg17 # L05: PostgreSQL 17 с расширением pgvector
         env:
           POSTGRES_USER: jasno
           POSTGRES_PASSWORD: jasno
