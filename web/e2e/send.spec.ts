@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { API_URL, createUser, letters } from './helpers';
 
 /*
- * B12: виды ответа, правка черновика с повторной проверкой, «Я отправил(а)», срок выполнен, «В календарь».
+ * B12: виды ответа, правка черновика с повторной проверкой, «Я отправил(а)», срок выполнен, «В Google Календарь».
  * Настоящий API (demo). Письмо собирается со сроком «сегодня + 20 дней», чтобы тест не устаревал.
  */
 
@@ -118,22 +117,35 @@ test('продлить срок: черновик, правка с провер�
   await expect(page.getByText('Вы отметили: ответ отправлен')).toBeVisible();
 });
 
-test('срок на странице дела: выполнено и снова открыт; «В календарь» скачивает .ics', async ({ page, request }) => {
+test('срок на странице дела: выполнено и снова открыт; «В Google Календарь» открывает готовое событие', async ({ page, request }) => {
   const deadline = de(inDays(15));
-  const u = await createUser(request, 'ics', `Anna${letters()}`);
+  const u = await createUser(request, 'gcal', `Anna${letters()}`);
   const { caseId } = await caseWithLetter(request, u.token, deadline);
   await signedIn(page, u.token);
   await page.goto(`/app/cases/${caseId}`);
 
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'В календарь' }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^jasno-srok-\d{4}-\d{2}-\d{2}\.ics$/);
-  const ics = readFileSync((await download.path())!, 'utf8');
-  expect(ics).toContain('BEGIN:VCALENDAR');
-  expect(ics).toContain(`DTSTART;VALUE=DATE:${deadline.split('.').reverse().join('')}`);
+  const link = page.getByRole('link', { name: 'В Google Календарь' });
+  await expect(link).toHaveAttribute('target', '_blank');
+  const url = new URL((await link.getAttribute('href'))!);
+  expect(url.origin + url.pathname).toBe('https://calendar.google.com/calendar/render');
+  expect(url.searchParams.get('action')).toBe('TEMPLATE');
+  expect(url.searchParams.get('dates')).toMatch(new RegExp(`^${deadline.split('.').reverse().join('')}/\\d{8}$`));
+  expect(url.searchParams.get('text')).toMatch(/^Срок/);
+  expect(url.searchParams.get('details')).toContain(`/app/cases/${caseId}`);
+
+  // тот же срок в кабинете, блок «Календарь и напоминания»
+  await page.goto('/app');
+  const item = page.getByTestId('calendar-profile').getByTestId('calendar-deadline');
+  await expect(item).toHaveCount(1);
+  await expect(item).toContainText(deadline);
+  const fromCabinet = new URL((await item.getByRole('link', { name: 'В Google Календарь' }).getAttribute('href'))!);
+  expect(fromCabinet.searchParams.get('dates')).toBe(url.searchParams.get('dates'));
+  expect(fromCabinet.searchParams.get('text')).toContain('Jobcenter');
+  await page.goto(`/app/cases/${caseId}`);
 
   await page.getByRole('button', { name: 'Выполнено' }).click();
   await expect(page.getByTestId('deadline').first()).toHaveAttribute('data-state', 'done');
-  await expect(page.getByRole('button', { name: 'В календарь' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'В Google Календарь' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Открыть срок снова' }).click();
   await expect(page.getByTestId('deadline').first()).toHaveAttribute('data-state', 'active');
 });

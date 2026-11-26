@@ -779,5 +779,14 @@
   "черновик, не проверено": "Entwurf, nicht geprüft",
   "янв": "Jan",
   "↑ Выше": "↑ Hoch",
-  "↓ Ниже": "↓ Runter"
+  "↓ Ниже": "↓ Runter",
+  "В Google Календарь": "In Google Kalender",
+  "Дело: {v0}": "Vorgang: {v0}",
+  "Срок из письма, подтверждённый в Ja!sno. Проверьте дату по оригиналу письма.": "Frist aus dem Brief, in Ja!sno bestätigt. Prüfen Sie das Datum im Original.",
+  "срок": "Frist",
+  "Ближайших сроков пока нет.": "Gerade gibt es keine nächsten Fristen.",
+  "Ближайшие сроки": "Nächste Fristen",
+  "Раньше вы создали ссылку-подписку на календарь. Она больше не нужна, её лучше отключить.": "Sie haben früher einen Kalender-Link zum Abonnieren erstellt. Er wird nicht mehr gebraucht. Schalten Sie ihn am besten aus.",
+  "Отключить старую ссылку": "Alten Link ausschalten",
+  "Нажмите «В Google Календарь» у срока: откроется Google Календарь с готовым событием, останется нажать «Сохранить». В событии только дата, вид срока, ведомство и название дела, без текста письма.": "Tippen Sie bei einer Frist auf „In Google Kalender“. Google Kalender öffnet sich mit einem fertigen Termin. Dann nur noch „Speichern“ tippen. Im Termin stehen nur Datum, Art der Frist, Amt und Name vom Vorgang, kein Text aus dem Brief."
 }
