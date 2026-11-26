@@ -80,7 +80,7 @@ describe('Вопросы к архиву писем (e2e, L05)', () => {
     rmSync(contentDir, { recursive: true, force: true });
   });
 
-  it('ответ по своим письмам: источник с точной цитатой, 2 обращения к модели, вектор без текста в журнале', async () => {
+  it('ответ по своим письмам: источник с точной цитатой, 2 обращения к модели, векторы локально', async () => {
     const a = await register('archive@example.org');
     const jobcenter = await upload(a.token, '01_jobcenter_request.pdf');
     await upload(a.token, '04_buergeramt.pdf');
@@ -107,17 +107,15 @@ describe('Вопросы к архиву писем (e2e, L05)', () => {
     const op = await db.llmOperation.findMany({ where: { cabinetId: a.cabinetId, kind: 'CHAT' } });
     expect(op).toHaveLength(1);
     const calls = await db.llmCall.findMany({ where: { operationId: op[0].id }, orderBy: { createdAt: 'asc' } });
-    expect(calls.map((c) => c.promptName)).toEqual(['embed', 'archive']);
+    // локальные векторы (LLM_EMBED_MODE=local): вопрос → слова для поиска, потом ответ; векторы без модели
+    expect(calls.map((c) => c.promptName)).toEqual(['archive-query', 'archive']);
     expect(calls.reduce((n, c) => n + c.attempts, 0)).toBeLessThanOrEqual(3);
-    expect(calls[0].input).toMatch(/^embed: \d+ texts, \d+ chars$/);
-    expect(calls[0].input).not.toContain('Kontoauszüge');
 
     // второй вопрос: письма уже готовы, векторы считаются только для вопроса
     await ask(a.token, 'Soll ich den Mietvertrag vorlegen?')
       .expect(200)
       .expect((r) => expect(r.body.sources[0].quote).toBe('Bitte legen Sie den Mietvertrag vor.'));
-    const embeds = await db.llmCall.findMany({ where: { cabinetId: a.cabinetId, promptName: 'embed' }, orderBy: { createdAt: 'asc' } });
-    expect(embeds[1].input).toMatch(/^embed: 1 texts/);
+    expect(await db.llmCall.count({ where: { cabinetId: a.cabinetId, promptName: 'embed' } })).toBe(0);
   });
 
   it('чужие письма не находятся; без писем — честный ответ без модели', async () => {

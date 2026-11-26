@@ -9,6 +9,7 @@ import {
 } from './llm.types.js';
 import { LlmLimitsService } from './llm-limits.service.js';
 import { LlmOperationHandle, MAX_ATTEMPTS } from './llm-operation.js';
+import { EMBEDDER, LocalEmbedder, type Embedder } from './local-embed.js';
 import { MaskingService, type MaskTable } from './masking.service.js';
 import { PromptRegistry, render } from './prompt-registry.js';
 import { TraceService, type LlmContext } from './trace.service.js';
@@ -75,7 +76,21 @@ export class LlmService {
     @Optional()
     @Inject(LlmLimitsService)
     private readonly limits?: LlmLimitsService,
+    // L05: источник векторов (LLM_EMBED_MODE). Нет — локальные векторы без модели.
+    @Optional()
+    @Inject(EMBEDDER)
+    private readonly embedder: Embedder = new LocalEmbedder(),
   ) {}
+
+  /** L05: какой источник векторов; ArchiveService пересчитывает куски при его смене. */
+  get embedderId(): string {
+    return this.embedder.id;
+  }
+
+  /** L05: векторы считаются локально, без модели (тогда вопрос сначала переводится в слова писем). */
+  get embedsLocally(): boolean {
+    return !this.embedder.remote;
+  }
 
   /** Учёт расхода не должен ломать ответ пользователю: ошибка записи только в лог. */
   private async recordUsage(
@@ -263,15 +278,18 @@ export class LlmService {
   }
 
   /**
-   * L05 (#81): векторы текстов для вопросов к архиву. Тексты маскируются перед отправкой.
+   * L05 (#81): векторы текстов для вопросов к архиву.
+   * Локальный источник (LLM_EMBED_MODE=local): без модели, без журнала и без попыток операции.
+   * Внешний (api): тексты маскируются перед отправкой.
    * Запись в LlmCall (promptName embed): без самих текстов, только их число и длина. Один вызов
    * собирает куски разных писем, а журнал по письму удаляется вместе с письмом (letterId).
    * Обращения входят в общий предел операции (MAX_ATTEMPTS) и в лимиты B18.
    */
   async embed(options: LlmEmbedOptions): Promise<number[][]> {
     if (options.texts.length === 0) return [];
-    const embedFn = this.adapter.embed?.bind(this.adapter);
-    if (!embedFn) throw new ApiError('LLM_FAILED');
+    if (!this.embedder.remote)
+      return (await this.embedder.embed({ texts: options.texts })).vectors;
+    const embedFn = this.embedder.embed.bind(this.embedder);
     const texts = options.texts.map((t) => this.masking.mask(t, new Map()));
     const chars = texts.reduce((n, t) => n + t.length, 0);
     const op =
@@ -289,7 +307,7 @@ export class LlmService {
         promptName: 'embed',
         promptVersion: 1,
         provider: this.adapter.provider,
-        model: this.adapter.embedModel ?? this.adapter.model,
+        model: this.embedder.id,
         input: `embed: ${texts.length} texts, ${chars} chars`,
         output: ok ? `${texts.length} vectors` : null,
         ok,
@@ -366,6 +384,16 @@ export function parseJson(
   try {
     return { ok: true, value: JSON.parse(trimmed) };
   } catch {
+    // Модель без режима JSON (Anthropic) иногда пишет фразу перед объектом: берём объект целиком
+    const from = trimmed.indexOf('{');
+    const to = trimmed.lastIndexOf('}');
+    if (from > 0 || (from === 0 && to < trimmed.length - 1)) {
+      try {
+        return { ok: true, value: JSON.parse(trimmed.slice(from, to + 1)) };
+      } catch {
+        // ниже общая ошибка
+      }
+    }
     return { ok: false, error: 'ответ не является JSON' };
   }
 }

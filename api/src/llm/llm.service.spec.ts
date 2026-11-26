@@ -3,14 +3,15 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import { ApiError } from '../common/api-error.js';
 import { DemoAdapter } from './adapters/demo.adapter.js';
-import { OpenAiAdapter } from './adapters/openai.adapter.js';
+import { OpenAiAdapter, isAnthropic } from './adapters/openai.adapter.js';
 import {
   AdapterError,
   type AdapterRequest,
   type AdapterResponse,
   type LlmAdapter,
 } from './llm.types.js';
-import { LlmService, MAX_ATTEMPTS } from './llm.service.js';
+import { LlmService, MAX_ATTEMPTS, parseJson } from './llm.service.js';
+import type { Embedder } from './local-embed.js';
 import { MaskingService } from './masking.service.js';
 import { PromptRegistry } from './prompt-registry.js';
 import { ExtractSchema } from './schemas/extract.schema.js';
@@ -524,16 +525,34 @@ describe('L05: LlmService.embed и адаптер openai /embeddings', () => {
     expect(err.kind).toBe('SERVER');
   });
 
-  it('маскирует тексты, пишет журнал без текстов, тратит попытки операции', async () => {
-    const adapter = new DemoAdapter();
-    const spy = vi.spyOn(adapter, 'embed');
+  /** Внешний источник векторов: отвечает по списку, как ScriptedAdapter. */
+  const remote = (script: (number[][] | AdapterError)[]) => {
+    const calls: string[][] = [];
+    const embedder: Embedder = {
+      id: 'api:test',
+      remote: true,
+      embed: vi.fn(async ({ texts }: { texts: string[] }) => {
+        calls.push(texts);
+        const next = script.shift();
+        if (next === undefined) throw new Error('сценарий закончился');
+        if (next instanceof AdapterError) throw next;
+        return { vectors: next, tokensIn: 3 };
+      }),
+    };
     const traces: TraceEntry[] = [];
     const service = new LlmService(
-      adapter,
+      new DemoAdapter(),
       new PromptRegistry(),
       new MaskingService(),
       { record: vi.fn(async (e: TraceEntry) => (traces.push(e), 'id')) } as unknown as TraceService,
+      undefined,
+      embedder,
     );
+    return { service, calls, traces };
+  };
+
+  it('внешний источник: маскирует тексты, журнал без текстов, тратит попытки операции', async () => {
+    const { service, calls, traces } = remote([[vec(1), vec(2)]]);
     const op = service.operation(null, 'CHAT');
     const vectors = await service.embed({
       texts: ['IBAN DE89 3704 0044 0532 0130 00 bitte', 'zweiter Text'],
@@ -541,32 +560,87 @@ describe('L05: LlmService.embed и адаптер openai /embeddings', () => {
       operation: op,
     });
     expect(vectors).toHaveLength(2);
-    expect(spy.mock.calls[0][0].texts[0]).not.toContain('DE89');
-    expect(traces[0]).toMatchObject({ promptName: 'embed', ok: true, attempts: 1, output: '2 vectors' });
-    expect(traces[0].input).toBe(`embed: 2 texts, ${spy.mock.calls[0][0].texts.join('').length} chars`);
+    expect(calls[0][0]).not.toContain('DE89');
+    expect(traces[0]).toMatchObject({ promptName: 'embed', model: 'api:test', ok: true, attempts: 1, output: '2 vectors' });
+    expect(traces[0].input).toBe(`embed: 2 texts, ${calls[0].join('').length} chars`);
     expect(op.remaining).toBe(MAX_ATTEMPTS - 1);
+    expect(service.embedsLocally).toBe(false);
     expect(await service.embed({ texts: [], context: { cabinetId: null } })).toEqual([]);
   });
 
-  it('адаптер без embed — LLM_FAILED; ошибка связи повторяется в пределах maxAttempts', async () => {
-    const { service } = setup([]);
-    await expect(service.embed({ texts: ['a'], context: { cabinetId: null } })).rejects.toMatchObject({
+  it('внешний источник: ошибка связи повторяется в пределах maxAttempts', async () => {
+    const { service, traces } = remote([
+      new AdapterError('NETWORK', 'нет связи'),
+      new AdapterError('NETWORK', 'нет связи'),
+    ]);
+    await expect(service.embed({ texts: ['a'], context: { cabinetId: null }, maxAttempts: 2 })).rejects.toMatchObject({
       code: 'LLM_FAILED',
     });
-
-    const adapter = new DemoAdapter();
-    const embed = vi
-      .spyOn(adapter, 'embed')
-      .mockRejectedValueOnce(new AdapterError('NETWORK', 'нет связи'))
-      .mockRejectedValueOnce(new AdapterError('NETWORK', 'нет связи'));
-    const traces: TraceEntry[] = [];
-    const s2 = new LlmService(adapter, new PromptRegistry(), new MaskingService(), {
-      record: vi.fn(async (e: TraceEntry) => (traces.push(e), 'id')),
-    } as unknown as TraceService);
-    await expect(s2.embed({ texts: ['a'], context: { cabinetId: null }, maxAttempts: 2 })).rejects.toMatchObject({
-      code: 'LLM_FAILED',
-    });
-    expect(embed).toHaveBeenCalledTimes(2);
     expect(traces[0]).toMatchObject({ ok: false, attempts: 2, error: 'нет связи' });
+  });
+
+  it('по умолчанию локальные векторы: без модели, без журнала, попытки не тратятся', async () => {
+    const { service, traces } = setup([]);
+    const op = service.operation(null, 'CHAT');
+    const vectors = await service.embed({ texts: ['Kontoauszüge'], context: { cabinetId: null }, operation: op });
+    expect(vectors[0]).toHaveLength(768);
+    expect(traces).toEqual([]);
+    expect(op.remaining).toBe(MAX_ATTEMPTS);
+    expect(service.embedsLocally).toBe(true);
+    expect(service.embedderId).toBe('local-v1');
+  });
+});
+
+describe('Anthropic (OpenAI-совместимый адрес) и JSON без режима json_object', () => {
+  it('для api.anthropic.com response_format не отправляется, для других — json_object', async () => {
+    const body = { choices: [{ message: { content: '{"a":1}' } }] };
+    const send = async (baseUrl: string) => {
+      const fetchFn = vi.fn(async () => new Response(JSON.stringify(body), { status: 200 }));
+      await new OpenAiAdapter({ baseUrl, apiKey: 'k', model: 'm', timeoutMs: 1000, fetchFn }).complete({
+        promptName: 'chat',
+        system: 's',
+        user: 'u',
+        variables: {},
+        images: [],
+      });
+      const [, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
+      return JSON.parse(init.body as string) as Record<string, unknown>;
+    };
+    const anthropic = await send('https://api.anthropic.com/v1/');
+    expect(anthropic).not.toHaveProperty('response_format');
+    expect(anthropic).not.toHaveProperty('temperature');
+    const gemini = await send('https://generativelanguage.googleapis.com/v1beta/openai');
+    expect(gemini.response_format).toEqual({ type: 'json_object' });
+    expect(gemini.temperature).toBe(0);
+    expect(isAnthropic('https://api.anthropic.com/v1')).toBe(true);
+    expect(isAnthropic('https://anthropic.com.evil.example/v1')).toBe(false);
+  });
+
+  it('400 про параметр «for this model» — BAD_REQUEST с текстом, не MODEL', async () => {
+    const res = (body: unknown) =>
+      new OpenAiAdapter({
+        baseUrl: 'https://api.anthropic.com/v1',
+        apiKey: 'k',
+        model: 'm',
+        timeoutMs: 1000,
+        fetchFn: vi.fn(async () => new Response(JSON.stringify(body), { status: 400 })),
+      })
+        .complete({ promptName: 'chat', system: 's', user: 'u', variables: {}, images: [] })
+        .then(
+          () => {
+            throw new Error('ожидалась ошибка');
+          },
+          (e: AdapterError) => e,
+        );
+    const deprecated = await res({ error: { type: 'invalid_request_error', message: '`temperature` is deprecated for this model.' } });
+    expect(deprecated.kind).toBe('BAD_REQUEST');
+    expect(deprecated.message).toContain('deprecated');
+    expect((await res({ error: { message: 'model: claude-x not found' } })).kind).toBe('MODEL');
+  });
+
+  it('parseJson: объект после фразы или перед ней достаётся целиком', () => {
+    expect(parseJson('Вот ответ:\n{"answer":"да"}')).toEqual({ ok: true, value: { answer: 'да' } });
+    expect(parseJson('{"answer":"да"}\nГотово.')).toEqual({ ok: true, value: { answer: 'да' } });
+    expect(parseJson('нет JSON').ok).toBe(false);
   });
 });

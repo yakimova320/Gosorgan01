@@ -6,7 +6,7 @@ import { cabinetLanguage, languageVariables, type Language } from '../common/lan
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
 import { LlmService } from '../llm/llm.service.js';
-import { ArchiveAnswerSchema } from '../llm/schemas/archive.schema.js';
+import { ArchiveAnswerSchema, ArchiveQuerySchema } from '../llm/schemas/archive.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { ArchiveReply, ArchiveSource } from './archive.dto.js';
 import { ArchiveRepository } from './archive.repository.js';
@@ -35,7 +35,9 @@ const dateDe = (d: Date) =>
 /**
  * L05 (#81): вопросы к архиву писем (RAG).
  * 1. Письма кабинета без векторов (или с изменённым текстом) режутся на куски.
- * 2. Одно обращение за векторами: вопрос + новые куски (LlmService.embed).
+ * 2. Векторы вопроса и новых кусков (LlmService.embed). Локальные векторы (по умолчанию) ищут по словам,
+ *    поэтому вопрос сначала переводится в немецкие слова писем (archive-query.v1, одно обращение).
+ *    Внешние векторы (LLM_EMBED_MODE=api) — одно обращение за векторами.
  * 3. Код ищет ближайшие куски только среди писем этого кабинета (pgvector, WHERE cabinetId).
  * 4. Второе обращение: ответ модели по кускам (archive.v1), Zod.
  * 5. Код оставляет только цитаты, которые есть в тексте письма.
@@ -84,7 +86,8 @@ export class ArchiveService {
     let room = EMBED_BATCH - 1;
     let pendingLetters = 0;
     for (const l of letters) {
-      const hash = textHash(l.rawText);
+      // источник векторов входит в отпечаток: при его смене куски считаются заново
+      const hash = textHash(`${this.llm.embedderId}\n${l.rawText}`);
       if (l.chunks[0]?.textHash === hash) continue;
       const chunks = splitLetter(l.rawText);
       if (chunks.length === 0) continue;
@@ -96,10 +99,23 @@ export class ArchiveService {
       batch.push({ letterId: l.id, hash, chunks });
     }
 
-    // 2. одно обращение за векторами: вопрос и новые куски
+    // 2. векторы вопроса и новых кусков
     const op = this.llm.operation(cabinetId, 'CHAT');
+    let searchText = question;
+    if (this.llm.embedsLocally) {
+      const q = await this.llm.call({
+        prompt: 'archive-query',
+        version: 1,
+        variables: { question },
+        schema: ArchiveQuerySchema,
+        context: { cabinetId },
+        operation: op,
+        maxAttempts: 2, // ещё одно обращение остаётся на ответ
+      });
+      searchText = `${question}\n${q.query}`;
+    }
     const vectors = await this.llm.embed({
-      texts: [question, ...batch.flatMap((b) => b.chunks)],
+      texts: [searchText, ...batch.flatMap((b) => b.chunks)],
       context: { cabinetId },
       operation: op,
       maxAttempts: 2, // ещё одно обращение остаётся на ответ
@@ -125,7 +141,7 @@ export class ArchiveService {
         return `### F${i + 1}\nПисьмо: «${l.title ?? 'без названия'}» · ${dateDe(l.createdAt)}\n${h.text}`;
       })
       .join('\n\n');
-    const terms = termsIn(`${question}\n${fragments}`, this.glossary());
+    const terms = termsIn(`${searchText}\n${fragments}`, this.glossary());
 
     // 4. ответ модели по кускам
     const result = await this.llm.call({
