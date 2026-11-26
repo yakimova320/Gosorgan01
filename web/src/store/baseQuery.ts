@@ -15,6 +15,22 @@ import { decryptFile, decryptResponse, documentKeys, keyring, newDocumentKey } f
 /** E01: сколько раз запрос повторяется с ключами документов после 428 KEYS_REQUIRED. */
 const KEY_RETRIES = 3;
 
+
+/*
+ * E02 (#165): расшифрованные байты файлов, выданных как blob:-адрес. Нужны для «Скачать оригинал»:
+ * CSP (connect-src 'self') не даёт прочитать blob: через fetch. Живут, пока экран не вызовет releaseFile.
+ */
+const fileBytes = new Map<string, Uint8Array>();
+
+export function fileBytesOf(url: string): Uint8Array | undefined {
+  return fileBytes.get(url);
+}
+
+export function releaseFile(url: string) {
+  fileBytes.delete(url);
+  URL.revokeObjectURL(url);
+}
+
 export type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 export interface RequestArgs {
@@ -128,9 +144,9 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
     try {
       const blob = await res.blob();
       const bytes = await decryptFile(new Uint8Array(await blob.arrayBuffer()));
-      return {
-        data: URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: blob.type })),
-      };
+      const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: blob.type }));
+      fileBytes.set(url, bytes);
+      return { data: url };
     } catch (e) {
       if (e instanceof CryptoIntegrityError)
         return { error: apiError('INTEGRITY_FAILED', 422) };

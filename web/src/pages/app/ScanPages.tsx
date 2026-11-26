@@ -641,7 +641,7 @@ export function LetterCheckPage({ id }: { id: string }) {
     <>
       <PageHeader title={t('Проверьте факты')} subtitle={t('Сравните с письмом. Ja!sno показывает только то, что нашло дословно в тексте.')} back="/app" />
       <Steps n={3} />
-      <LetterOriginals letterId={letter.id} files={letter.files} />
+      <LetterOriginals letterId={letter.id} files={letter.files} title={letter.title} createdAt={letter.createdAt} />
 
       {blocker.state === 'blocked' && (
         <div className="alert alert--warn stack-s" role="alertdialog" aria-label={t('Несохранённые решения')}>

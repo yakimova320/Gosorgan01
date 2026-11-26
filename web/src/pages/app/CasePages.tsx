@@ -393,7 +393,12 @@ export function LetterPage({ id }: { id: string }) {
         back={back}
       />
       <LetterTitleEditor letterId={id} title={letter.data.letter.title ?? null} />
-      <LetterOriginals letterId={id} files={letter.data.letter.files} />
+      <LetterOriginals
+        letterId={id}
+        files={letter.data.letter.files}
+        title={letter.data.letter.title}
+        createdAt={letter.data.letter.createdAt}
+      />
       <div className="desktop-2col stack">
         <section className="stack">
           {expl.isFetching && <Loading text={t('Ja!sno объясняет письмо…')} />}

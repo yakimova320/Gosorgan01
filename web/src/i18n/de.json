@@ -817,5 +817,9 @@
   "Ja!sno шифрует письма прямо в браузере. На сервере лежит только шифротекст: ни мы, ни база данных не можем прочитать ваш архив.": "Ja!sno verschlüsselt Ihre Briefe direkt im Browser. Auf dem Server liegt nur verschlüsselter Text: Weder wir noch die Datenbank können Ihr Archiv lesen.",
   "Секрет восстановления — единственный способ открыть архив на новом устройстве. Ja!sno его не хранит и не сможет восстановить. Сброс пароля архив не открывает.": "Der Wiederherstellungsschlüssel ist der einzige Weg, das Archiv auf einem neuen Gerät zu öffnen. Ja!sno speichert ihn nicht und kann ihn nicht wiederherstellen. Ein neues Passwort öffnet das Archiv nicht.",
   "На этом устройстве архив ещё не открыт. Введите секрет восстановления, который вы сохранили при создании ключа архива.": "Auf diesem Gerät ist das Archiv noch nicht geöffnet. Geben Sie den Wiederherstellungsschlüssel ein, den Sie beim Erstellen des Archivschlüssels gespeichert haben.",
-  "Без секрета архив не открыть: Ja!sno не хранит ключей. Если архив открыт на другом устройстве, откройте его там. Иначе письма придётся загрузить заново в новом аккаунте.": "Ohne den Schlüssel lässt sich das Archiv nicht öffnen: Ja!sno speichert keine Schlüssel. Ist das Archiv auf einem anderen Gerät geöffnet, öffnen Sie es dort. Sonst müssen Sie die Briefe in einem neuen Konto erneut hochladen."
+  "Без секрета архив не открыть: Ja!sno не хранит ключей. Если архив открыт на другом устройстве, откройте его там. Иначе письма придётся загрузить заново в новом аккаунте.": "Ohne den Schlüssel lässt sich das Archiv nicht öffnen: Ja!sno speichert keine Schlüssel. Ist das Archiv auf einem anderen Gerät geöffnet, öffnen Sie es dort. Sonst müssen Sie die Briefe in einem neuen Konto erneut hochladen.",
+  "Скачать оригинал (PDF)": "Original herunterladen (PDF)",
+  "Готовим файл…": "Datei wird vorbereitet…",
+  "Точная копия загруженного файла, с подписями и печатями.": "Genaue Kopie der hochgeladenen Datei, mit Unterschriften und Stempeln.",
+  "Фото страниц одним PDF, без пересжатия.": "Fotos der Seiten als ein PDF, ohne erneute Komprimierung."
 }
