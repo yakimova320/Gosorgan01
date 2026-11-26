@@ -14,3 +14,8 @@ export const ArchiveAnswerSchema = z.object({
     .default([]),
 });
 export type ArchiveAnswer = z.infer<typeof ArchiveAnswerSchema>;
+
+/** Ответ archive-query.v1: слова для поиска по письмам (при локальных векторах). */
+export const ArchiveQuerySchema = z.object({
+  query: z.string().trim().min(1).max(500),
+});

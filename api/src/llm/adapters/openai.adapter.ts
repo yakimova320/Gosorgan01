@@ -37,11 +37,18 @@ export class OpenAiAdapter implements LlmAdapter {
   readonly model: string;
   readonly embedModel: string;
   private readonly fetchFn: typeof fetch;
+  /**
+   * Anthropic (OpenAI-совместимый адрес api.anthropic.com/v1) отвечает HTTP 400 (26.11) на
+   * response_format json_object и на temperature («deprecated for this model»): для него оба поля
+   * не отправляются. JSON требуют сами промпты, parseJson достаёт объект из ответа.
+   */
+  private readonly anthropic: boolean;
 
   constructor(private readonly options: OpenAiAdapterOptions) {
     this.model = options.model;
     this.embedModel = options.embedModel ?? 'gemini-embedding-001';
     this.fetchFn = options.fetchFn ?? fetch;
+    this.anthropic = isAnthropic(options.baseUrl);
   }
 
   async complete(request: AdapterRequest): Promise<AdapterResponse> {
@@ -74,8 +81,9 @@ export class OpenAiAdapter implements LlmAdapter {
               { role: 'system', content: request.system },
               { role: 'user', content: user },
             ],
-            response_format: { type: 'json_object' },
-            temperature: 0,
+            ...(this.anthropic
+              ? {}
+              : { response_format: { type: 'json_object' }, temperature: 0 }),
           }),
           signal: AbortSignal.timeout(this.options.timeoutMs),
         },
@@ -153,6 +161,15 @@ export class OpenAiAdapter implements LlmAdapter {
   }
 }
 
+export function isAnthropic(baseUrl: string): boolean {
+  try {
+    const host = new URL(baseUrl).hostname;
+    return host === 'anthropic.com' || host.endsWith('.anthropic.com');
+  } catch {
+    return false;
+  }
+}
+
 /** Текст ошибки провайдера обрезается: в нём не должно оказаться ключа или длинного эха запроса. */
 async function toAdapterError(res: Response): Promise<AdapterError> {
   const raw = await res.text().catch(() => '');
@@ -179,7 +196,8 @@ async function toAdapterError(res: Response): Promise<AdapterError> {
   }
   if (res.status >= 500)
     return new AdapterError('SERVER', `${status}: ${detail}`);
-  if (/model/i.test(detail) && /not found|unsupported|invalid/i.test(detail)) {
+  // «model … not found / not supported», но не «… is deprecated for this model» (параметр запроса)
+  if (/model\b[^.]{0,60}\b(not found|does not exist|unsupported|not supported)|(unknown|invalid) model/i.test(detail)) {
     return new AdapterError('MODEL', `${status}: модель не поддерживается`);
   }
   return new AdapterError('BAD_REQUEST', `${status}: ${detail}`);

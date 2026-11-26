@@ -42,10 +42,6 @@ export interface LlmAdapter {
   readonly provider: string;
   readonly model: string;
   complete(request: AdapterRequest): Promise<AdapterResponse>;
-  /** L05: модель векторов для журнала LlmCall. */
-  readonly embedModel?: string;
-  /** L05: векторы текстов для поиска по архиву. Нет — у адаптера поиска нет (тестовые адаптеры). */
-  embed?(request: EmbedRequest): Promise<EmbedResponse>;
 }
 
 export const LLM_ADAPTER = Symbol('LLM_ADAPTER');

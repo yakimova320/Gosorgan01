@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { demoArchive, demoEmbed, DEMO_ARCHIVE_NONE } from '../llm/adapters/demo-archive.js';
+import { demoArchive, DEMO_ARCHIVE_NONE } from '../llm/adapters/demo-archive.js';
+import { localEmbed as demoEmbed } from '../llm/local-embed.js';
 import { EMBEDDING_DIM } from '../llm/llm.types.js';
 import { fitVector, normalize, toPgVector } from '../llm/vector.js';
 import { CHUNK_CHARS, MAX_CHUNKS_PER_LETTER, splitLetter, textHash } from './chunking.js';
@@ -62,7 +63,7 @@ describe('L05: векторы', () => {
     expect(toPgVector([0.5, -1, Number.NaN])).toBe('[0.5,-1,0]');
   });
 
-  it('demo: тексты с общими словами ближе, чем без них', () => {
+  it('локальные векторы: тексты с общими словами ближе, чем без них', () => {
     const q = demoEmbed('Welche Kontoauszüge?');
     const near = demoEmbed('Bitte reichen Sie die Kontoauszüge ein.');
     const far = demoEmbed('Bitte legen Sie den Mietvertrag vor.');
