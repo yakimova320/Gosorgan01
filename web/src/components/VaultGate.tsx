@@ -43,6 +43,12 @@ function ApiVaultGate({ children }: { children: ReactNode }) {
     if (token && vault.status === 'unknown') void initKeyring();
   }, [token, vault.status]);
 
+  // E02 (#165): ответы, пришедшие до открытия архива (например, кабинет для «Ваш следующий шаг»),
+  // в кэше остались шифротекстом. После открытия они запрашиваются заново и расшифровываются.
+  useEffect(() => {
+    if (vault.status === 'unlocked') dispatch(api.util.invalidateTags([...ALL_TAGS]));
+  }, [vault.status, dispatch]);
+
   useEffect(() => {
     if (vault.status !== 'unlocked' || vault.legacy === 0) return;
     void encryptLegacy().then(() => dispatch(api.util.invalidateTags([...ALL_TAGS])));

@@ -1,8 +1,8 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, type Page } from '@playwright/test';
 import { test } from './fixtures';
-import { createUser, letters, signedIn } from './helpers';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * E01 (#163): ключ архива в браузере. Секрет создаётся на экране «Ключ вашего архива»;
@@ -90,6 +90,44 @@ test('второй вход на том же устройстве: архив о
   const u = await createUser(request, 'vault2', `Anna${letters()}`);
   expect(await signedIn(page, u.token)).toMatch(/-/);
   expect(await signedIn(page, u.token)).toBeNull();
+});
+
+test('E02 (#165): после открытия архива «Ваш следующий шаг» показывает название дела, не шифротекст', async ({
+  page,
+  request,
+}) => {
+  const u = await createUser(request, 'vault-next', `Anna${letters()}`);
+  const h = { Authorization: `Bearer ${u.token}` };
+  const up = await request.post(`${API_URL}/letters`, {
+    headers: h,
+    multipart: {
+      files: { name: '04_buergeramt.pdf', mimeType: 'application/pdf', buffer: readFileSync(fixture('04_buergeramt.pdf')) },
+    },
+  });
+  expect(up.status()).toBe(201);
+  const body = (await up.json()) as { letter: { id: string }; claims: { id: string }[] };
+  await request.post(`${API_URL}/letters/${body.letter.id}/claims/confirm`, {
+    headers: h,
+    data: { confirm: body.claims.map((c) => c.id) },
+  });
+  const assigned = await request.post(`${API_URL}/letters/${body.letter.id}/assign`, {
+    headers: h,
+    data: { newCase: {} },
+  });
+  expect(assigned.ok()).toBe(true);
+  const caseId = ((await assigned.json()) as { caseId: string }).caseId;
+  const kase = (await (await request.get(`${API_URL}/cases/${caseId}`, { headers: h })).json()) as {
+    case?: { title: string };
+    title?: string;
+  };
+  const title = kase.case?.title ?? kase.title!;
+  expect(title).not.toMatch(/^jx1\./);
+
+  // новое устройство: данные кабинета запрашиваются ещё до ввода секрета
+  await signedIn(page, u.token);
+  const next = page.getByRole('link', { name: /Ваш следующий шаг/ });
+  await expect(next).toContainText(title);
+  await expect(next).not.toContainText('jx1.');
 });
 
 async function signedInOnly(page: Page, token: string) {
