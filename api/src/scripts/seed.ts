@@ -16,10 +16,11 @@ loadEnvFiles(apiDir);
 let prepared;
 try {
   // сначала проверки (окружение, пароль, файлы писем), потом любые изменения базы
-  prepared = prepareSeed({
+  prepared = await prepareSeed({
     nodeEnv: process.env.NODE_ENV,
     email: process.env.DEMO_EMAIL,
     password: process.env.DEMO_PASSWORD,
+    recoverySecret: process.env.DEMO_RECOVERY_SECRET,
     fixturesDir: resolve(apiDir, '..', 'fixtures', 'letters'),
   });
 } catch (e) {
@@ -38,7 +39,9 @@ try {
   console.log(
     `Демо-кабинет ${r.replaced ? 'пересоздан' : 'создан'}: ${r.email}, дел: ${r.cases}, просроченных сроков: ${r.overdueDeadlines}.`,
   );
-  console.log('Вход: e-mail выше и пароль из DEMO_PASSWORD (api/.env). Сценарий показа: docs/demo-runbook.md');
+  console.log(
+    'Вход: e-mail выше и пароль из DEMO_PASSWORD (api/.env), архив — секрет DEMO_RECOVERY_SECRET. Сценарий показа: docs/demo-runbook.md',
+  );
 } catch (e) {
   if (e instanceof SeedError) {
     console.error(`Seed не выполнен: ${e.message}`);

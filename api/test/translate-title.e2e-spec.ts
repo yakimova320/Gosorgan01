@@ -82,7 +82,7 @@ describe('Перевод и название письма (e2e, поправки
     const call = await db.llmCall.findFirstOrThrow({
       where: { letterId: up.letter.id, promptName: 'extract' },
     });
-    expect(call.promptVersion).toBe(4);
+    expect(call.promptVersion).toBe(5);
   });
 
   it('название можно изменить; пустое — 400; чужое письмо — 404', async () => {

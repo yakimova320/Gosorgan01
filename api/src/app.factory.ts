@@ -8,6 +8,7 @@ import { ApiErrorFilter } from './common/error.filter.js';
 import { APP_CONFIG } from './config/config.module.js';
 import type { Env } from './config/env.schema.js';
 import { serveWeb } from './web/web-static.js';
+import { keyContextMiddleware } from './crypto/key-context.js';
 
 /**
  * Собирает приложение одинаково для запуска (main.ts) и для e2e-тестов.
@@ -25,6 +26,8 @@ export async function createApp(options?: {
   if (config.TRUST_PROXY !== undefined) app.set('trust proxy', config.TRUST_PROXY);
 
   app.enableCors({ origin: config.CORS_ORIGIN, credentials: false });
+  // E01: ключи документов из заголовков — только в памяти запроса (AsyncLocalStorage)
+  app.use(keyContextMiddleware);
   app.useGlobalFilters(new ApiErrorFilter());
   app.enableShutdownHooks();
   // B13: в Docker API отдаёт и собранный сайт

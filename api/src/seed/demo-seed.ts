@@ -1,9 +1,16 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import {
   AI_CONSENT_VERSION,
+  createDocumentKey,
   EmailSchema,
+  generateRecoverySecret,
   NewPasswordSchema,
+  newRawKey,
+  parseRecoverySecret,
+  wrapMasterKey,
+  type NewKey,
 } from '@jasno/shared';
+import { runWithKeys } from '../crypto/key-context.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { hashPassword } from '../auth/password.js';
@@ -17,6 +24,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
  * Три дела из писем 01, 04 и 12 (у 12 срок просрочен); даты и эталоны не меняются.
  * Повторный запуск пересоздаёт только кабинет с пометкой demo; обычный аккаунт с тем же e-mail не трогается.
  * Модель внутри seed всегда demo (без сети и расходов), .env не меняется.
+ * E01 (#163): архив демо-кабинета зашифрован. Ключ архива открывается секретом DEMO_RECOVERY_SECRET
+ * (api/.env, в git не попадает): его вводят в браузере при первом входе на устройстве.
  */
 
 export const DEMO_LETTERS = [
@@ -45,17 +54,20 @@ export interface SeedInput {
   nodeEnv: string | undefined;
   email: string | undefined;
   password: string | undefined;
+  recoverySecret: string | undefined;
   fixturesDir: string;
 }
 
 export interface PreparedSeed {
   email: string;
   password: string;
+  /** E01: 32 байта секрета восстановления (из DEMO_RECOVERY_SECRET) */
+  recoverySecret: Uint8Array;
   files: { id: string; data: Buffer }[];
 }
 
 /** Проверки до любых изменений в базе: окружение, пароль, e-mail, файлы писем. */
-export function prepareSeed(input: SeedInput): PreparedSeed {
+export async function prepareSeed(input: SeedInput): Promise<PreparedSeed> {
   if (input.nodeEnv === 'production')
     throw new SeedError('Seed демо-кабинета в production запрещён.');
   if (!input.password)
@@ -65,6 +77,14 @@ export function prepareSeed(input: SeedInput): PreparedSeed {
   const pw = NewPasswordSchema.safeParse(input.password);
   if (!pw.success)
     throw new SeedError(`DEMO_PASSWORD не подходит: ${pw.error.issues[0]?.message}`);
+  if (!input.recoverySecret)
+    throw new SeedError(
+      'Нет DEMO_RECOVERY_SECRET. Впишите секрет восстановления демо-кабинета в api/.env, например новый: ' +
+        `${await generateRecoverySecret()} — его вводят в браузере при первом входе.`,
+    );
+  const recoverySecret = await parseRecoverySecret(input.recoverySecret);
+  if (!recoverySecret)
+    throw new SeedError('DEMO_RECOVERY_SECRET не подходит: проверьте опечатки (55 знаков группами по 4).');
   const email = EmailSchema.safeParse(input.email ?? DEFAULT_DEMO_EMAIL);
   if (!email.success) throw new SeedError('DEMO_EMAIL: неверный e-mail.');
   const files = DEMO_LETTERS.map((id) => {
@@ -72,7 +92,7 @@ export function prepareSeed(input: SeedInput): PreparedSeed {
     if (!existsSync(path)) throw new SeedError(`Нет файла письма ${id}.pdf в fixtures/letters.`);
     return { id, data: readFileSync(path) };
   });
-  return { email: email.data, password: input.password, files };
+  return { email: email.data, password: input.password, recoverySecret, files };
 }
 
 export interface SeedResult {
@@ -119,13 +139,32 @@ export async function seedDemo(
     },
   });
 
+  // E01: мастер-ключ создаётся здесь так же, как в браузере, и хранится только под секретом
+  const master = newRawKey();
+  await db.keyVault.create({
+    data: {
+      cabinetId: cabinet.id,
+      wrappedMaster: await wrapMasterKey(master, prepared.recoverySecret, cabinet.id),
+    },
+  });
+  const withKey = <T>(key: NewKey, fn: () => Promise<T>, fresh: NewKey | null = null) =>
+    runWithKeys([key], fn, fresh);
+
   for (const file of prepared.files) {
-    const up = await letters.upload(cabinet.id, [file.data]);
+    const letterKey = await createDocumentKey(master, cabinet.id);
+    const up = await runWithKeys([], () => letters.upload(cabinet.id, [file.data]), letterKey);
     const ids = up.claims.filter((c) => c.status === 'UNCONFIRMED').map((c) => c.id);
     if (ids.length)
-      await letters.confirm(cabinet.id, up.letter.id, { confirm: ids, reject: [] });
-    await letters.assign(cabinet.id, up.letter.id, { newCase: {} });
-    await explain.explain(cabinet.id, up.letter.id, 'ru');
+      await withKey(letterKey, () =>
+        letters.confirm(cabinet.id, up.letter.id, { confirm: ids, reject: [] }),
+      );
+    const caseKey = await createDocumentKey(master, cabinet.id);
+    await withKey(
+      letterKey,
+      () => letters.assign(cabinet.id, up.letter.id, { newCase: {} }),
+      caseKey,
+    );
+    await withKey(letterKey, () => explain.explain(cabinet.id, up.letter.id, 'ru'));
   }
 
   const today = options.today ?? new Date().toISOString().slice(0, 10);

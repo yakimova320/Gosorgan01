@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { isEnvelope } from '@jasno/shared';
 import { ApiError } from '../common/api-error.js';
 import { DocumentsService } from '../documents/documents.service.js';
 import { MIME } from '../documents/file-checks.js';
@@ -7,7 +8,11 @@ import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { StorageService } from '../documents/storage.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { LlmService } from '../llm/llm.service.js';
-import { ExtractV3Schema } from '../llm/schemas/extract.schema.js';
+import { ExtractV5Schema } from '../llm/schemas/extract.schema.js';
+import { ArchiveRepository } from '../archive/archive.repository.js';
+import { checkSummary, summaryForEmbedding } from '../archive/summary-check.js';
+import { sealClaim } from '../crypto/claim-fields.js';
+import { VaultService } from '../crypto/vault.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { assertAiConsent } from '../cabinet/ai-consent.js';
 import { cabinetLanguage, languageVariables } from '../common/language.js';
@@ -53,6 +58,8 @@ export class LettersService {
     @Inject(DocumentsService) private readonly documents: DocumentsService,
     @Inject(StorageService) private readonly storage: StorageService,
     @Inject(LlmService) private readonly llm: LlmService,
+    @Inject(VaultService) private readonly vault: VaultService,
+    @Inject(ArchiveRepository) private readonly archive: ArchiveRepository,
   ) {}
 
   // ---------- Загрузка ----------
@@ -64,6 +71,10 @@ export class LettersService {
   ): Promise<UploadLetterResponse> {
     // K11: без согласия на анализ ИИ письмо не принимается и не сохраняется
     await assertAiConsent(this.db, cabinetId);
+    // E01: ключ письма из браузера (x-jasno-new-key). Нет ключа архива или ключа в запросе —
+    // ошибка до обращения к модели. null: кабинет без шифрования (только NODE_ENV=test).
+    const key = await this.vault.takeNewKey(cabinetId);
+    const keyId = key?.keyId ?? null;
     const inputs = this.documents.precheckAll(uploaded);
     const letterId = randomUUID();
     const context = { cabinetId, letterId };
@@ -74,9 +85,9 @@ export class LettersService {
 
     const { data: extracted } = await this.llm.callWithTrace({
       prompt: 'extract',
-      version: 4, // L07: extract.v4 — название письма на языке кабинета
+      version: 5, // E01: extract.v5 — и обезличенное резюме для поиска по архиву
       variables: { letterText: doc.text, ...languageVariables(await cabinetLanguage(this.db, cabinetId)) },
-      schema: ExtractV3Schema,
+      schema: ExtractV5Schema,
       context,
       operation,
     });
@@ -87,14 +98,50 @@ export class LettersService {
       doc.sourceType !== 'PDF_TEXT',
     );
 
+    // E01: резюме для поиска — только обезличенное; вектор считается здесь, в памяти.
+    // Не получилось (проверка, сбой векторов): письмо сохраняется без резюме и не попадает в поиск.
+    const profile = (
+      await this.db.cabinet.findUnique({ where: { id: cabinetId }, select: { profile: true } })
+    )?.profile as { firstName?: string; lastName?: string; address?: string } | null;
+    const summary = checkSummary(extracted.summary, profile ?? null);
+    let summaryVector: number[] | null = null;
+    if (summary && operation.remaining > 0) {
+      try {
+        const [v] = await this.llm.embed({
+          texts: [summaryForEmbedding(summary)],
+          context,
+          operation,
+          maxAttempts: 1,
+        });
+        summaryVector = v ?? null;
+      } catch {
+        summaryVector = null;
+      }
+    }
+
     // Оригиналы по порядку страниц: n = номер файла (фото n = страница n; PDF — один файл).
-    const files: (StoredFile & { data: Buffer })[] = inputs.map((f, i) => ({
-      n: i + 1,
-      fileKey: this.storage.newKey(cabinetId, f.kind === 'jpeg' ? 'jpg' : f.kind),
-      mime: MIME[f.kind],
-      bytes: f.data.length,
-      data: f.data,
-    }));
+    // E01: в хранилище — шифротекст JXB1 ключом письма; путь случайный, без имени файла.
+    const files: (StoredFile & { data: Buffer })[] = [];
+    for (const [i, f] of inputs.entries())
+      files.push({
+        n: i + 1,
+        fileKey: this.storage.newKey(cabinetId, f.kind === 'jpeg' ? 'jpg' : f.kind),
+        mime: MIME[f.kind],
+        bytes: f.data.length,
+        data: await this.vault.sealBytes(cabinetId, keyId, f.data),
+      });
+    const sealed = {
+      rawText: await this.vault.seal(cabinetId, keyId, doc.text),
+      // поправка 8: название — подсказка модели, только если её цитата есть в письме
+      title: await this.vault.sealOrNull(cabinetId, keyId, verifiedTitle(extracted.title, doc.text)),
+      claims: await Promise.all(claims.map((c) => sealClaim(this.vault, cabinetId, keyId, c))),
+      summary:
+        summary && summaryVector
+          ? keyId
+            ? ((await this.vault.sealJson(cabinetId, keyId, summary)) as string)
+            : JSON.stringify(summary)
+          : null,
+    };
     const removeAll = () =>
       Promise.all(files.map((f) => this.storage.remove(f.fileKey)));
 
@@ -106,14 +153,15 @@ export class LettersService {
           throw new ApiError('ACCOUNT_DELETING');
         for (const f of files) await this.storage.write(f.fileKey, f.data);
         try {
+          await this.vault.saveKey(tx, cabinetId, key);
           await tx.letter.create({
             data: {
               id: letterId,
               cabinetId,
+              keyId,
               sourceType: doc.sourceType,
-              rawText: doc.text,
-              // поправка 8: название — подсказка модели, только если её цитата есть в письме
-              title: verifiedTitle(extracted.title, doc.text),
+              rawText: sealed.rawText,
+              title: sealed.title,
               pages: doc.pages,
               files: files.map(({ n, fileKey, mime, bytes }) => ({
                 n,
@@ -123,15 +171,17 @@ export class LettersService {
               })),
             },
           });
-          for (const c of claims) {
+          for (const [i, c] of claims.entries()) {
+            const enc = sealed.claims[i]!;
             const row = await tx.claim.create({
               data: {
                 letterId,
                 kind: c.kind,
-                value: c.value,
-                text: c.text,
-                quote: c.quote,
+                value: enc.value,
+                text: enc.text,
+                quote: enc.quote,
                 page: c.page,
+                relative: c.kind === 'OTHER' && c.text.startsWith(RELATIVE_PREFIX),
                 basis: 'DOCUMENT',
                 status: 'UNCONFIRMED',
                 updatedBy: 'SYSTEM',
@@ -148,6 +198,14 @@ export class LettersService {
               });
             }
           }
+          if (sealed.summary && summaryVector)
+            await this.archive.saveSummary(tx, {
+              cabinetId,
+              letterId,
+              summary: sealed.summary,
+              embedderId: this.llm.embedderId,
+              vector: summaryVector,
+            });
         } catch (e) {
           // до отката транзакции, пока строка кабинета ещё заблокирована
           await removeAll();
@@ -162,13 +220,18 @@ export class LettersService {
     const detail = await this.detail(cabinetId, letterId);
     return {
       ...detail,
-      suggestions: await this.suggestions(cabinetId, detail.claims),
+      // E01: номер дела сравнивается по открытому значению из этого запроса; номера зашифрованных
+      // дел сравнивает браузер (сервер их не видит)
+      suggestions: await this.suggestions(
+        cabinetId,
+        claims.map((c) => ({ kind: c.kind, value: c.value })),
+      ),
       extraction: { dropped: dropped.length },
     };
   }
 
   /** Подсказка дела: совпадает номер дела. Решает человек (ТЗ v3 6.4). */
-  private async suggestions(cabinetId: string, claims: ClaimView[]) {
+  private async suggestions(cabinetId: string, claims: { kind: string; value: string }[]) {
     const number = claims.find((c) => c.kind === 'CASE_NUMBER')?.value;
     if (!number) return [];
     const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -177,7 +240,7 @@ export class LettersService {
       select: { id: true, title: true, caseNumber: true },
     });
     return cases
-      .filter((c) => norm(c.caseNumber ?? '') === norm(number))
+      .filter((c) => !isEnvelope(c.caseNumber) && norm(c.caseNumber ?? '') === norm(number))
       .slice(0, 3)
       .map((c) => ({
         caseId: c.id,
@@ -341,8 +404,7 @@ export class LettersService {
       if (!old) throw new ApiError('NOT_FOUND');
       if (old.status === 'SUPERSEDED')
         throw new ApiError('CLAIM_STATE', { claimId, status: old.status });
-      const relative =
-        old.kind === 'OTHER' && old.text.startsWith(RELATIVE_PREFIX);
+      const relative = old.relative;
       const problem = checkUserValue(old.kind, input.value);
       if (problem)
         throw new ApiError('VALIDATION_FAILED', { fields: { value: problem } });
@@ -359,15 +421,21 @@ export class LettersService {
         throw new ApiError('CLAIM_STATE', { reason: 'changed-concurrently' });
 
       const deadlineKind = old.deadline?.kind;
+      const enc = await sealClaim(this.vault, cabinetId, letter.keyId, {
+        kind: old.kind,
+        value: input.value,
+        text:
+          input.text ??
+          `${claimText(relative ? 'RELATIVE_DEADLINE' : (old.kind as never), input.value, deadlineKind as never)} (исправлено вами)`,
+      });
       const created = await tx.claim.create({
         data: {
           letterId,
           caseId: old.caseId,
           kind: old.kind,
-          value: input.value,
-          text:
-            input.text ??
-            `${claimText(relative ? 'RELATIVE_DEADLINE' : (old.kind as never), input.value, deadlineKind as never)} (исправлено вами)`,
+          value: enc.value,
+          text: enc.text,
+          relative,
           quote: null, // цитата оригинала не доказывает новое значение
           page: null,
           basis: 'USER',
@@ -460,6 +528,8 @@ export class LettersService {
       }
       await tx.llmCall.deleteMany({ where: { letterId } });
       await tx.letter.delete({ where: { id: letterId } });
+      // E01: ключ письма больше не нужен (резюме удалено каскадом)
+      if (letter.keyId) await tx.documentKey.deleteMany({ where: { id: letter.keyId, cabinetId } });
     });
     for (const f of (letter.files as unknown as StoredFile[]) ?? [])
       await this.storage.remove(f.fileKey);
@@ -505,11 +575,15 @@ export class LettersService {
       } else {
         if (letter.caseId)
           throw new ApiError('LETTER_IN_CASE', { caseId: letter.caseId });
-        const confirmed = await tx.claim.findMany({
-          where: { letterId, status: 'CONFIRMED' },
-          orderBy: { createdAt: 'asc' },
-          select: { kind: true, value: true },
-        });
+        // E01: значения фактов зашифрованы ключом письма — нужен ключ из запроса (иначе 428)
+        const confirmed = await this.vault.open(
+          cabinetId,
+          await tx.claim.findMany({
+            where: { letterId, status: 'CONFIRMED' },
+            orderBy: { createdAt: 'asc' },
+            select: { kind: true, value: true },
+          }),
+        );
         const first = (k: string) =>
           confirmed.find((c) => c.kind === k)?.value ?? null;
         const authority = first('AUTHORITY');
@@ -520,12 +594,17 @@ export class LettersService {
             ? `${authority}: ${requirement}`
             : (authority ?? 'Новое дело')
           ).slice(0, 120);
+        // E01: у дела свой ключ (новый ключ из запроса); название, ведомство и номер — шифротекст
+        const caseKey = await this.vault.takeNewKey(cabinetId, tx);
+        const caseKeyId = caseKey?.keyId ?? null;
+        await this.vault.saveKey(tx, cabinetId, caseKey);
         const created = await tx.case.create({
           data: {
             cabinetId,
-            title,
-            authority,
-            caseNumber: first('CASE_NUMBER'),
+            keyId: caseKeyId,
+            title: await this.vault.seal(cabinetId, caseKeyId, title),
+            authority: await this.vault.sealOrNull(cabinetId, caseKeyId, authority),
+            caseNumber: await this.vault.sealOrNull(cabinetId, caseKeyId, first('CASE_NUMBER')),
           },
         });
         targetId = created.id;
@@ -566,9 +645,14 @@ export class LettersService {
     letterId: string,
     input: RenameLetterInput,
   ): Promise<LetterDetail> {
+    const letter = await this.db.letter.findFirst({
+      where: { id: letterId, cabinetId },
+      select: { keyId: true },
+    });
+    if (!letter) throw new ApiError('NOT_FOUND');
     const res = await this.db.letter.updateMany({
       where: { id: letterId, cabinetId },
-      data: { title: input.title },
+      data: { title: await this.vault.seal(cabinetId, letter.keyId, input.title) },
     });
     if (res.count !== 1) throw new ApiError('NOT_FOUND');
     return this.detail(cabinetId, letterId);
@@ -579,7 +663,7 @@ export class LettersService {
   private async ownLetter(tx: Tx, cabinetId: string, letterId: string) {
     const letter = await tx.letter.findFirst({
       where: { id: letterId, cabinetId },
-      select: { id: true, caseId: true },
+      select: { id: true, caseId: true, keyId: true },
     });
     if (!letter) throw new ApiError('NOT_FOUND');
     return letter;
@@ -638,6 +722,7 @@ export function toClaimView(c: {
   basis: string;
   status: string;
   supersedesId: string | null;
+  relative: boolean;
 }): ClaimView {
   return {
     id: c.id,
@@ -649,7 +734,7 @@ export function toClaimView(c: {
     basis: c.basis as ClaimView['basis'],
     status: c.status as ClaimView['status'],
     supersedesId: c.supersedesId,
-    relativeDeadline: c.kind === 'OTHER' && c.text.startsWith(RELATIVE_PREFIX),
+    relativeDeadline: c.relative,
   };
 }
 
@@ -670,6 +755,7 @@ export function verifiedTitle(
 
 function toLetterView(row: {
   id: string;
+  keyId: string | null;
   title: string | null;
   caseId: string | null;
   sourceType: string;
@@ -683,6 +769,7 @@ function toLetterView(row: {
   const files = (row.files as StoredFile[]) ?? [];
   return {
     id: row.id,
+    keyId: row.keyId,
     title: row.title,
     caseId: row.caseId,
     sourceType: row.sourceType as LetterView['sourceType'],

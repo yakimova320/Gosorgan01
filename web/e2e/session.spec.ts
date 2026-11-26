@@ -1,14 +1,7 @@
 import { resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
-import {
-  clientNavigate,
-  createUser,
-  loginUi,
-  PASSWORD,
-  uniqueEmail,
-  fillRegistration,
-  letters,
-} from './helpers';
+import { expect } from '@playwright/test';
+import { test } from './fixtures';
+import { clientNavigate, createUser, loginUi, PASSWORD, uniqueEmail, fillRegistration, letters, openArchive } from './helpers';
 
 const FIXTURE_PDF = resolve(
   import.meta.dirname,
@@ -26,6 +19,7 @@ test('регистрация через сайт ведёт в кабинет, �
   await fillRegistration(page, { email: uniqueEmail('reg') });
   await page.locator('form button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await openArchive(page); // E01: экран ключа архива
   await clientNavigate(page, '/app/profile');
   await page.getByRole('button', { name: 'Выйти' }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -42,6 +36,7 @@ test('пользователь Б в том же браузере не види�
 
   await page.goto('/login');
   await loginUi(page, a.email);
+  await openArchive(page); // E01: экран ключа архива
   await expect(
     page.getByRole('heading', { name: new RegExp(a.firstName) }),
   ).toBeVisible();
@@ -53,6 +48,7 @@ test('пользователь Б в том же браузере не види�
   await expect(page).toHaveURL(/\/$/);
   await clientNavigate(page, '/login');
   await loginUi(page, b.email);
+  await openArchive(page); // E01: экран ключа архива
   await expect(
     page.getByRole('heading', { name: new RegExp(b.firstName) }),
   ).toBeVisible();
@@ -76,6 +72,7 @@ test('выбранные файлы сценария не переходят к 
   await page.goto('/login');
   await loginUi(page, a.email);
   await expect(page).toHaveURL(/\/app$/);
+  await openArchive(page); // E01: экран ключа архива
   await clientNavigate(page, '/app/scan');
   await page.getByTestId('file-input').setInputFiles(FIXTURE_PDF);
   await expect(page).toHaveURL(/\/app\/scan\/pages$/);
@@ -86,6 +83,7 @@ test('выбранные файлы сценария не переходят к 
   await clientNavigate(page, '/login');
   await loginUi(page, b.email);
   await expect(page).toHaveURL(/\/app$/);
+  await openArchive(page); // E01: экран ключа архива
   await clientNavigate(page, '/app/scan/pages');
   await expect(page).toHaveURL(/\/app\/scan$/);
 });

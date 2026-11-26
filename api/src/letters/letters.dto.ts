@@ -4,6 +4,8 @@ import { z } from 'zod';
 /** Письмо в ответе API. Без путей и ключей хранения файлов. */
 export interface LetterView {
   id: string;
+  /** E01: ключ письма (шифротекст jx1 и оригиналы JXB1 открывает браузер); null — письмо до шифрования */
+  keyId: string | null;
   /** Поправка 8: название письма (подсказка модели по цитате или от человека); null — нет */
   title: string | null;
   caseId: string | null;

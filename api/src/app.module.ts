@@ -14,6 +14,7 @@ import { LlmModule } from './llm/llm.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { CalendarModule } from './calendar/calendar.module.js';
 import { ArchiveModule } from './archive/archive.module.js';
+import { CryptoModule } from './crypto/crypto.module.js';
 
 @Module({})
 export class AppModule {
@@ -33,6 +34,7 @@ export class AppModule {
           }),
         }),
         PrismaModule,
+        CryptoModule,
         AuthModule,
         CabinetModule,
         LlmModule,

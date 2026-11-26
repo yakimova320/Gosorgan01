@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * B18: что видит человек при лимитах. Сами лимиты проверяет e2e API (малые значения);
@@ -18,10 +19,6 @@ const DAILY = {
 };
 const QUOTA = { code: 'LLM_QUOTA', message: 'Ja!sno сейчас перегружен. Попробуйте позже' };
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 async function startUpload(page: Page) {
   await page.goto('/app/scan');

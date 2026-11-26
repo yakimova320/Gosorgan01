@@ -54,6 +54,8 @@ const child = spawn(process.execPath, [resolve(API_DIR, 'dist', 'main.js')], {
     // B18: браузерные тесты регистрируют много пользователей с одного IP; лимиты проверяют e2e API
     RATE_LIMIT_IP: 'false',
     LLM_DAILY_OPS_PER_CABINET: '1000',
+    // E01: как в production — письма только зашифрованными (экран ключа архива проходит helpers.signedIn)
+    ENCRYPTION_REQUIRED: 'true',
   },
 });
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => child.kill(sig));

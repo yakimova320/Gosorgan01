@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * F05: номера в профиле попадают в черновик; экран консультаций совпадает с FAQ.
@@ -11,10 +12,6 @@ import { API_URL, createUser, letters } from './helpers';
 const root = resolve(import.meta.dirname, '..', '..');
 type Claim = { id: string };
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 test('номер из профиля: проверка поля, сохранение, черновик DE и RU; удаление номера', async ({
   page,

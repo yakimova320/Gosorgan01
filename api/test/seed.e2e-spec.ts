@@ -16,12 +16,22 @@ import {
   seedDemo,
   type PreparedSeed,
 } from '../src/seed/demo-seed.js';
+import {
+  decryptEnvelope,
+  generateRecoverySecret,
+  isEnvelope,
+  parseRecoverySecret,
+  unwrapDocumentKey,
+  unwrapMasterKey,
+} from '@jasno/shared';
 import { PERSON } from './person.js';
 import { createTestDatabase } from './test-db.js';
 
 const FIXTURES = resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters');
 const PASSWORD = 'demo-Passwort-2026';
 const EMAIL = 'demo-seed@example.org';
+// E01: тестовый секрет восстановления (55 знаков base32 с контрольной суммой), не настоящий
+let SECRET = '';
 
 /*
  * B19: seed демо-кабинета. Три дела из 01, 04, 12 (у 12 просроченный срок), подтверждённые факты,
@@ -54,7 +64,14 @@ describe('Seed демо-кабинета (e2e, B19)', () => {
       { logger: false },
     );
     db = app.get(PrismaService);
-    prepared = prepareSeed({ nodeEnv: 'test', email: EMAIL, password: PASSWORD, fixturesDir: FIXTURES });
+    SECRET = await generateRecoverySecret();
+    prepared = await prepareSeed({
+      nodeEnv: 'test',
+      email: EMAIL,
+      password: PASSWORD,
+      recoverySecret: SECRET,
+      fixturesDir: FIXTURES,
+    });
   }, 60_000); // миграции схемы и запуск контекста иногда дольше 10 с
 
   afterAll(async () => {
@@ -81,8 +98,24 @@ describe('Seed демо-кабинета (e2e, B19)', () => {
       expect(l.claims.length).toBeGreaterThan(0);
       expect(l.claims.every((c) => c.status === 'CONFIRMED')).toBe(true);
     }
-    const authorities = letters.flatMap((l) => l.claims.filter((c) => c.kind === 'AUTHORITY').map((c) => c.value)).sort();
+    // E01: в базе шифротекст; открывается только секретом восстановления
+    const vault = await db.keyVault.findUniqueOrThrow({ where: { cabinetId: cabinet.id } });
+    const master = await unwrapMasterKey(vault.wrappedMaster, (await parseRecoverySecret(SECRET))!, cabinet.id);
+    const keys = await db.documentKey.findMany({ where: { cabinetId: cabinet.id } });
+    const open = async (v: string) => {
+      expect(isEnvelope(v)).toBe(true);
+      const keyId = v.split('.')[2]!;
+      const k = keys.find((x) => x.id === keyId)!;
+      return decryptEnvelope(await unwrapDocumentKey(master, k.wrapped, cabinet.id, keyId), cabinet.id, v);
+    };
+    const authorities = (
+      await Promise.all(
+        letters.flatMap((l) => l.claims.filter((c) => c.kind === 'AUTHORITY').map((c) => open(c.value))),
+      )
+    ).sort();
     expect(authorities).toEqual(['Bürgeramt Beispielhausen', 'Finanzamt Beispielhausen', 'Jobcenter Musterstadt']);
+    for (const l of letters) expect(isEnvelope(l.rawText)).toBe(true);
+    expect(await db.case.count({ where: { cabinetId: cabinet.id, keyId: null } })).toBe(0);
     // нет настоящих людей: только синтетические имена из писем
     const texts = JSON.stringify(await db.cabinet.findMany({ where: { id: cabinet.id }, include: { letters: true } }));
     expect(texts).not.toMatch(/@(?!example\.org)/);
@@ -125,13 +158,15 @@ describe('Seed демо-кабинета (e2e, B19)', () => {
     expect(await db.letter.count({ where: { cabinetId: normal.id } })).toBe(0);
   });
 
-  it('проверки до изменений базы: production, нет пароля, короткий пароль, нет файлов писем', () => {
-    const base = { nodeEnv: 'test', email: EMAIL, password: PASSWORD, fixturesDir: FIXTURES };
-    expect(() => prepareSeed({ ...base, nodeEnv: 'production' })).toThrow(/production запрещён/);
-    expect(() => prepareSeed({ ...base, password: undefined })).toThrow(/DEMO_PASSWORD/);
-    expect(() => prepareSeed({ ...base, password: '' })).toThrow(/DEMO_PASSWORD/);
-    expect(() => prepareSeed({ ...base, password: 'kurz' })).toThrow(/DEMO_PASSWORD не подходит/);
-    expect(() => prepareSeed({ ...base, fixturesDir: join(FIXTURES, 'gibt-es-nicht') })).toThrow(/Нет файла письма/);
-    expect(() => prepareSeed({ ...base, email: 'kein-email' })).toThrow(/DEMO_EMAIL/);
+  it('проверки до изменений базы: production, нет пароля, короткий пароль, нет секрета, нет файлов писем', async () => {
+    const base = { nodeEnv: 'test', email: EMAIL, password: PASSWORD, recoverySecret: SECRET, fixturesDir: FIXTURES };
+    await expect(prepareSeed({ ...base, nodeEnv: 'production' })).rejects.toThrow(/production запрещён/);
+    await expect(prepareSeed({ ...base, password: undefined })).rejects.toThrow(/DEMO_PASSWORD/);
+    await expect(prepareSeed({ ...base, password: '' })).rejects.toThrow(/DEMO_PASSWORD/);
+    await expect(prepareSeed({ ...base, password: 'kurz' })).rejects.toThrow(/DEMO_PASSWORD не подходит/);
+    await expect(prepareSeed({ ...base, recoverySecret: undefined })).rejects.toThrow(/DEMO_RECOVERY_SECRET/);
+    await expect(prepareSeed({ ...base, recoverySecret: 'ABCD-EFGH' })).rejects.toThrow(/DEMO_RECOVERY_SECRET не подходит/);
+    await expect(prepareSeed({ ...base, fixturesDir: join(FIXTURES, 'gibt-es-nicht') })).rejects.toThrow(/Нет файла письма/);
+    await expect(prepareSeed({ ...base, email: 'kein-email' })).rejects.toThrow(/DEMO_EMAIL/);
   });
 });

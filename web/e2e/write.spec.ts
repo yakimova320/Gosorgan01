@@ -1,15 +1,12 @@
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * B16: своё письмо по шаблону (экраны 22–25) → дело OUTGOING → обычный экран черновика.
  * Настоящий API (demo).
  */
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 const addDays = (days: number) => {
   const d = new Date();

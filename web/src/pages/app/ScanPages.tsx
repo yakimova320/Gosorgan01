@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useBeforeUnload, useBlocker, useLocation, useNavigate } from 'react-router';
 import { errorCode, errorText, isApiError, isDailyLimit } from '../../api/errors';
 import type { CaseSuggestion, LetterClaim, LetterDetail } from '../../api/types';
@@ -515,12 +515,31 @@ function CorrectForm({ claim, letterId, onDone }: { claim: LetterClaim; letterId
   );
 }
 
+/**
+ * E01 (#163): подсказка дела по номеру. Номера зашифрованных дел сервер не видит, поэтому браузер
+ * сравнивает номер письма с уже расшифрованным списком дел и добавляет найденное к подсказкам сервера.
+ */
+function useCaseSuggestions(letter: LetterDetail | undefined, fromServer: CaseSuggestion[] = []): CaseSuggestion[] {
+  const cases = useCasesQuery();
+  return useMemo(() => {
+    const number = letter?.claims.find((c) => c.kind === 'CASE_NUMBER' && c.status !== 'REJECTED')?.value;
+    if (!number) return fromServer;
+    const norm = (v: string) => v.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+    const found = (cases.data ?? [])
+      .filter((c) => c.caseNumber && norm(c.caseNumber) === norm(number))
+      .filter((c) => !fromServer.some((s) => s.caseId === c.id))
+      .map((c) => ({ caseId: c.id, title: c.title, reason: t('Совпадает номер дела {v0}', { v0: number }) }));
+    return [...fromServer, ...found].slice(0, 3);
+  }, [letter, fromServer, cases.data]);
+}
+
 /** Шаг 3: проверка фактов письма. Решения до «Сохранить проверку» живут только на этой странице. */
 export function LetterCheckPage({ id }: { id: string }) {
   const q = useLetterQuery(id);
   const location = useLocation();
   const navigate = useNavigate();
   const fromUpload = (location.state ?? null) as { dropped?: number; suggestions?: CaseSuggestion[] } | null;
+  const suggestions = useCaseSuggestions(q.data, fromUpload?.suggestions);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'info' | 'error' | 'warn'; text: string } | null>(null);
@@ -759,7 +778,7 @@ export function LetterCheckPage({ id }: { id: string }) {
 
       <section className="card stack-s" aria-label={t('Что дальше')}>
         <h2 style={{ fontSize: 19 }}>{t('Что дальше')}</h2>
-        {(fromUpload?.suggestions ?? []).map((s) => (
+        {suggestions.map((s) => (
           <span key={s.caseId} className="small text-2">
             {t('Похоже на дело «')}{s.title}»: {s.reason}.
           </span>
@@ -767,7 +786,7 @@ export function LetterCheckPage({ id }: { id: string }) {
         <AssignBlock
           letterId={id}
           suggestedTitle={q.data?.letter.title ?? null}
-          suggestions={fromUpload?.suggestions ?? []}
+          suggestions={suggestions}
           pending={pending}
           onSave={save}
           onDiscard={() => setDecisions({})}

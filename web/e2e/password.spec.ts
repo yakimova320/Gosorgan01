@@ -1,11 +1,6 @@
-import {
-  expect,
-  test,
-  type APIRequestContext,
-  type Browser,
-  type Page,
-} from '@playwright/test';
-import { API_URL, PASSWORD, createUser, letters, loginUi } from './helpers';
+import { expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, PASSWORD, createUser, letters, loginUi, openArchive } from './helpers';
 
 /*
  * A02: смена пароля на сайте с настоящим API (demo).
@@ -20,6 +15,7 @@ async function device(browser: Browser, token: string): Promise<Page> {
   await page.goto('/');
   await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
   await page.goto('/app/profile');
+  await openArchive(page, token); // E01: экран ключа архива на каждом «устройстве»
   await expect(page.getByLabel('Старый пароль')).toBeVisible();
   return page;
 }

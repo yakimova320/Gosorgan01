@@ -103,7 +103,7 @@ describe('LlmService: повторы', () => {
       ok: true,
       attempts: 2,
       promptName: 'extract',
-      promptVersion: 4, // последняя версия extract (поправка 8)
+      promptVersion: 5, // последняя версия extract (E01: резюме для поиска)
       tokensIn: 20,
     });
   });
@@ -460,7 +460,7 @@ describe('Адаптер openai', () => {
 describe('PromptRegistry', () => {
   it('находит последнюю версию extract и делит на System и User', () => {
     const p = new PromptRegistry().get('extract');
-    expect(p.version).toBe(4);
+    expect(p.version).toBe(5);
     expect(p.system).toContain('Отвечай только JSON');
     expect(p.user).toContain('{{letterText}}');
   });

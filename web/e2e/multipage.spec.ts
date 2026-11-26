@@ -1,16 +1,13 @@
 import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /* B11: письмо из нескольких фото, проверка снимков, PDF-скан, оригиналы только владельцу. Настоящий API (demo). */
 
 const fixture = (name: string) => resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters', name);
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 const pageCards = (page: Page) => page.getByTestId('scan-page');
 

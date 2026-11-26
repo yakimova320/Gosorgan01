@@ -5,6 +5,8 @@ import { StorageService } from '../documents/storage.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { toClaimView } from '../letters/letters.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { isEnvelope } from '@jasno/shared';
+import { VaultService } from '../crypto/vault.service.js';
 import type {
   CaseDetail,
   CaseSummary,
@@ -71,6 +73,7 @@ export class CasesService {
   constructor(
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(StorageService) private readonly storage: StorageService,
+    @Inject(VaultService) private readonly vault: VaultService,
   ) {}
 
   async list(cabinetId: string, query: ListCasesQuery): Promise<CaseSummary[]> {
@@ -88,10 +91,12 @@ export class CasesService {
     });
     const q = query.q?.toLowerCase();
     const today = toIsoDate(berlinToday());
+    // E01: у зашифрованного дела поиск по названию, ведомству и номеру делает браузер после расшифровки
     return rows
       .filter(
         (c) =>
           !q ||
+          isEnvelope(c.title) ||
           [c.title, c.authority, c.caseNumber].some((v) =>
             v?.toLowerCase().includes(q),
           ),
@@ -169,10 +174,16 @@ export class CasesService {
     caseId: string,
     input: UpdateCaseInput,
   ): Promise<CaseDetail> {
+    const kase = await this.db.case.findFirst({
+      where: { id: caseId, cabinetId },
+      select: { keyId: true },
+    });
+    if (!kase) throw new ApiError('NOT_FOUND');
     const res = await this.db.case.updateMany({
       where: { id: caseId, cabinetId },
       data: {
-        ...(input.title ? { title: input.title } : {}),
+        // E01: новое название шифруется ключом дела из запроса
+        ...(input.title ? { title: await this.vault.seal(cabinetId, kase.keyId, input.title) } : {}),
         ...(input.status ? { status: input.status } : {}),
       },
     });
@@ -187,13 +198,17 @@ export class CasesService {
   async remove(cabinetId: string, caseId: string): Promise<void> {
     const letters = await this.db.letter.findMany({
       where: { caseId, cabinetId },
-      select: { id: true, files: true },
+      select: { id: true, files: true, keyId: true },
     });
+    const kase = await this.db.case.findFirst({ where: { id: caseId, cabinetId }, select: { keyId: true } });
     await this.db.$transaction(async (tx) => {
       const res = await tx.case.deleteMany({
         where: { id: caseId, cabinetId },
       });
       if (res.count !== 1) throw new ApiError('NOT_FOUND');
+      // E01: ключи дела и его писем больше не нужны
+      const keyIds = [kase?.keyId, ...letters.map((l) => l.keyId)].filter((k): k is string => !!k);
+      if (keyIds.length) await tx.documentKey.deleteMany({ where: { id: { in: keyIds }, cabinetId } });
       await tx.llmCall.deleteMany({
         where: {
           OR: [{ caseId }, { letterId: { in: letters.map((l) => l.id) } }],
@@ -353,6 +368,7 @@ function toSummary(c: CaseRow, today: string): CaseSummary {
   );
   return {
     id: c.id,
+    keyId: c.keyId,
     title: c.title,
     authority: c.authority,
     caseNumber: c.caseNumber,

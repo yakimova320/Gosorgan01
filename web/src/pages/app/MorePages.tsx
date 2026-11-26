@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { forgetKeyring } from '../../crypto/keyring';
 import { AiConsentSection } from '../../components/consent';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { PASSWORD_MIN_CHARS, PROFILE_NUMBERS_MAX, splitAddress } from '@jasno/shared';
@@ -77,6 +78,8 @@ export function ProfilePage() {
     setDelErr(null);
     try {
       const { pending } = await deleteAccountReq(password).unwrap();
+      // E01: ключи архива и запись «устройство разблокировано» больше не нужны
+      await forgetKeyring();
       // Сначала уйти с закрытой страницы (flushSync: сразу), иначе она сама перенаправит на вход.
       // Выход сбрасывает сессию и весь кэш (store/index.ts).
       await navigate('/', {

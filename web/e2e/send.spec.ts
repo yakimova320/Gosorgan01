@@ -1,5 +1,6 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * B12: виды ответа, правка черновика с повторной проверкой, «Я отправил(а)», срок выполнен, «В Google Календарь».
@@ -40,10 +41,6 @@ function letterPdf(deadline: string): Buffer {
   return Buffer.from(out, 'latin1');
 }
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 /** Письмо с подтверждёнными фактами в новом деле. */
 async function caseWithLetter(request: APIRequestContext, token: string, deadline: string) {

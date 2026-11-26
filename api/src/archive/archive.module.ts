@@ -7,5 +7,6 @@ import { ArchiveService } from './archive.service.js';
 @Module({
   controllers: [ArchiveController],
   providers: [ArchiveRepository, ArchiveService],
+  exports: [ArchiveRepository],
 })
 export class ArchiveModule {}

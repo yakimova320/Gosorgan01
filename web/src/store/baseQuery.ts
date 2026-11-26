@@ -3,6 +3,17 @@ import { API_URL, REQUEST_TIMEOUT_MS } from '../api/config';
 import { apiError, type ApiError } from '../api/errors';
 import { sessionExpired, type SessionState } from './session';
 import { t } from '../i18n';
+import {
+  CryptoIntegrityError,
+  formatKeysHeader,
+  formatNewKeyHeader,
+  KEYS_HEADER,
+  NEW_KEY_HEADER,
+} from '@jasno/shared';
+import { decryptFile, decryptResponse, documentKeys, keyring, newDocumentKey } from '../crypto/keyring';
+
+/** E01: сколько раз запрос повторяется с ключами документов после 428 KEYS_REQUIRED. */
+const KEY_RETRIES = 3;
 
 export type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -30,6 +41,15 @@ export function abortAllRequests(): void {
 }
 
 /**
+ * E01 (#163) шифрование:
+ * - запрос-действие (не GET) с открытым архивом несёт новый ключ документа (x-jasno-new-key):
+ *   он нужен серверу, только если запрос создаёт письмо или дело;
+ * - сервер ответил 428 KEYS_REQUIRED { keyIds }: запрос повторяется с ключами именно этих документов
+ *   (x-jasno-keys). Ключи нужны только для действий (загрузка, объяснение, перевод, черновик, архив);
+ *   просмотр (GET) сервер отдаёт шифротекстом;
+ * - ответ расшифровывается здесь, в кэш RTK Query попадает уже открытый текст (память страницы);
+ *   подмена шифротекста: ошибка INTEGRITY_FAILED.
+ *
  * Один запрос к API для RTK Query. Ошибка всегда объект ApiError:
  * ответ сервера { code, message }, или NETWORK, TIMEOUT, BAD_RESPONSE, CANCELLED.
  * Ответ 204 возвращает undefined и не разбирается как JSON.
@@ -54,6 +74,11 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
     headers['Content-Type'] = 'application/json';
     body = JSON.stringify(args.body);
   }
+  const method = args.method ?? 'GET';
+  if (token && method !== 'GET' && keyring.unlocked) {
+    const fresh = await newDocumentKey();
+    if (fresh) headers[NEW_KEY_HEADER] = formatNewKeyHeader(fresh);
+  }
 
   const controller = new AbortController();
   inFlight.add(controller);
@@ -67,12 +92,26 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${args.path}`, {
-      method: args.method ?? 'GET',
-      headers,
-      body,
-      signal: controller.signal,
-    });
+    const sent = new Map<string, Uint8Array>();
+    for (let attempt = 0; ; attempt++) {
+      res = await fetch(`${API_URL}${args.path}`, {
+        method,
+        headers,
+        body,
+        signal: controller.signal,
+      });
+      if (res.status !== 428 || attempt >= KEY_RETRIES || !keyring.unlocked) break;
+      const err = (await res.clone().json().catch(() => null)) as {
+        code?: string;
+        details?: { keyIds?: string[] };
+      } | null;
+      if (err?.code !== 'KEYS_REQUIRED') break;
+      const wanted = (err.details?.keyIds ?? []).filter((id) => !sent.has(id));
+      const found = await documentKeys(wanted);
+      if (found.length === 0) break;
+      for (const k of found) sent.set(k.keyId, k.raw);
+      headers[KEYS_HEADER] = formatKeysHeader([...sent].map(([keyId, raw]) => ({ keyId, raw })));
+    }
   } catch {
     if (timedOut) return { error: apiError('TIMEOUT') };
     if (controller.signal.aborted)
@@ -87,8 +126,14 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
   if (res.status === 204) return { data: undefined };
   if (args.binary && res.ok) {
     try {
-      return { data: URL.createObjectURL(await res.blob()) };
-    } catch {
+      const blob = await res.blob();
+      const bytes = await decryptFile(new Uint8Array(await blob.arrayBuffer()));
+      return {
+        data: URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: blob.type })),
+      };
+    } catch (e) {
+      if (e instanceof CryptoIntegrityError)
+        return { error: apiError('INTEGRITY_FAILED', 422) };
       return { error: apiError('NETWORK') };
     }
   }
@@ -117,5 +162,10 @@ export const apiBaseQuery: BaseQueryFn<RequestArgs, unknown, ApiError> = async (
     }
     return { error: apiError(code, res.status, err.message, err.details) };
   }
-  return { data };
+  try {
+    return { data: await decryptResponse(data) };
+  } catch (e) {
+    if (e instanceof CryptoIntegrityError) return { error: apiError('INTEGRITY_FAILED', 422) };
+    throw e;
+  }
 };

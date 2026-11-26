@@ -1,3 +1,4 @@
+import { isEnvelope } from '@jasno/shared';
 import type { Language } from '../common/language.js';
 
 /*
@@ -40,6 +41,7 @@ export function deadlineWhat(kind: string, lang: Language = 'ru'): string {
 
 /** «Срок: ответить — Jobcenter» */
 export function deadlineSummary(kind: string, authority?: string | null, lang: Language = 'ru'): string {
+  authority = plainOrNull(authority);
   return `${WORD[lang].deadline}: ${deadlineWhat(kind, lang)}${authority ? ` — ${authority}` : ''}`;
 }
 
@@ -65,4 +67,12 @@ export function deadlineLink(
 ): string {
   const base = appUrl.replace(/\/+$/, '');
   return d.caseId ? `${base}/app/cases/${d.caseId}` : `${base}/app/letters/${d.letterId}`;
+}
+
+/**
+ * E01 (#163): зашифрованное значение (ведомство, название дела) сервер не видит. В письмо-напоминание,
+ * в ленту .ics и в файл срока оно не попадает: остаются вид срока, дата и ссылка.
+ */
+export function plainOrNull(v: string | null | undefined): string | null {
+  return v && !isEnvelope(v) ? v : null;
 }

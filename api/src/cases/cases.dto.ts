@@ -4,6 +4,8 @@ import type { CaseStage } from './stage.js';
 
 export interface CaseSummary {
   id: string;
+  /** E01: ключ дела (название, ведомство, номер — шифротекст, открывает браузер); null — дело до шифрования */
+  keyId?: string | null;
   title: string;
   authority: string | null;
   caseNumber: string | null;

@@ -1,12 +1,9 @@
-import { expect, test, type Page } from '@playwright/test';
-import { createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { createUser, letters, signedIn } from './helpers';
 
 /* Чат-помощник (24.11): свободный вопрос, ответ по FAQ в режиме demo, пометка под каждым ответом. */
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 test('чат: вопрос, ответ с пометкой, история после перезагрузки, очистка', async ({ page, request }) => {
   const u = await createUser(request, 'chat', `Anna${letters()}`);

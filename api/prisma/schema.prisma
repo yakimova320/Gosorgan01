@@ -127,7 +127,35 @@ model Cabinet {
   chatMessages        ChatMessage[]
   cases               Case[]
   letters             Letter[]
-  letterChunks        LetterChunk[]
+  letterSummaries     LetterSummary[]
+  // E01 (#163): мастер-ключ, зашифрованный секретом восстановления, и ключи документов под мастер-ключом
+  keyVault            KeyVault?
+  documentKeys        DocumentKey[]
+}
+
+// E01 (#163): шифрование писем в браузере. Мастер-ключ создаёт браузер; здесь он только
+// зашифрован секретом восстановления (jxm1, packages/shared/src/crypto.ts). Секрета у сервера нет.
+// Сброс пароля эту строку не трогает: архив открывается только секретом.
+model KeyVault {
+  cabinetId     String   @id
+  cabinet       Cabinet  @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  wrappedMaster String
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// E01: ключ одного документа (письмо или дело), зашифрован мастер-ключом (jxk1).
+// id создаёт браузер (UUID), он же входит в AAD шифротекста. Открытый ключ сервер видит
+// только во время запроса-действия и не сохраняет.
+model DocumentKey {
+  id        String   @id
+  cabinetId String
+  cabinet   Cabinet  @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  wrapped   String
+  createdAt DateTime @default(now())
+
+  @@index([cabinetId])
 }
 
 model Session {
@@ -190,6 +218,8 @@ model Case {
   id         String     @id @default(cuid())
   cabinetId  String
   cabinet    Cabinet    @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  // E01: у зашифрованного дела title, authority, caseNumber и черновики — шифротекст ключом keyId
+  keyId      String?
   title      String
   authority  String?
   caseNumber String?
@@ -214,6 +244,9 @@ model Letter {
   caseId      String? // null = во входящих
   case        Case?      @relation(fields: [caseId], references: [id], onDelete: Cascade)
   sourceType  SourceType
+  // E01: у зашифрованного письма rawText, title, explanation, translation — шифротекст jx1 ключом keyId,
+  // оригиналы в хранилище — JXB1. keyId null: письмо загружено до шифрования (открытый текст).
+  keyId       String?
   rawText     String // распознанный текст, исходный, без маскирования
   pages       Json // [{ n, readable, chars }]
   files       Json // ТЗ v4: оригиналы [{ n, fileKey, mime, bytes }] в порядке страниц (B11: до 10 фото или один PDF), fileKey случайный, без имени файла
@@ -223,29 +256,26 @@ model Letter {
   createdAt   DateTime   @default(now())
   claims      Claim[]
   deadlines   Deadline[]
-  chunks      LetterChunk[]
+  summary     LetterSummary?
 
   @@index([cabinetId])
   @@index([caseId])
 }
 
-// L05 (#81): куски текста письма с векторами для вопросов к архиву (RAG, pgvector).
-// Поиск только по cabinetId самого пользователя, отбор делает код (WHERE cabinetId).
-// Удаляются вместе с письмом и кабинетом (каскад). textHash: если текст письма изменился, куски пересчитываются.
+// E01 (#163) вместо L05 LetterChunk: поиск по архиву без открытого текста.
+// summary — обезличенное резюме письма (без имён, адресов, номеров), зашифровано ключом письма.
+// embedding — вектор этого резюме, единственное открытое производное письма (решение 26.11).
 // Вектор пишется и читается только сырым SQL (api/src/archive/archive.repository.ts).
-model LetterChunk {
-  id        String                     @id @default(cuid())
-  cabinetId String
-  cabinet   Cabinet                    @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
-  letterId  String
-  letter    Letter                     @relation(fields: [letterId], references: [id], onDelete: Cascade)
-  n         Int // номер куска в письме, с 0
-  text      String // кусок rawText без маскирования (как и сам rawText)
-  textHash  String // sha256 всего rawText на момент расчёта
-  embedding Unsupported("vector(768)")
-  createdAt DateTime                   @default(now())
+model LetterSummary {
+  letterId   String                     @id
+  letter     Letter                     @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  cabinetId  String
+  cabinet    Cabinet                    @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+  summary    String
+  embedderId String
+  embedding  Unsupported("vector(768)")
+  createdAt  DateTime                   @default(now())
 
-  @@unique([letterId, n])
   @@index([cabinetId])
 }
 
@@ -256,6 +286,8 @@ model Claim {
   caseId       String?
   case         Case?       @relation(fields: [caseId], references: [id], onDelete: Cascade)
   kind         ClaimKind
+  // E01: value открыт только у дат (LETTER_DATE, DEADLINE: срок и так открыт в Deadline), иначе шифротекст;
+  // text и quote — шифротекст ключом письма (или дела у фактов своего письма)
   value        String // нормализованное значение, дата в ISO 8601
   text         String // формулировка для человека по-русски
   quote        String? // точная цитата из письма; у USER может не быть
@@ -263,6 +295,8 @@ model Claim {
   basis        ClaimBasis
   status       ClaimStatus @default(UNCONFIRMED)
   reason       String? // почему SUPERSEDED или REJECTED
+  // E01: «Срок без точной даты» (раньше узнавали по началу text, теперь text зашифрован)
+  relative     Boolean     @default(false)
   // ТЗ v4: исправление создаёт новую запись, она ссылается на предыдущую; старая получает SUPERSEDED
   supersedesId String?
   supersedes   Claim?      @relation("ClaimRevision", fields: [supersedesId], references: [id], onDelete: SetNull)

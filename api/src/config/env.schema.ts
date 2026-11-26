@@ -48,6 +48,9 @@ export const envSchema = z
       }),
     // B18: лимиты по IP (@nestjs/throttler). false только для тестов, в production запрещено.
     RATE_LIMIT_IP: bool.default(true),
+    // E01 (#163): письма принимаются только зашифрованными ключом из браузера (нужен KeyVault кабинета).
+    // По умолчанию true, кроме NODE_ENV=test (старые e2e API загружают письма без ключей). В production false нельзя.
+    ENCRYPTION_REQUIRED: bool.optional(),
     CORS_ORIGIN: z
       .string()
       .default('http://localhost:5173')
@@ -155,6 +158,13 @@ export const envSchema = z
         code: 'custom',
         path: ['RATE_LIMIT_IP'],
         message: 'в production лимиты по IP выключать нельзя',
+      });
+    }
+    if (env.NODE_ENV === 'production' && env.ENCRYPTION_REQUIRED === false) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ENCRYPTION_REQUIRED'],
+        message: 'в production письма без шифрования принимать нельзя',
       });
     }
     if (env.NODE_ENV === 'production' && env.MAIL_MODE === 'file') {
