@@ -100,6 +100,8 @@ export type CaseStage = 'CLOSED' | 'OVERDUE' | 'DOCUMENTS' | 'REPLY' | 'NEEDS_CH
 
 export interface CaseSummary {
   id: string;
+  /** E01: ключ дела (название, ведомство, номер — шифротекст, открывает браузер); null — дело до шифрования */
+  keyId?: string | null;
   title: string;
   authority: string | null;
   caseNumber: string | null;
@@ -211,6 +213,8 @@ export interface LetterDeadline {
 export interface LetterDetail {
   letter: {
     id: string;
+    /** E01: ключ письма; null — письмо до шифрования */
+    keyId?: string | null;
     caseId: string | null;
     sourceType: 'PDF_TEXT' | 'IMAGE' | 'PDF_SCAN';
     text: string;

@@ -18,6 +18,8 @@ import { berlinToday, toIsoDate } from '../common/berlin-date.js';
 import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { sealClaim } from '../crypto/claim-fields.js';
+import { VaultService } from '../crypto/vault.service.js';
 import { buildLetterPdf } from './letter-pdf.js';
 import type {
   CreateDraftInput,
@@ -89,7 +91,31 @@ export class DraftsService {
     @Inject(ClaimsService) private readonly claims: ClaimsService,
     @Inject(VerificationService)
     private readonly verification: VerificationService,
+    @Inject(VaultService) private readonly vault: VaultService,
   ) {}
+
+  /**
+   * E01: черновик шифруется ключом дела. Открыты только служебные поля снимка (письмо, шаблон,
+   * вопрос) и итог проверки; тексты, значения фактов, проверки и чек-лист — шифротекст.
+   */
+  private async sealDraft(
+    cabinetId: string,
+    keyId: string | null,
+    d: { germanText: string; russianText: string; snapshot: SnapshotJson; report: VerificationReport & { edited?: boolean } },
+  ) {
+    const { claims, ...meta } = d.snapshot;
+    const { checks, checklist, ...summary } = d.report;
+    return {
+      germanText: await this.vault.seal(cabinetId, keyId, d.germanText),
+      russianText: await this.vault.seal(cabinetId, keyId, d.russianText),
+      claimSnapshot: { ...meta, claims: await this.vault.sealJson(cabinetId, keyId, claims) } as unknown as object,
+      verification: {
+        ...summary,
+        checks: await this.vault.sealJson(cabinetId, keyId, checks),
+        checklist: await this.vault.sealJson(cabinetId, keyId, checklist),
+      } as unknown as object,
+    };
+  }
 
   async create(
     cabinetId: string,
@@ -98,7 +124,7 @@ export class DraftsService {
   ): Promise<DraftView> {
     const kase = await this.db.case.findFirst({
       where: { id: caseId, cabinetId },
-      select: { id: true },
+      select: { id: true, keyId: true },
     });
     if (!kase) throw new ApiError('NOT_FOUND');
     if (input.kind === 'WIDERSPRUCH')
@@ -170,20 +196,23 @@ export class DraftsService {
 
     const draft = await this.db.$transaction(async (tx) => {
       // Факты или профиль изменились, пока собирался черновик: не сохранять.
-      const nowClaims = await tx.claim.findMany({
-        where: {
-          letterId: input.letterId,
-          status: 'CONFIRMED',
-          letter: { caseId, cabinetId },
-        },
-        select: {
-          id: true,
-          letterId: true,
-          kind: true,
-          value: true,
-          quote: true,
-        },
-      });
+      const nowClaims = await this.vault.open(
+        cabinetId,
+        await tx.claim.findMany({
+          where: {
+            letterId: input.letterId,
+            status: 'CONFIRMED',
+            letter: { caseId, cabinetId },
+          },
+          select: {
+            id: true,
+            letterId: true,
+            kind: true,
+            value: true,
+            quote: true,
+          },
+        }),
+      );
       const nowProfile = await tx.cabinet.findUniqueOrThrow({
         where: { id: cabinetId },
         select: { profile: true },
@@ -215,11 +244,13 @@ export class DraftsService {
           caseId,
           kind: input.kind,
           templateId,
-          germanText: built.germanText,
-          russianText: built.russianText,
           claimIds: built.claimIds,
-          claimSnapshot: snapshot as unknown as object,
-          verification: report as unknown as object,
+          ...(await this.sealDraft(cabinetId, kase.keyId, {
+            germanText: built.germanText,
+            russianText: built.russianText,
+            snapshot,
+            report,
+          })),
         },
       });
       await tx.event.create({
@@ -258,6 +289,7 @@ export class DraftsService {
   ): Promise<DraftView> {
     const draft = await this.db.draft.findFirst({
       where: { id: draftId, case: { cabinetId } },
+      include: { case: { select: { keyId: true } } },
     });
     if (!draft) throw new ApiError('NOT_FOUND');
     if (draft.status === 'SENT') throw new ApiError('DRAFT_ALREADY_SENT');
@@ -288,12 +320,18 @@ export class DraftsService {
 
     // Условное обновление: черновик не устарел и не отправлен, пока шла проверка.
     const updated = await this.db.$transaction(async (tx) => {
+      const sealed = await this.sealDraft(cabinetId, draft.case.keyId, {
+        germanText: input.germanText,
+        russianText: input.russianText,
+        snapshot: { ...(snap as SnapshotJson), claims: {} },
+        report: { ...report, edited: true },
+      });
       const res = await tx.draft.updateMany({
         where: { id: draftId, status: 'PREPARED', stale: false },
         data: {
-          germanText: input.germanText,
-          russianText: input.russianText,
-          verification: { ...report, edited: true } as unknown as object,
+          germanText: sealed.germanText,
+          russianText: sealed.russianText,
+          verification: sealed.verification,
         },
       });
       if (res.count !== 1) throw new ApiError('DRAFT_STALE');
@@ -385,12 +423,14 @@ export class DraftsService {
    * не печатается (409 DRAFT_STALE): в PDF не должны попасть изменившиеся факты или профиль.
    */
   async pdf(cabinetId: string, draftId: string): Promise<Buffer> {
-    const draft = await this.db.draft.findFirst({
+    const row = await this.db.draft.findFirst({
       where: { id: draftId, case: { cabinetId } },
       select: { germanText: true, stale: true },
     });
-    if (!draft) throw new ApiError('NOT_FOUND');
-    if (draft.stale) throw new ApiError('DRAFT_STALE');
+    if (!row) throw new ApiError('NOT_FOUND');
+    if (row.stale) throw new ApiError('DRAFT_STALE');
+    // E01: PDF собирается из открытого текста — нужен ключ дела из запроса (кнопка «Скачать PDF»)
+    const draft = await this.vault.open(cabinetId, row);
     return buildLetterPdf({ germanText: draft.germanText });
   }
 
@@ -425,15 +465,20 @@ export class DraftsService {
       // A01: во время удаления аккаунта новых строк у кабинета не появляется
       if (!(await lockActiveCabinet(tx, cabinetId)))
         throw new ApiError('ACCOUNT_DELETING');
+      // E01: своё письмо — новое дело со своим ключом из запроса
+      const key = await this.vault.takeNewKey(cabinetId, tx);
+      const keyId = key?.keyId ?? null;
+      await this.vault.saveKey(tx, cabinetId, key);
       const kase = await tx.case.create({
         data: {
           cabinetId,
+          keyId,
           origin: 'OUTGOING',
-          title: `${template.titleRu}: ${input.recipient.name}`,
-          authority: input.recipient.name,
-          caseNumber: fields.reference ?? null,
+          title: await this.vault.seal(cabinetId, keyId, `${template.titleRu}: ${input.recipient.name}`),
+          authority: await this.vault.seal(cabinetId, keyId, input.recipient.name),
+          caseNumber: await this.vault.sealOrNull(cabinetId, keyId, fields.reference ?? null),
         },
-        select: { id: true },
+        select: { id: true, keyId: true },
       });
       const rows: { key: string; kind: ConfirmedClaim['kind']; value: string; text: string }[] = [
         {
@@ -469,22 +514,24 @@ export class DraftsService {
       ];
       const claims: Record<string, ConfirmedClaim> = {};
       for (const r of rows) {
+        const enc = await sealClaim(this.vault, cabinetId, keyId, r);
         const claim = await tx.claim.create({
           data: {
             caseId: kase.id,
             kind: r.kind,
-            value: r.value,
-            text: r.text,
+            value: enc.value,
+            text: enc.text,
             basis: 'USER',
             status: 'CONFIRMED',
             updatedBy: 'USER',
           },
-          select: { id: true, letterId: true, kind: true, value: true, quote: true, text: true },
+          select: { id: true, letterId: true, kind: true, quote: true },
         });
-        const { text, ...rest } = claim;
-        claims[r.key] = { ...rest, label: text };
+        claims[r.key] = { ...claim, kind: r.kind, value: r.value, label: r.text };
       }
       const draft = await this.saveOutgoingDraft(tx, {
+        cabinetId,
+        keyId,
         caseId: kase.id,
         templateId: input.templateId,
         claims,
@@ -524,10 +571,14 @@ export class DraftsService {
         where: { id: cabinetId },
         select: { profile: true },
       });
-      const nowClaims = await tx.claim.findMany({
-        where: { id: { in: Object.values(claims).map((c) => c.id) }, caseId, status: 'CONFIRMED' },
-        select: { id: true, letterId: true, kind: true, value: true, quote: true },
-      });
+      const nowClaims = await this.vault.open(
+        cabinetId,
+        await tx.claim.findMany({
+          where: { id: { in: Object.values(claims).map((c) => c.id) }, caseId, status: 'CONFIRMED' },
+          select: { id: true, letterId: true, kind: true, value: true, quote: true },
+        }),
+      );
+      const kase = await tx.case.findUniqueOrThrow({ where: { id: caseId }, select: { keyId: true } });
       const parsed = ProfileSchema.safeParse(nowProfile.profile);
       if (
         !parsed.success ||
@@ -535,6 +586,8 @@ export class DraftsService {
       )
         throw new ApiError('DRAFT_SOURCES_CHANGED');
       return this.saveOutgoingDraft(tx, {
+        cabinetId,
+        keyId: kase.keyId,
         caseId,
         templateId: snap.outgoing!.templateId,
         claims,
@@ -547,6 +600,8 @@ export class DraftsService {
   private async saveOutgoingDraft(
     tx: Prisma.TransactionClient,
     a: {
+      cabinetId: string;
+      keyId: string | null;
       caseId: string;
       templateId: OutgoingTemplateId;
       claims: Record<string, ConfirmedClaim>;
@@ -580,11 +635,13 @@ export class DraftsService {
         caseId: a.caseId,
         kind: 'TEMPLATE',
         templateId: `outgoing.${a.templateId}`,
-        germanText: built.germanText,
-        russianText: built.russianText,
         claimIds: built.claimIds,
-        claimSnapshot: snapshot as unknown as object,
-        verification: report as unknown as object,
+        ...(await this.sealDraft(a.cabinetId, a.keyId, {
+          germanText: built.germanText,
+          russianText: built.russianText,
+          snapshot,
+          report,
+        })),
       },
     });
     await tx.event.create({

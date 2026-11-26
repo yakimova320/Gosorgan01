@@ -26,9 +26,13 @@ export class DemoAdapter implements LlmAdapter {
     extract: (v, request) => {
       const base = demoExtract(v.letterText ?? '');
       // extract.v3 (поправка 8): и название письма по строке Betreff; L07: на языке кабинета
-      return (request.promptVersion ?? 0) >= 3
-        ? { ...base, title: demoTitle(v.letterText ?? '', demoLang(v.lang)) }
-        : base;
+      const version = request.promptVersion ?? 0;
+      if (version < 3) return base;
+      const title = demoTitle(v.letterText ?? '', demoLang(v.lang));
+      // extract.v5 (E01): обезличенное резюме для поиска по архиву
+      return version >= 5
+        ? { ...base, title, summary: demoSummary(v.letterText ?? '', demoLang(v.lang)) }
+        : { ...base, title };
     },
     translate: (v) => demoTranslate(v.letterText ?? '', demoLang(v.lang)),
     chat: (v) => demoChat(v.question ?? '', v.faq ?? '', demoLang(v.lang)),
@@ -417,6 +421,38 @@ export function demoTitle(
   const short = authority?.split(/\s+/)[0];
   const value = (short ? `${short}: ${subject}` : subject).slice(0, 60);
   return { value, quote: betreff };
+}
+
+/** Слова с 4 и больше цифрами и метки личных данных: в резюме их нет (E01). */
+const stripNumbers = (s: string) =>
+  s
+    .replace(/\[[A-Z]+_\d+\]/g, '')
+    .replace(/\S*\d{4,}\S*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/**
+ * Резюме для extract.v5 в demo (E01): вид ведомства, тема из Betreff и первая просьба письма,
+ * без чисел; local — название письма на языке кабинета.
+ */
+export function demoSummary(
+  text: string,
+  lang: DemoLang = 'ru',
+): { de: string; local: string } | null {
+  const lines = text.split('\n').map((l) => l.trim());
+  const authority = AUTHORITY.exec(
+    lines.find((l) => AUTHORITY.test(l) && !/^(An|Betreff)\b/.test(l)) ?? '',
+  )?.[1];
+  const betreff = lines.find((l) => /^Betreff:/i.test(l))?.replace(/^Betreff:\s*/i, '');
+  const request = lines.find((l) => /^Bitte\b/i.test(l));
+  const de = stripNumbers(
+    [authority && `Schreiben vom ${authority}.`, betreff && `Thema: ${betreff}.`, request]
+      .filter(Boolean)
+      .join(' '),
+  );
+  if (!de) return null;
+  const title = demoTitle(text, lang)?.value;
+  return { de, local: stripNumbers(title ?? de) };
 }
 
 /**

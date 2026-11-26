@@ -15,6 +15,7 @@ import {
   type SessionState,
 } from './session';
 import { clearUploadFiles } from './uploads';
+import { keyring, lockKeyring } from '../crypto/keyring';
 
 /*
  * Store сайта: session (slice) и api (кэш RTK Query).
@@ -29,13 +30,15 @@ export function createStore(preloadedSession?: SessionState) {
     effect: (action, { dispatch, getState }) => {
       abortAllRequests();
       clearUploadFiles();
+      // E01: ключи архива только в памяти; при смене или конце сессии стираются
+      lockKeyring();
       dispatch(api.util.resetApiState());
       writeStoredToken((getState() as { session: SessionState }).session.token);
       void action;
     },
   });
 
-  return configureStore({
+  const store = configureStore({
     reducer: { session: sessionReducer, [api.reducerPath]: api.reducer },
     preloadedState: preloadedSession
       ? { session: preloadedSession }
@@ -43,6 +46,8 @@ export function createStore(preloadedSession?: SessionState) {
     middleware: (gdm) =>
       gdm().prepend(listener.middleware).concat(api.middleware),
   });
+  keyring.configure({ getToken: () => store.getState().session.token });
+  return store;
 }
 
 export type AppStore = ReturnType<typeof createStore>;

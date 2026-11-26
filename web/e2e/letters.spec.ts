@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /* F02: загрузка письма и проверка фактов на сайте, с настоящим API в режиме demo. */
 
@@ -31,10 +32,6 @@ function plainPdf(): Buffer {
   return Buffer.from(out, 'latin1');
 }
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 /** Загрузка через сайт: выбор файла → «Готово, читать письмо» → страница проверки. */
 async function uploadUi(

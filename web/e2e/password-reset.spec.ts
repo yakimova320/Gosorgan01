@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, PASSWORD, createUser, letters, loginUi } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, PASSWORD, createUser, letters, loginUi, openArchive } from './helpers';
 
 /*
  * A03: восстановление пароля на сайте с настоящим API (demo, MAIL_MODE=file).
@@ -72,6 +73,7 @@ test('забыли пароль → письмо → новый пароль →
   await expect(page.getByText('Неверный e-mail или пароль')).toBeVisible();
   await loginUi(page, u.email, NEW_PASSWORD);
   await expect(page).toHaveURL(/\/app$/);
+  await openArchive(page); // E01: экран ключа архива
 
   // старая сессия (до сброса) завершена
   expect(

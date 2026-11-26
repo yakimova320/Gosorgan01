@@ -3,7 +3,7 @@ import { ApiError } from '../common/api-error.js';
 import { toIsoDate } from '../common/berlin-date.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { cabinetLanguage } from '../common/language.js';
-import { caseLine, deadlineCheckNote, deadlineSummary } from './deadline-text.js';
+import { caseLine, deadlineCheckNote, deadlineSummary, plainOrNull } from './deadline-text.js';
 import { buildIcs } from './ics.js';
 
 export interface DeadlineState {
@@ -86,7 +86,7 @@ export class DeadlinesService {
       date: toIsoDate(d.date),
       summary: deadlineSummary(d.kind, d.letter.claims[0]?.value, lang),
       description: [
-        d.case?.title ? caseLine(d.case.title, lang) : null,
+        plainOrNull(d.case?.title) ? caseLine(plainOrNull(d.case?.title)!, lang) : null,
         deadlineCheckNote(lang),
       ]
         .filter(Boolean)

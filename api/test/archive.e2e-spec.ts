@@ -13,7 +13,7 @@ const PASSWORD = 'mein-langes-Passwort';
 const fixture = (name: string) =>
   readFileSync(resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters', name));
 
-describe('Вопросы к архиву писем (e2e, L05)', () => {
+describe('Вопросы к архиву писем (e2e, L05, E01: поиск по резюме)', () => {
   let app: INestApplication;
   let db: PrismaService;
   let cleanup: () => Promise<void>;
@@ -101,14 +101,14 @@ describe('Вопросы к архиву писем (e2e, L05)', () => {
     // справочник: только проверенный термин, черновик не используется
     expect(res.body.terms).toEqual([{ term: 'Aktenzeichen', text: 'Номер дела.' }]);
 
-    // векторы посчитаны для обоих писем
-    expect(await db.letterChunk.count({ where: { cabinetId: a.cabinetId } })).toBeGreaterThanOrEqual(2);
+    // E01: векторы обезличенных резюме посчитаны при загрузке, открытых кусков текста нет
+    expect(await db.letterSummary.count({ where: { cabinetId: a.cabinetId } })).toBe(2);
 
     const op = await db.llmOperation.findMany({ where: { cabinetId: a.cabinetId, kind: 'CHAT' } });
     expect(op).toHaveLength(1);
     const calls = await db.llmCall.findMany({ where: { operationId: op[0].id }, orderBy: { createdAt: 'asc' } });
-    // локальные векторы (LLM_EMBED_MODE=local): вопрос → слова для поиска, потом ответ; векторы без модели
-    expect(calls.map((c) => c.promptName)).toEqual(['archive-query', 'archive']);
+    // E01: локальные векторы без модели; резюме на двух языках, поэтому вопрос не переводится
+    expect(calls.map((c) => c.promptName)).toEqual(['archive']);
     expect(calls.reduce((n, c) => n + c.attempts, 0)).toBeLessThanOrEqual(3);
 
     // второй вопрос: письма уже готовы, векторы считаются только для вопроса
@@ -143,23 +143,24 @@ describe('Вопросы к архиву писем (e2e, L05)', () => {
     expect(res.body.answer).toContain('нет');
   });
 
-  it('удаление письма и аккаунта удаляет куски; изменённый текст письма считается заново', async () => {
+  it('удаление письма и аккаунта удаляет резюме; письмо без резюме в поиск не попадает', async () => {
     const a = await register('archive-del@example.org');
     const l1 = await upload(a.token, '01_jobcenter_request.pdf');
     const l2 = await upload(a.token, '04_buergeramt.pdf');
     await ask(a.token, 'Mietvertrag').expect(200);
-    expect(await db.letterChunk.count({ where: { letterId: l1 } })).toBeGreaterThan(0);
+    expect(await db.letterSummary.count({ where: { letterId: l1 } })).toBe(1);
 
     await http().delete(`/letters/${l1}`).set(auth(a.token)).expect(204);
-    expect(await db.letterChunk.count({ where: { letterId: l1 } })).toBe(0);
+    expect(await db.letterSummary.count({ where: { letterId: l1 } })).toBe(0);
 
-    // текст письма изменился (например, распознан заново): куски пересчитываются
-    await db.letter.update({ where: { id: l2 }, data: { rawText: 'Bürgeramt Beispielhausen\nBitte bringen Sie Ihren Reisepass mit.' } });
-    const res = await ask(a.token, 'Reisepass').expect(200);
-    expect(res.body.sources[0].quote).toBe('Bitte bringen Sie Ihren Reisepass mit.');
+    // письмо без резюме (загружено до E01): не ищется и считается в pendingLetters
+    await db.letterSummary.deleteMany({ where: { letterId: l2 } });
+    const res = await ask(a.token, 'Mietvertrag').expect(200);
+    expect(res.body.sources).toEqual([]);
+    expect(res.body.pendingLetters).toBe(1);
 
     await http().delete('/cabinet').set(auth(a.token)).send({ password: PASSWORD }).expect(204);
-    expect(await db.letterChunk.count({ where: { cabinetId: a.cabinetId } })).toBe(0);
+    expect(await db.letterSummary.count({ where: { cabinetId: a.cabinetId } })).toBe(0);
     expect(await db.llmCall.count({ where: { cabinetId: a.cabinetId } })).toBe(0);
   });
 

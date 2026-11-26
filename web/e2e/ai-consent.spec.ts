@@ -1,14 +1,11 @@
-import { expect, test, type Page } from '@playwright/test';
-import { createUser, fillRegistration, letters, uniqueEmail } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { createUser, fillRegistration, letters, uniqueEmail, signedIn, openArchive } from './helpers';
 
 /*
  * K11 (#134): согласие на анализ письма ИИ. Настоящий API в режиме demo.
  */
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 test('без согласия: вместо загрузки — согласие; кнопка только после отметки; отзыв в профиле возвращает запрос', async ({
   page,
@@ -46,6 +43,7 @@ test('регистрация с отметкой согласия на анал�
   await fillRegistration(page, { email: uniqueEmail('k11reg'), firstName: `Anna${letters()}`, aiConsent: true });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await openArchive(page); // E01: экран ключа архива
   await page.goto('/app/scan');
   await expect(page.getByRole('button', { name: 'Выбрать фото или PDF' })).toBeVisible();
   await expect(page.getByTestId('ai-consent')).toHaveCount(0);

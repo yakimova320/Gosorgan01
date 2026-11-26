@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { API_URL, ADDRESS, PASSWORD, createUser, letters, uniqueEmail } from './helpers';
+import { expect } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, ADDRESS, PASSWORD, createUser, letters, uniqueEmail, openArchive } from './helpers';
 
 /*
  * L07 (#83): языки сайта RU / UA / DE. Настоящий API (demo).
@@ -51,6 +52,7 @@ test('регистрация на украинском: язык сохраня�
   await page.getByLabel(/Я погоджуюся з обробкою/).check();
   await page.getByRole('button', { name: 'Зареєструватися' }).click();
   await expect(page).toHaveURL(/\/app/);
+  await openArchive(page); // E01: экран ключа архива
   await expect(page.getByRole('heading', { name: 'Тут поки тихо' })).toBeVisible();
 
   const token = await page.evaluate(() => localStorage.getItem('jasno.session'));
@@ -74,6 +76,7 @@ test('вход: язык кабинета главнее языка браузе
   await expect(page.getByTestId('lang-switcher')).toHaveValue('ru');
   await page.evaluate((t) => localStorage.setItem('jasno.session', t), u.token);
   await page.goto('/app');
+  await openArchive(page, u.token); // E01: экран ключа архива (на немецком)
   await expect(page.getByTestId('lang-switcher').first()).toHaveValue('de');
   await expect(page.getByRole('heading', { name: 'Hier ist es noch ruhig' })).toBeVisible();
 });

@@ -1,14 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import {
-  API_URL,
-  clientNavigate,
-  fillRegistration,
-  letters,
-  loginUi,
-  uniqueEmail,
-} from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, clientNavigate, fillRegistration, letters, loginUi, uniqueEmail, openArchive } from './helpers';
 
 /*
  * Приёмка регистрации с именем, фамилией и адресом:
@@ -37,6 +31,7 @@ async function register(page: Page, firstName: string, lastName: string) {
   });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await openArchive(page); // E01: экран ключа архива
   const token = await page.evaluate(() =>
     localStorage.getItem('jasno.session'),
   );

@@ -1,12 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import {
-  expect,
-  test,
-  type APIRequestContext,
-  type Page,
-} from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /* F03: экран дела, письмо с объяснением, история (настоящий API, demo). */
 
@@ -14,10 +10,6 @@ const fixture = (name: string) =>
   resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters', name);
 type Claim = { id: string; kind: string; status: string };
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 /** Письмо через API: загрузить, подтвердить нужные факты, положить в новое дело. */
 async function letterInCase(
@@ -108,7 +100,8 @@ test('изменение фактов → объяснение обновляе�
   let explains = 0;
   page.on(
     'request',
-    (r) => r.method() === 'POST' && r.url().includes('/explain') && explains++,
+    // E01: повтор с ключом письма после 428 — тот же запрос, не новое действие
+    (r) => r.method() === 'POST' && r.url().includes('/explain') && !r.headers()['x-jasno-keys'] && explains++,
   );
 
   await page.goto(`/app/letters/${letterId}`);

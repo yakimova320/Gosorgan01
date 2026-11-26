@@ -70,6 +70,7 @@ const err = (code: string, message: string, details?: unknown) => ({
 const EXAMPLE: UploadLetterResponse = {
   letter: {
     id: '7f1c2e9a-3b4d-4c5e-8f60-1a2b3c4d5e6f',
+    keyId: null,
     title: 'Jobcenter: документы к заявлению',
     caseId: null,
     sourceType: 'PDF_TEXT',

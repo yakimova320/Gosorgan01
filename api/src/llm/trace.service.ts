@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { keyContext } from '../crypto/key-context.js';
 
 export interface LlmContext {
   /** null: гость (чат-помощник без входа) */
@@ -57,8 +58,13 @@ export class TraceService {
             promptVersion: entry.promptVersion,
             provider: entry.provider,
             model: entry.model,
-            input: entry.input,
-            output: entry.output,
+            // E01: запрос с ключами документов работал с расшифрованным письмом — открытый текст
+            // в журнал не пишется, только размер
+            input: sealedRequest() ? `[письмо зашифровано: ${entry.input.length} знаков]` : entry.input,
+            output:
+              sealedRequest() && entry.output !== null
+                ? `[ответ скрыт: ${entry.output.length} знаков]`
+                : entry.output,
             ok: entry.ok,
             error: entry.error,
             attempts: entry.attempts,
@@ -77,4 +83,10 @@ export class TraceService {
       return null;
     }
   }
+}
+
+/** E01: в запросе есть ключи документов (браузер открыл зашифрованное письмо для обработки). */
+function sealedRequest(): boolean {
+  const ctx = keyContext();
+  return !!ctx && (ctx.keys.size > 0 || ctx.newKey !== null);
 }

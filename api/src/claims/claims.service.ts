@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/api-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { VaultService } from '../crypto/vault.service.js';
 
 /** Подтверждённый факт письма: единственный источник данных для черновика (AGENTS.md). */
 export interface ConfirmedClaim {
@@ -23,7 +24,10 @@ export interface ConfirmedClaim {
 
 @Injectable()
 export class ClaimsService {
-  constructor(@Inject(PrismaService) private readonly db: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly db: PrismaService,
+    @Inject(VaultService) private readonly vault: VaultService,
+  ) {}
 
   /**
    * Подтверждённые факты одного письма дела. Проверяет, что дело принадлежит кабинету,
@@ -39,7 +43,8 @@ export class ClaimsService {
       select: { id: true },
     });
     if (!letter) throw new ApiError('NOT_FOUND');
-    const rows = await this.db.claim.findMany({
+    // E01: значения и цитаты открываются ключом письма из запроса (иначе 428 KEYS_REQUIRED)
+    const rows = await this.vault.open(cabinetId, await this.db.claim.findMany({
       where: { letterId, status: 'CONFIRMED' },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: {
@@ -49,7 +54,7 @@ export class ClaimsService {
         value: true,
         quote: true,
       },
-    });
+    }));
     return rows.map((r) => ({ ...r, letterId: r.letterId! }));
   }
 
@@ -66,7 +71,8 @@ export class ClaimsService {
       select: { id: true },
     });
     if (!kase) throw new ApiError('NOT_FOUND');
-    const rows = await this.db.claim.findMany({
+    // E01: поля своего письма открываются ключом дела из запроса
+    const rows = await this.vault.open(cabinetId, await this.db.claim.findMany({
       where: { caseId, letterId: null, basis: 'USER', status: 'CONFIRMED' },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: {
@@ -77,7 +83,7 @@ export class ClaimsService {
         quote: true,
         text: true,
       },
-    });
+    }));
     return rows.map(({ text, ...r }) => ({ ...r, label: text }));
   }
 }

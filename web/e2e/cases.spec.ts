@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /* B07 на сайте: «В дело» со страницы проверки, статус дела в кабинете (настоящий API, demo). */
 
@@ -11,10 +12,6 @@ const claim = (page: Page, text: string) =>
 // у каждого теста свой пользователь и одно дело; название дела — предложенное название письма (поправка 8)
 const caseCard = (page: Page) => page.getByTestId('case-row').first();
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 async function uploadAndCheck(page: Page, file: string): Promise<string> {
   await page.goto('/app/scan');

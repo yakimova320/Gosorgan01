@@ -6,6 +6,7 @@ import { cabinetLanguage, languageVariables, type Language } from '../common/lan
 import { LlmService } from '../llm/llm.service.js';
 import { TranslateSchema } from '../llm/schemas/translate.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { VaultService } from '../crypto/vault.service.js';
 import type { TranslationView } from './letters.dto.js';
 
 /** Версия промпта перевода: входит в ключ кэша. */
@@ -30,6 +31,7 @@ export class TranslateService {
   constructor(
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(LlmService) private readonly llm: LlmService,
+    @Inject(VaultService) private readonly vault: VaultService,
   ) {}
 
   async translate(
@@ -37,11 +39,13 @@ export class TranslateService {
     letterId: string,
     requested?: Language,
   ): Promise<TranslationView> {
-    const letter = await this.db.letter.findFirst({
+    const row = await this.db.letter.findFirst({
       where: { id: letterId, cabinetId },
-      select: { id: true, caseId: true, rawText: true, translation: true },
+      select: { id: true, keyId: true, caseId: true, rawText: true, translation: true },
     });
-    if (!letter) throw new ApiError('NOT_FOUND');
+    if (!row) throw new ApiError('NOT_FOUND');
+    // E01: текст и кэш открываются ключом письма из запроса (нажата кнопка «Перевести»), иначе 428
+    const letter = await this.vault.open(cabinetId, row);
     // перевод отправляет текст письма модели — нужно действующее согласие (кэш тоже не отдаём)
     await assertAiConsent(this.db, cabinetId);
     const lang = requested ?? (await cabinetLanguage(this.db, cabinetId));
@@ -76,7 +80,7 @@ export class TranslateService {
     // письмо удалили, пока модель отвечала: перевод не сохраняется
     const saved = await this.db.letter.updateMany({
       where: { id: letterId, cabinetId },
-      data: { translation: entry as unknown as object },
+      data: { translation: (await this.vault.sealJson(cabinetId, letter.keyId, entry)) as object },
     });
     if (saved.count !== 1) throw new ApiError('NOT_FOUND');
     return { lang, text: result.text, machine: true, cached: false };

@@ -4,6 +4,7 @@ import { cabinetLanguage, languageVariables, type Language } from '../common/lan
 import { LlmService } from '../llm/llm.service.js';
 import { ExplainV2Schema } from '../llm/schemas/explain.schema.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { VaultService } from '../crypto/vault.service.js';
 import { assertAiConsent } from '../cabinet/ai-consent.js';
 import {
   checkExplanation,
@@ -36,6 +37,7 @@ export class ExplainService {
   constructor(
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(LlmService) private readonly llm: LlmService,
+    @Inject(VaultService) private readonly vault: VaultService,
   ) {}
 
   async explain(
@@ -43,16 +45,18 @@ export class ExplainService {
     letterId: string,
     requested?: Language,
   ): Promise<ExplainResponse> {
-    const letter = await this.db.letter.findFirst({
+    const row = await this.db.letter.findFirst({
       where: { id: letterId, cabinetId },
-      select: { id: true, caseId: true, rawText: true, explanation: true },
+      select: { id: true, keyId: true, caseId: true, rawText: true, explanation: true },
     });
-    if (!letter) throw new ApiError('NOT_FOUND');
+    if (!row) throw new ApiError('NOT_FOUND');
+    // E01: текст, факты и кэш открываются ключом письма из запроса (кнопка «Объяснить»), иначе 428
+    const letter = await this.vault.open(cabinetId, row);
     // K11: объяснение отправляет текст письма модели — нужно действующее согласие (кэш тоже не отдаём)
     await assertAiConsent(this.db, cabinetId);
     const lang = requested ?? (await cabinetLanguage(this.db, cabinetId));
 
-    const facts = await this.facts(letterId);
+    const facts = await this.facts(cabinetId, letterId);
     if (facts.length === 0) throw new ApiError('NO_CLAIMS');
     const version = factsVersion(facts);
 
@@ -97,7 +101,7 @@ export class ExplainService {
     const explanation = finalizeExplanation(result, facts, lang);
 
     await this.db.$transaction(async (tx) => {
-      const now = await this.facts(letterId, tx);
+      const now = await this.facts(cabinetId, letterId, tx);
       if (factsVersion(now) !== version) throw new ApiError('CLAIMS_CHANGED');
       const entry: CachedExplanation = {
         lang,
@@ -107,7 +111,7 @@ export class ExplainService {
       };
       await tx.letter.update({
         where: { id: letterId },
-        data: { explanation: entry as unknown as object },
+        data: { explanation: (await this.vault.sealJson(cabinetId, letter.keyId, entry)) as object },
       });
     });
     return { ...explanation, cached: false };
@@ -115,14 +119,18 @@ export class ExplainService {
 
   /** Действующие факты письма: без отклонённых и заменённых. */
   private async facts(
+    cabinetId: string,
     letterId: string,
     db: Pick<PrismaService, 'claim'> = this.db,
   ): Promise<ExplainFact[]> {
-    const rows = await db.claim.findMany({
-      where: { letterId, status: { in: ['UNCONFIRMED', 'CONFIRMED'] } },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      include: { deadline: { select: { kind: true } } },
-    });
+    const rows = await this.vault.open(
+      cabinetId,
+      await db.claim.findMany({
+        where: { letterId, status: { in: ['UNCONFIRMED', 'CONFIRMED'] } },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        include: { deadline: { select: { kind: true } } },
+      }),
+    );
     return rows.map((c) => ({
       id: c.id,
       kind: c.kind,

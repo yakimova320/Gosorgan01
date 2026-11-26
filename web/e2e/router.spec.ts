@@ -2,8 +2,9 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { expect, test } from '@playwright/test';
-import { createUser, loginUi } from './helpers';
+import { expect } from '@playwright/test';
+import { test } from './fixtures';
+import { createUser, loginUi, openArchive } from './helpers';
 
 test('прямое открытие вложенного адреса и обновление страницы', async ({
   page,
@@ -13,6 +14,7 @@ test('прямое открытие вложенного адреса и обн�
   await page.goto('/login');
   await loginUi(page, a.email);
   await expect(page).toHaveURL(/\/app$/);
+  await openArchive(page); // E01: экран ключа архива
   await page.goto('/app/cases/case-123/answer');
   await expect(page).toHaveURL(/\/app\/cases\/case-123\/answer$/);
   await expect(page.getByText('Такой страницы нет')).toHaveCount(0);

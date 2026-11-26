@@ -13,6 +13,7 @@ import {
 import { RouterProvider } from 'react-router/dom';
 import { AppShell, MockBanner, ModeBadge, PublicLayout } from '../components/layout';
 import { StorageNotice } from '../components/StorageNotice';
+import { VaultGate } from '../components/VaultGate';
 import {
   AnswerDetailsPage,
   AnswerDraftPage,
@@ -150,7 +151,11 @@ function RouteScreen({ route }: { route: Route }) {
   const { token } = useSession();
   if (route.area === 'cabinet') {
     if (!token) return <Navigate to="/login" replace />;
-    return <AppShell key={route.path}>{route.render(params, search)}</AppShell>;
+    return (
+      <AppShell key={route.path}>
+        <VaultGate>{route.render(params, search)}</VaultGate>
+      </AppShell>
+    );
   }
   return (
     <PublicLayout key={route.path}>{route.render(params, search)}</PublicLayout>

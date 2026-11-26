@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './fixtures';
 import { createUser, PASSWORD, uniqueEmail, fillRegistration } from './helpers';
 
 /* Поля и проверка форм (TechBriefing v5, раздел 5.3). */

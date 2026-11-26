@@ -6,17 +6,20 @@ import { cabinetLanguage, languageVariables, type Language } from '../common/lan
 import { APP_CONFIG } from '../config/config.module.js';
 import type { Env } from '../config/env.schema.js';
 import { LlmService } from '../llm/llm.service.js';
-import { ArchiveAnswerSchema, ArchiveQuerySchema } from '../llm/schemas/archive.schema.js';
+import { ArchiveAnswerSchema } from '../llm/schemas/archive.schema.js';
+import { wordStems } from '../llm/local-embed.js';
+import { VaultService } from '../crypto/vault.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { ArchiveReply, ArchiveSource } from './archive.dto.js';
 import { ArchiveRepository } from './archive.repository.js';
-import { splitLetter, textHash } from './chunking.js';
+import { splitLetter } from './chunking.js';
+import type { LetterSummaryText } from './summary-check.js';
 import { loadCheckedTerms, termsIn, type GlossaryTerm } from './glossary.js';
 
-/** Сколько кусков отдаётся модели как контекст. */
-export const TOP_CHUNKS = 6;
-/** Не больше текстов в одном обращении за векторами (вопрос + куски писем). */
-export const EMBED_BATCH = 90;
+/** Сколько писем находит поиск по резюме. */
+export const TOP_LETTERS = 4;
+/** Сколько кусков каждого найденного письма уходит модели вместе с резюме. */
+export const CHUNKS_PER_LETTER = 2;
 /** Не больше источников под ответом. */
 const MAX_SOURCES = 4;
 
@@ -33,15 +36,14 @@ const dateDe = (d: Date) =>
   `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${d.getUTCFullYear()}`;
 
 /**
- * L05 (#81): вопросы к архиву писем (RAG).
- * 1. Письма кабинета без векторов (или с изменённым текстом) режутся на куски.
- * 2. Векторы вопроса и новых кусков (LlmService.embed). Локальные векторы (по умолчанию) ищут по словам,
- *    поэтому вопрос сначала переводится в немецкие слова писем (archive-query.v1, одно обращение).
- *    Внешние векторы (LLM_EMBED_MODE=api) — одно обращение за векторами.
- * 3. Код ищет ближайшие куски только среди писем этого кабинета (pgvector, WHERE cabinetId).
- * 4. Второе обращение: ответ модели по кускам (archive.v1), Zod.
- * 5. Код оставляет только цитаты, которые есть в тексте письма.
- * Не больше 3 обращений на вопрос (операция CHAT, лимит LLM_DAILY_CHAT_PER_CABINET).
+ * L05 (#81), E01 (#163): вопросы к архиву писем (RAG) без открытого текста в базе.
+ * 1. Вектор вопроса (LlmService.embed; локальные векторы — без модели).
+ * 2. Код ищет ближайшие резюме писем только этого кабинета (pgvector, WHERE cabinetId).
+ *    Резюме обезличено и зашифровано, открыт только его вектор (extract.v5 при загрузке).
+ * 3. Текст найденных писем открывается ключами из запроса: браузер присылает их по кнопке «Спросить»
+ *    (428 KEYS_REQUIRED с нужными keyId → повтор с ключами). Модели уходят резюме и по 2 куска письма.
+ * 4. Ответ модели (archive.v1), Zod. 5. Код оставляет только цитаты, которые есть в тексте письма.
+ * Не больше 3 обращений на вопрос (операция CHAT, лимит LLM_DAILY_CHAT_PER_CABINET). Ничего не сохраняется.
  */
 @Injectable()
 export class ArchiveService {
@@ -53,6 +55,7 @@ export class ArchiveService {
     @Inject(LlmService) private readonly llm: LlmService,
     @Inject(ArchiveRepository) private readonly repo: ArchiveRepository,
     @Inject(APP_CONFIG) private readonly config: Env,
+    @Inject(VaultService) private readonly vault: VaultService,
   ) {}
 
   private glossary(): GlossaryTerm[] {
@@ -65,8 +68,25 @@ export class ArchiveService {
   async ask(cabinetId: string, question: string): Promise<ArchiveReply> {
     await assertAiConsent(this.db, cabinetId);
     const lang = await cabinetLanguage(this.db, cabinetId);
-    const letters = await this.db.letter.findMany({
-      where: { cabinetId },
+    const total = await this.db.letter.count({ where: { cabinetId } });
+    if (total === 0)
+      return { disclaimer: CHAT_DISCLAIMER, answer: NO_LETTERS[lang], sources: [], terms: [], pendingLetters: 0 };
+    // письма без резюме (загружены до E01 или резюме не прошло проверку) в поиск не попадают
+    const pendingLetters = await this.db.letter.count({
+      where: { cabinetId, summary: { is: null } },
+    });
+
+    // 1–2. вектор вопроса и поиск по резюме писем этого кабинета
+    const op = this.llm.operation(cabinetId, 'CHAT');
+    const [qVector] = await this.llm.embed({
+      texts: [question],
+      context: { cabinetId },
+      operation: op,
+      maxAttempts: 2, // ещё одно обращение остаётся на ответ
+    });
+    const hits = await this.repo.search(cabinetId, this.llm.embedderId, qVector!, TOP_LETTERS);
+    const rows = await this.db.letter.findMany({
+      where: { id: { in: hits.map((h) => h.letterId) }, cabinetId },
       select: {
         id: true,
         rawText: true,
@@ -74,74 +94,29 @@ export class ArchiveService {
         createdAt: true,
         caseId: true,
         case: { select: { title: true } },
-        chunks: { select: { textHash: true }, where: { n: 0 }, take: 1 },
+        summary: { select: { summary: true } },
       },
-      orderBy: { createdAt: 'desc' },
     });
-    if (letters.length === 0)
-      return { disclaimer: CHAT_DISCLAIMER, answer: NO_LETTERS[lang], sources: [], terms: [], pendingLetters: 0 };
-
-    // 1. письма без векторов: новые и с изменённым текстом, сначала свежие
-    const batch: { letterId: string; hash: string; chunks: string[] }[] = [];
-    let room = EMBED_BATCH - 1;
-    let pendingLetters = 0;
-    for (const l of letters) {
-      // источник векторов входит в отпечаток: при его смене куски считаются заново
-      const hash = textHash(`${this.llm.embedderId}\n${l.rawText}`);
-      if (l.chunks[0]?.textHash === hash) continue;
-      const chunks = splitLetter(l.rawText);
-      if (chunks.length === 0) continue;
-      if (chunks.length > room) {
-        pendingLetters++;
-        continue;
-      }
-      room -= chunks.length;
-      batch.push({ letterId: l.id, hash, chunks });
-    }
-
-    // 2. векторы вопроса и новых кусков
-    const op = this.llm.operation(cabinetId, 'CHAT');
-    let searchText = question;
-    if (this.llm.embedsLocally) {
-      const q = await this.llm.call({
-        prompt: 'archive-query',
-        version: 1,
-        variables: { question },
-        schema: ArchiveQuerySchema,
-        context: { cabinetId },
-        operation: op,
-        maxAttempts: 2, // ещё одно обращение остаётся на ответ
-      });
-      searchText = `${question}\n${q.query}`;
-    }
-    const vectors = await this.llm.embed({
-      texts: [searchText, ...batch.flatMap((b) => b.chunks)],
-      context: { cabinetId },
-      operation: op,
-      maxAttempts: 2, // ещё одно обращение остаётся на ответ
-    });
-    const [qVector, ...chunkVectors] = vectors;
-    let at = 0;
-    for (const b of batch) {
-      const chunks = b.chunks.map((text) => ({ text, vector: chunkVectors[at++] }));
-      const saved = await this.repo.replaceChunks(cabinetId, b.letterId, b.hash, chunks);
-      if (!saved) this.logger.log('куски письма не записаны: письмо удалено или аккаунт удаляется');
-    }
-
-    // 3. поиск только по письмам этого кабинета
-    const hits = await this.repo.search(cabinetId, qVector, TOP_CHUNKS);
-    const byId = new Map(letters.map((l) => [l.id, l]));
-    const found = hits.filter((h) => byId.has(h.letterId));
-    if (found.length === 0)
+    if (rows.length === 0)
       return { disclaimer: CHAT_DISCLAIMER, answer: NO_LETTERS[lang], sources: [], terms: [], pendingLetters };
 
+    // 3. текст найденных писем: только с ключами из запроса (иначе 428 KEYS_REQUIRED)
+    const opened = await this.vault.open(cabinetId, rows);
+    const byId = new Map(opened.map((l) => [l.id, l]));
+    const found = hits.map((h) => byId.get(h.letterId)).filter((l) => l !== undefined);
     const fragments = found
-      .map((h, i) => {
-        const l = byId.get(h.letterId)!;
-        return `### F${i + 1}\nПисьмо: «${l.title ?? 'без названия'}» · ${dateDe(l.createdAt)}\n${h.text}`;
+      .map((l, i) => {
+        const summary = readSummary(l.summary?.summary);
+        const parts = bestChunks(l.rawText, `${question}\n${summary?.de ?? ''}`, CHUNKS_PER_LETTER);
+        // резюме — в строке заголовка: цитаты берутся только из кусков самого письма
+        return [
+          `### F${i + 1}`,
+          `Письмо: «${l.title ?? 'без названия'}» · ${dateDe(l.createdAt)}${summary ? ` · Кратко: ${summary.de}` : ''}`,
+          ...parts,
+        ].join('\n');
       })
       .join('\n\n');
-    const terms = termsIn(`${searchText}\n${fragments}`, this.glossary());
+    const terms = termsIn(`${question}\n${fragments}`, this.glossary());
 
     // 4. ответ модели по кускам
     const result = await this.llm.call({
@@ -163,8 +138,7 @@ export class ArchiveService {
     const sources: ArchiveSource[] = [];
     const seen = new Set<string>();
     for (const s of result.sources) {
-      const hit = found[Number(s.fragment.slice(1)) - 1];
-      const letter = hit && byId.get(hit.letterId);
+      const letter = found[Number(s.fragment.slice(1)) - 1];
       if (!letter) continue;
       const quote = flat(s.quote);
       if (!quote || !flat(letter.rawText).includes(quote)) continue;
@@ -191,5 +165,28 @@ export class ArchiveService {
       terms: terms.map((t) => ({ term: t.term, text: t.text[lang] || t.text.ru })),
       pendingLetters,
     };
+  }
+}
+
+/** Куски письма с наибольшим числом общих основ слов с вопросом и резюме, в порядке письма. */
+export function bestChunks(text: string, query: string, n: number): string[] {
+  const want = new Set(wordStems(query));
+  const chunks = splitLetter(text);
+  return chunks
+    .map((c, i) => ({ c, i, score: wordStems(c).filter((w) => want.has(w)).length }))
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, n)
+    .sort((a, b) => a.i - b.i)
+    .map((x) => x.c);
+}
+
+/** Резюме из LetterSummary: после расшифровки — объект, у письма без шифрования — строка JSON. */
+export function readSummary(raw: unknown): LetterSummaryText | undefined {
+  if (!raw) return undefined;
+  if (typeof raw !== 'string') return raw as LetterSummaryText;
+  try {
+    return JSON.parse(raw) as LetterSummaryText;
+  } catch {
+    return undefined;
   }
 }

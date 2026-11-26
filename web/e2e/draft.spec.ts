@@ -1,12 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import {
-  expect,
-  test,
-  type APIRequestContext,
-  type Page,
-} from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * F04: экран черновика. Устаревание и основной успех — через настоящий API (demo);
@@ -17,10 +13,6 @@ const fixture = (name: string) =>
   resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters', name);
 type Claim = { id: string; kind: string; supersedesId: string | null };
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 /** Письмо 01 с подтверждёнными фактами в новом деле и черновик по API. */
 async function prepared(request: APIRequestContext, token: string) {
@@ -195,6 +187,7 @@ test('ошибка сборки: без автоматического повт�
     'request',
     (r) =>
       r.url().endsWith(`/letters/${p.letterId}/draft-questions`) &&
+      !r.headers()['x-jasno-keys'] && // E01: повтор с ключом после 428 не считается
       questionLoads++,
   );
   await page.route(`${API_URL}/cases/${p.caseId}/draft`, (r) => {
@@ -230,6 +223,7 @@ test('двойное нажатие: один черновик; чужой че�
     (r) =>
       r.method() === 'POST' &&
       r.url() === `${API_URL}/cases/${p.caseId}/draft` &&
+      !r.headers()['x-jasno-keys'] && // E01: повтор с ключами после 428 — то же нажатие
       posts++,
   );
   await page.goto(`/app/cases/${p.caseId}/answer/details?letter=${p.letterId}`);

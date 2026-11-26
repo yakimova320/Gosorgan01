@@ -5879,6 +5879,126 @@
           ]
         }
       ]
+    },
+    {
+      "name": "16 Шифрование писем (E01)",
+      "description": "Ключ архива и ключи документов. Сервер хранит только зашифрованные записи (jxm1, jxk1); мастер-ключ и секрет восстановления создаёт браузер (Web Crypto). Postman не умеет AES-GCM, поэтому ключ архива здесь не создаётся: коллекция идёт с кабинетом без ключа архива (на сервере ENCRYPTION_REQUIRED=false, только не в production). Полную проверку шифрования делают api/test/encryption.e2e-spec.ts и Playwright.",
+      "item": [
+        {
+          "name": "GET /crypto/vault: ключ архива кабинета",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/crypto/vault",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "crypto",
+                "vault"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('cabinetId для AAD', () => pm.expect(b.cabinetId).to.be.a('string'));",
+                  "pm.test('wrappedMaster: null или jxm1', () => pm.expect(b.wrappedMaster === null || b.wrappedMaster.startsWith('jxm1.')).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /crypto/keys: ключи документов под мастер-ключом",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/crypto/keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "crypto",
+                "keys"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('keys — список записей jxk1', () => { pm.expect(b.keys).to.be.an('array'); b.keys.forEach((k) => pm.expect(k.wrapped).to.match(/^jxk1\\./)); });",
+                  "pm.test('legacy — число писем и дел до шифрования', () => pm.expect(b.legacy).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /crypto/vault: неверная запись ключа — 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/crypto/vault",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "crypto",
+                "vault"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"wrappedMaster\": \"nicht-verschluesselt\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('статус 400', () => pm.response.to.have.status(400));",
+                  "pm.test('код VALIDATION_FAILED', () => pm.expect(pm.response.json().code).to.eql('VALIDATION_FAILED'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

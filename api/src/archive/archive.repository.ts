@@ -1,13 +1,9 @@
-import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { lockActiveCabinet } from '../erasure/cabinet-lock.js';
 import { toPgVector } from '../llm/vector.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
-export interface ChunkHit {
-  id: string;
+export interface SummaryHit {
   letterId: string;
-  text: string;
   distance: number;
 }
 
@@ -15,7 +11,8 @@ export interface ChunkHit {
 const ident = (name: string) => `"${name.replace(/"/g, '""')}"`;
 
 /**
- * L05 (#81): сырой SQL для векторов (Prisma не умеет тип vector).
+ * L05 (#81), E01 (#163): сырой SQL для векторов (Prisma не умеет тип vector).
+ * Вектор — от обезличенного резюме письма (LetterSummary), открытых кусков текста больше нет.
  * Каждый запрос поиска ограничен cabinetId: чужие письма в выдачу не попадают (AGENTS.md: отбор делает код).
  */
 @Injectable()
@@ -25,7 +22,7 @@ export class ArchiveRepository {
   constructor(@Inject(PrismaService) private readonly db: PrismaService) {}
 
   private get table(): string {
-    return `${ident(this.db.dbSchema)}."LetterChunk"`;
+    return `${ident(this.db.dbSchema)}."LetterSummary"`;
   }
 
   /** Схема расширения vector: public локально и в CI, на Supabase может быть extensions. */
@@ -47,49 +44,40 @@ export class ArchiveRepository {
   }
 
   /**
-   * Заменяет куски письма новыми. Письмо уже удалено или аккаунт удаляется: ничего не пишет, false.
+   * Резюме письма: зашифрованный текст и открытый вектор. Пишется в транзакции загрузки письма.
+   * db — клиент транзакции (письмо уже создано в ней).
    */
-  async replaceChunks(
-    cabinetId: string,
-    letterId: string,
-    hash: string,
-    chunks: { text: string; vector: number[] }[],
-  ): Promise<boolean> {
+  async saveSummary(
+    db: Pick<PrismaService, '$executeRawUnsafe'>,
+    row: { cabinetId: string; letterId: string; summary: string; embedderId: string; vector: number[] },
+  ): Promise<void> {
     const { type } = await this.vectorType();
-    return this.db.$transaction(async (tx) => {
-      if (!(await lockActiveCabinet(tx, cabinetId))) return false;
-      const letter = await tx.letter.count({ where: { id: letterId, cabinetId } });
-      if (!letter) return false;
-      await tx.letterChunk.deleteMany({ where: { letterId } });
-      for (const [n, c] of chunks.entries()) {
-        await tx.$executeRawUnsafe(
-          `INSERT INTO ${this.table} ("id", "cabinetId", "letterId", "n", "text", "textHash", "embedding")
-           VALUES ($1, $2, $3, $4, $5, $6, $7::${type})`,
-          randomUUID(),
-          cabinetId,
-          letterId,
-          n,
-          c.text,
-          hash,
-          toPgVector(c.vector),
-        );
-      }
-      return true;
-    });
+    await db.$executeRawUnsafe(
+      `INSERT INTO ${this.table} ("letterId", "cabinetId", "summary", "embedderId", "embedding")
+       VALUES ($1, $2, $3, $4, $5::${type})
+       ON CONFLICT ("letterId") DO UPDATE SET "summary" = EXCLUDED."summary",
+         "embedderId" = EXCLUDED."embedderId", "embedding" = EXCLUDED."embedding"`,
+      row.letterId,
+      row.cabinetId,
+      row.summary,
+      row.embedderId,
+      toPgVector(row.vector),
+    );
   }
 
-  /** Ближайшие куски писем этого кабинета (косинусное расстояние, 0 — то же направление). */
-  async search(cabinetId: string, vector: number[], limit: number): Promise<ChunkHit[]> {
+  /** Ближайшие письма этого кабинета по вектору резюме (косинусное расстояние, 0 — то же направление). */
+  async search(cabinetId: string, embedderId: string, vector: number[], limit: number): Promise<SummaryHit[]> {
     const { type, op } = await this.vectorType();
-    const rows = await this.db.$queryRawUnsafe<ChunkHit[]>(
-      `SELECT "id", "letterId", "text", ("embedding" ${op} $2::${type})::float8 AS "distance"
+    const rows = await this.db.$queryRawUnsafe<SummaryHit[]>(
+      `SELECT "letterId", ("embedding" ${op} $2::${type})::float8 AS "distance"
          FROM ${this.table}
-        WHERE "cabinetId" = $1
+        WHERE "cabinetId" = $1 AND "embedderId" = $4
         ORDER BY "distance" ASC
         LIMIT $3`,
       cabinetId,
       toPgVector(vector),
       limit,
+      embedderId,
     );
     return rows.map((r) => ({ ...r, distance: Number(r.distance) }));
   }

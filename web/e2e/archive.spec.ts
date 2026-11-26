@@ -1,16 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /* L05 (#81): вопрос к своим письмам (demo: поиск по общим словам), справочник терминов. */
 
 const fixture = (name: string) => resolve(import.meta.dirname, '..', '..', 'fixtures', 'letters', name);
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 async function upload(request: APIRequestContext, token: string, name: string) {
   const res = await request.post(`${API_URL}/letters`, {

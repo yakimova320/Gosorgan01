@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './fixtures';
 
 /*
  * K10 (#135): подсказка о хранении в браузере. Видна при каждом запуске сайта; «Понятно» скрывает до перезагрузки и ничего не сохраняет (поправка 1, 23.11).

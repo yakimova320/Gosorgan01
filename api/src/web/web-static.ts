@@ -21,6 +21,32 @@ const WEB_PAGES: readonly RegExp[] = [
   /^\/app(\/[^.]*)?$/,
 ];
 
+/**
+ * E01 (#163): строгая CSP для сайта. Скрипты только свои (без inline и eval), без чужих фреймов и плагинов.
+ * Шрифты Google — единственный внешний ресурс (стили и файлы шрифтов, не скрипты). Картинки оригиналов
+ * и PDF открываются из blob: после расшифровки в браузере. API — тот же адрес (B13: один контейнер).
+ */
+export const WEB_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "frame-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+function securityHeaders(res: Response): void {
+  res.setHeader('Content-Security-Policy', WEB_CSP);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Frame-Options', 'DENY');
+}
+
 export function isWebPage(path: string): boolean {
   return WEB_PAGES.some((re) => re.test(path));
 }
@@ -37,6 +63,7 @@ export function serveWeb(app: NestExpressApplication, webDistDir: string): void 
     redirect: false,
     fallthrough: true,
     setHeaders: (res, path) => {
+      securityHeaders(res);
       // имена в assets/ содержат хэш: можно кэшировать надолго
       res.setHeader(
         'Cache-Control',
@@ -48,6 +75,7 @@ export function serveWeb(app: NestExpressApplication, webDistDir: string): void 
   app.use((req: Request, res: Response, next: NextFunction) => {
     if ((req.method !== 'GET' && req.method !== 'HEAD') || !isWebPage(req.path)) return next();
     res.setHeader('Cache-Control', 'no-cache');
+    securityHeaders(res);
     res.sendFile(index);
   });
 }

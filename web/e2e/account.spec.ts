@@ -1,15 +1,12 @@
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, PASSWORD, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, PASSWORD, createUser, letters, signedIn } from './helpers';
 
 /*
  * A01: удаление аккаунта на сайте с настоящим API (demo).
  * Ответ 202 подменяется только для проверки интерфейса.
  */
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 async function openDeleteForm(page: Page) {
   await page.goto('/app/profile');

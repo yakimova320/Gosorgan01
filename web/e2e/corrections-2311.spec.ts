@@ -1,12 +1,9 @@
-import { expect, test, type Page } from '@playwright/test';
-import { createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { createUser, letters, signedIn } from './helpers';
 
 /* Поправки 23.11, вечер: подвал на всех страницах, «Главная» в кабинете, приветствие в меню, адрес по частям. */
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 test('кабинет: общий подвал, «Главная» и приветствие с именем в боковом меню', async ({ page, request }) => {
   const name = `Anna${letters()}`;

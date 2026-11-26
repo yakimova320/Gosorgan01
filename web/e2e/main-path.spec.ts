@@ -1,12 +1,7 @@
 import { resolve } from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import {
-  API_URL,
-  clientNavigate,
-  fillRegistration,
-  letters,
-  uniqueEmail,
-} from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, clientNavigate, fillRegistration, letters, uniqueEmail, openArchive } from './helpers';
 
 /*
  * Весь основной путь на сайте с настоящим API: вход → письмо → факты → дело → объяснение →
@@ -68,6 +63,8 @@ test('основной путь: от регистрации до скопиро
   });
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  // E01: до первой загрузки — ключ архива и секрет восстановления
+  await openArchive(page);
 
   // 2. Письмо (синтетическое 01). K11: при регистрации согласие на анализ ИИ не дано — спросят здесь
   await page.getByRole('link', { name: 'Сфотографировать письмо' }).click();

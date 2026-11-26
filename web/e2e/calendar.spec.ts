@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
-import { API_URL, createUser, letters } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { test } from './fixtures';
+import { API_URL, createUser, letters, signedIn } from './helpers';
 
 /*
  * K12, поправка 26.11: блок «Календарь и напоминания» в кабинете. Настоящий API (demo).
@@ -7,10 +8,6 @@ import { API_URL, createUser, letters } from './helpers';
  * Сроки с кнопкой «В Google Календарь» проверяет send.spec.ts.
  */
 
-async function signedIn(page: Page, token: string) {
-  await page.goto('/');
-  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
-}
 
 test('календарь: без сроков, отключить старую ссылку, выключить письма', async ({ page, request }) => {
   const u = await createUser(request, 'calendar', `Anna${letters()}`);

@@ -52,3 +52,19 @@ export const ExtractV3Schema = ExtractV2Schema.extend({
     .default(null),
 });
 export type ExtractV3Result = z.infer<typeof ExtractV3Schema>;
+
+/**
+ * Ответ extract.v5 (E01, #163): как v3 и обезличенное резюме для поиска по архиву
+ * (по-немецки и на языке кабинета). Резюме проверяет код (archive/summary-check.ts): с личными данными
+ * или длинными числами оно не сохраняется. Нет резюме: письмо не попадает в поиск по архиву.
+ */
+export const ExtractV5Schema = ExtractV3Schema.extend({
+  summary: z
+    .object({
+      de: z.string().trim().min(1).max(400),
+      local: z.string().trim().min(1).max(400),
+    })
+    .nullable()
+    .default(null),
+});
+export type ExtractV5Result = z.infer<typeof ExtractV5Schema>;

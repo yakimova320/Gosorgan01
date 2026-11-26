@@ -7,6 +7,7 @@ import type { Env } from '../config/env.schema.js';
 import {
   calendarName,
   caseLine,
+  plainOrNull,
   deadlineCheckNote,
   deadlineLink,
   deadlineSummary,
@@ -130,7 +131,7 @@ export class CalendarService {
         id: d.id,
         date: toIsoDate(d.date),
         summary: deadlineSummary(d.kind, d.letter.claims[0]?.value, lang),
-        description: [d.case?.title ? caseLine(d.case.title, lang) : null, deadlineCheckNote(lang)]
+        description: [plainOrNull(d.case?.title) ? caseLine(plainOrNull(d.case?.title)!, lang) : null, deadlineCheckNote(lang)]
           .filter(Boolean)
           .join('\n'),
         url: deadlineLink(this.config.APP_PUBLIC_URL, d),

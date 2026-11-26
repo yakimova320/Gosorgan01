@@ -85,6 +85,23 @@ export const ERROR_CODES = {
     status: 409,
     message: 'Сначала подтвердите факты письма',
   },
+  // E01 (#163): шифрование писем
+  ENCRYPTION_SETUP_REQUIRED: {
+    status: 409,
+    message: 'Сначала создайте ключ архива и сохраните секрет восстановления',
+  },
+  VAULT_EXISTS: {
+    status: 409,
+    message: 'Ключ архива уже создан. Откройте архив секретом восстановления',
+  },
+  KEYS_REQUIRED: {
+    status: 428,
+    message: 'Для этого действия нужен ключ письма. Откройте архив и повторите',
+  },
+  INTEGRITY_FAILED: {
+    status: 422,
+    message: 'Данные повреждены или подменены: проверка целостности не пройдена',
+  },
   FILE_TOO_LARGE: { status: 413, message: 'Файл слишком большой' },
   NO_FILE: { status: 400, message: 'Выберите файл письма: PDF, JPG или PNG' },
   FILE_DAMAGED: {

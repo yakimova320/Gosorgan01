@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { adoptVault, rememberVault, vaultFor, vaultForCabinet } from './vault-client';
 
 export const API_URL = process.env.JASNO_E2E_API_URL ?? 'http://127.0.0.1:3100';
 export const PASSWORD = 'e2e-lange-passwort-1';
@@ -79,4 +80,49 @@ export async function clientNavigate(page: Page, path: string) {
     window.history.pushState({}, '', p);
     window.dispatchEvent(new PopStateEvent('popstate'));
   }, path);
+}
+
+/**
+ * E01 (#163): вход по токену и открытый архив.
+ * Ключ архива уже создан тестом через API (vault-client): экран «Откройте архив», ввод секрета.
+ * Ключа ещё нет: экран «Ключ вашего архива» в браузере; секрет запоминается для запросов теста.
+ * Дальше это устройство (контекст браузера) разблокировано. Возвращает секрет, если ключ создан сейчас.
+ */
+export async function signedIn(page: Page, token: string): Promise<string | null> {
+  await page.goto('/');
+  await page.evaluate((t) => localStorage.setItem('jasno.session', t), token);
+  await page.goto('/app');
+  return openArchive(page, token);
+}
+
+/** Пройти экран ключа архива, если он показан. Секрет — если ключ создан сейчас. */
+export async function openArchive(page: Page, token?: string): Promise<string | null> {
+  const setup = page.getByTestId('vault-setup');
+  const unlock = page.getByTestId('vault-unlock');
+  const open = page.getByTestId('vault-open');
+  await expect(setup.or(unlock).or(open).first()).toBeAttached({ timeout: 15_000 });
+  const pageToken = token ?? (await page.evaluate(() => localStorage.getItem('jasno.session'))) ?? undefined;
+  if (await unlock.isVisible()) {
+    let known = pageToken ? vaultFor(pageToken) : undefined;
+    if (!known && pageToken) {
+      const res = await page.request.get(`${API_URL}/crypto/vault`, {
+        headers: { Authorization: `Bearer ${pageToken}` },
+      });
+      known = vaultForCabinet(((await res.json()) as { cabinetId: string }).cabinetId);
+    }
+    if (!known) throw new Error('архив закрыт, а секрет тесту неизвестен');
+    if (pageToken) rememberVault(pageToken, known);
+    // по id и testid: экран может быть на любом языке сайта
+    await page.locator('#recovery-secret').fill(known.secret);
+    await page.getByTestId('vault-unlock-submit').click();
+    await expect(open).toBeAttached({ timeout: 15_000 });
+    return null;
+  }
+  if (!(await setup.isVisible())) return null;
+  const secret = (await page.getByTestId('recovery-secret').textContent())?.trim() ?? null;
+  await page.locator('#vault-saved').check();
+  await page.getByTestId('vault-create').click();
+  await expect(open).toBeAttached({ timeout: 15_000 });
+  if (secret && pageToken) await adoptVault(page.request, pageToken, secret);
+  return secret;
 }
