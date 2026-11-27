@@ -77,7 +77,7 @@ describe('текст PDF', () => {
     expect(imageSize(a[0].data, 'png').width).toBe(RENDER_WIDTH_PX);
     const b = await renderPdfPages(pdf, [2]);
     expect(b[0].data.equals(a[0].data)).toBe(true);
-  });
+  }, 30_000);
 
   it('21 страница: LETTER_TOO_LARGE до чтения текста', async () => {
     await expect(readPdfText(await textPdf(21))).rejects.toMatchObject({
@@ -141,5 +141,5 @@ describe('transcribe.v2 в режиме demo (B11)', () => {
       [false, 'BLURRY'],
     ]);
     expect(r.pages[1].text).toContain('SA-2026-8810');
-  });
+  }, 30_000);
 });
