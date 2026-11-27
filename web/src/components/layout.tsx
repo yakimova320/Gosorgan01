@@ -32,6 +32,8 @@ export function MockBanner() {
 
 /** UX 26.11: ссылка на блок «Как это работает» на главной (/#how). */
 const HOW = { pathname: '/', hash: '#how' } as const;
+/** UX 27.11: раздел тарифов на главной (/#preise). */
+const PRICES = { pathname: '/', hash: '#preise' } as const;
 
 function BurgerIcon({ open }: { open: boolean }) {
   return open ? <Icon name="x" size={22} /> : <Icon name="menu" size={22} />;
@@ -77,6 +79,9 @@ function PublicMenu() {
           >
             <Icon name="chat" size={20} /> {t('Задать вопрос')}
           </button>
+          <Link to="/formulare" onClick={() => d.close(false)}>
+            <Icon name="edit" size={20} /> {t('Формуляры')}
+          </Link>
           <Link to="/blog" onClick={() => d.close(false)}>
             <Icon name="book" size={20} /> {t('Блог')}
           </Link>
@@ -116,6 +121,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
 /**
  * UX 26.11 (#168): тёмный подвал, ссылки группами. Один подвал на всех страницах — публичных и в кабинете.
+ * UX 27.11 (#172): две колонки рядом по левому краю, без линии между ними; дисклеймер под обеими.
  * Поправка 3 (23.11): «Частые вопросы» в подвале называются FAQ.
  */
 export function SiteFooter() {
@@ -133,6 +139,7 @@ export function SiteFooter() {
           <Link to="/faq">FAQ</Link>
           <Link to="/glossary">{t('Глоссарий')}</Link>
           <Link to={HOW}>{t('Как это работает?')}</Link>
+          <Link to={PRICES}>{t('Тарифы')}</Link>
         </nav>
         <p className="footer__note">
           {t('Ja!sno объясняет письма и не заменяет юридическую консультацию. Тестовая версия: только примеры писем.')}
@@ -163,6 +170,8 @@ const MAIN_NAV = [
   // чат-помощник (24.11)
   { to: '/app/ask', label: t('Спросить Ja!sno'), icon: 'chat', exact: false },
   { to: '/app/write', label: t('Написать письмо'), icon: 'pen', exact: false },
+  // UX 27.11 (#172): «Формуляры», пока страница с пометкой «скоро»
+  { to: '/formulare', label: t('Формуляры'), icon: 'edit', exact: false },
   { to: '/blog', label: t('Блог'), icon: 'book', exact: false },
   // UX 26.11: Glossar в меню кабинета (боковое на компьютере, бургер на телефоне)
   { to: '/glossary', label: t('Глоссарий'), icon: 'search', exact: false },

@@ -46,6 +46,7 @@ import {
   WissenPage,
 } from '../pages/public/InfoPages';
 import { AgbPage, ImpressumPage, PrivacyPage } from '../pages/public/PrivacyPage';
+import { FormularePage } from '../pages/public/FormularePage';
 import { StartPage } from '../pages/public/StartPage';
 import { FlowProvider } from './flow';
 import { createStore, useSession } from '../store';
@@ -81,6 +82,8 @@ export const ROUTES: Route[] = [
   { path: '/impressum', area: 'public', render: () => <ImpressumPage /> },
   // UX 26.11 (#168): условия использования
   { path: '/agb', area: 'public', render: () => <AgbPage /> },
+  // UX 27.11 (#172): «Формуляры», пока пометка «скоро»
+  { path: '/formulare', area: 'public', render: () => <FormularePage /> },
 
   { path: '/app', area: 'cabinet', render: () => <CabinetPage /> },
   { path: '/app/cases', area: 'cabinet', render: () => <CasesPage /> },
