@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, type APIRequestContext} from '@playwright/test';
 import { test } from './fixtures';
 import { API_URL, createUser, letters, signedIn } from './helpers';
 
@@ -133,45 +133,59 @@ test('перед копированием состояние перечитыв�
 });
 
 test('ошибка проверки актуальности — не разрешение копировать; ручное копирование, если буфер недоступен', async ({
-  page,
-  request,
-}) => {
+                                                                                                                    page,
+                                                                                                                    request,
+                                                                                                                  }) => {
   const u = await createUser(request, 'copy', `Anna${letters()}`);
   const p = await prepared(request, u.token);
   await signedIn(page, u.token);
   await page.goto(p.url);
+
+  // Сначала ждём, пока черновик загрузится и появится кнопка.
+  const copyButton = page.getByRole('button', {
+    name: 'Скопировать немецкий текст',
+  });
+  await expect(page.getByTestId('german-text')).toBeVisible();
+  await expect(copyButton).toBeEnabled();
+
+  // Теперь ошибка 500 относится к проверке перед копированием.
   await page.route(`${API_URL}/drafts/${p.draftId}`, (r) =>
-    r.fulfill({
-      status: 500,
-      contentType: 'application/json',
-      body: '{"code":"INTERNAL_ERROR","message":"x"}',
-    }),
+      r.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: '{"code":"INTERNAL_ERROR","message":"x"}',
+      }),
   );
-  await page
-    .getByRole('button', { name: 'Скопировать немецкий текст' })
-    .click();
+
+  await copyButton.click();
   await expect(page.getByTestId('draft-stale')).toContainText(
-    'Копирование недоступно',
+      'Копирование недоступно',
   );
   await expect(page.getByText('Скопировано')).toHaveCount(0);
 
+  // Возвращаем настоящий API и делаем буфер обмена недоступным.
   await page.unroute(`${API_URL}/drafts/${p.draftId}`);
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText: () => Promise.reject(new Error('denied')) },
+      value: {
+        writeText: () => Promise.reject(new Error('denied')),
+      },
       configurable: true,
     });
   });
+
   await page.reload();
-  await page
-    .getByRole('button', { name: 'Скопировать немецкий текст' })
-    .click();
+  await expect(page.getByTestId('german-text')).toBeVisible();
+  await expect(copyButton).toBeEnabled();
+
+  await copyButton.click();
   await expect(page.getByTestId('manual-copy')).toBeVisible();
   await expect(page.getByText('Скопировано')).toHaveCount(0);
+
   const german = await page.getByTestId('german-text').textContent();
-  await expect(page.getByLabel('Текст для ручного копирования')).toHaveValue(
-    german!,
-  );
+  await expect(
+      page.getByLabel('Текст для ручного копирования'),
+  ).toHaveValue(german!);
 });
 
 test('ошибка сборки: без автоматического повтора POST, вопросы перечитываются', async ({
