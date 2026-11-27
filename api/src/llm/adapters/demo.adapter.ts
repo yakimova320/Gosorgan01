@@ -9,6 +9,7 @@ import {
   type LlmAdapter,
 } from '../llm.types.js';
 import { demoArchive, demoArchiveQuery } from './demo-archive.js';
+import { FIXTURES_DIR, expectedRequest, extractFromExpected, findExpectedLetter } from './demo-expected.js';
 
 /**
  * Режим без настоящей модели: простые правила, без сети.
@@ -24,7 +25,10 @@ export class DemoAdapter implements LlmAdapter {
     (variables: Record<string, string>, request: AdapterRequest) => unknown
   > = {
     extract: (v, request) => {
-      const base = demoExtract(v.letterText ?? '');
+      const rules = demoExtract(v.letterText ?? '');
+      // #173: письма 16–30 узнаются по тексту, факты из эталона; остальные — по правилам
+      const letter = findExpectedLetter(v.letterText ?? '');
+      const base = letter ? extractFromExpected(letter, rules.amounts) : rules;
       // extract.v3 (поправка 8): и название письма по строке Betreff; L07: на языке кабинета
       const version = request.promptVersion ?? 0;
       if (version < 3) return base;
@@ -138,17 +142,6 @@ export function demoExtract(text: string) {
     amounts,
   };
 }
-
-/** Папка с синтетическими письмами: из src/llm/adapters и dist/llm/adapters на четыре уровня выше. */
-const FIXTURES_DIR = resolve(
-  import.meta.dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  'fixtures',
-  'letters',
-);
 
 interface FixturePhoto {
   text: string;
@@ -328,6 +321,8 @@ const DEMO_VERBS: Record<DemoLang, { confirm: string; show: string; send: string
  * (сайт покажет только немецкий текст).
  */
 export function demoRequestRu(value: string, lang: DemoLang = 'ru'): string | null {
+  const prepared = expectedRequest(value, lang); // #173: письма 16–30
+  if (prepared) return prepared;
   const col = lang === 'uk' ? 2 : lang === 'de' ? 3 : 1;
   const docs = DEMO_DOCUMENTS.filter(([re]) => re.test(value)).map((d) => d[col]);
   if (docs.length === 0) return null;

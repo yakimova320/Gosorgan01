@@ -1,0 +1,22 @@
+{
+  "id": "20_krankenkasse_offene_frage_ocr",
+  "synthetic": true,
+  "file": "20_krankenkasse_offene_frage_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "GesundPlus Musterkasse - fiktiv\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 20.11.2026\nAktenzeichen: GK-TEST-2105\n\nBetreff: Rückfrage zu Ihrer Beschäftigung\n\nSehr geehrte Person Beispiel,\n\nUns liegen unterschiedliche Angaben zum Beginn Ihrer Beschäftigung vor: Im Formular steht der 01.10.2026, in der Arbeitgebermeldung der 15.10.2026.\n\nBitte teilen Sie uns den tatsächlichen Beschäftigungsbeginn mit und fügen Sie eine Bestätigung Ihres Arbeitgebers bei.\n\nBitte antworten Sie bis zum 07.12.2026.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "GesundPlus Musterkasse - fiktiv",
+    "caseNumber": "GK-TEST-2105",
+    "letterDate": "2026-11-20",
+    "requirements": [
+      "Bitte teilen Sie uns den tatsächlichen Beschäftigungsbeginn mit und fügen Sie eine Bestätigung Ihres Arbeitgebers bei."
+    ],
+    "deadlines": [
+      "2026-12-07"
+    ]
+  },
+  "userMessage": "Я начала работать 15 октября, но подтверждения работодателя пока нет.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

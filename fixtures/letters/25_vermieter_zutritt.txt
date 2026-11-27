@@ -1,0 +1,21 @@
+Hausverwaltung Musterhof - fiktiv
+Musterweg 10, 00000 Musterstadt
+
+An: Alex Beispiel
+Beispielallee 12, 00000 Beispielhausen
+
+Datum: 24.11.2026
+Aktenzeichen: HV-TEST-2110
+
+Betreff: Termin zur Prüfung des Wasserzählers
+
+Sehr geehrte Person Beispiel,
+
+Die Prüfung des Wasserzählers ist für den 09.12.2026 zwischen 09:00 und 12:00 Uhr vorgesehen.
+
+Bitte ermöglichen Sie in diesem Zeitraum den Zugang zum Wasserzähler.
+
+Falls Sie verhindert sind, teilen Sie uns dies bitte bis zum 02.12.2026 mit, damit wir einen Ersatztermin vereinbaren können.
+
+Mit freundlichen Grüßen
+Ihre Sachbearbeitung

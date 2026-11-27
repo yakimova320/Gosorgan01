@@ -1,0 +1,18 @@
+{
+  "id": "22_finanzamt_information",
+  "synthetic": true,
+  "file": "22_finanzamt_information.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Finanzamt Musterstadt - Teststelle\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 23.11.2026\nAktenzeichen: FA-TEST-2107\n\nBetreff: Eingangsbestätigung Ihrer Unterlagen\n\nSehr geehrte Person Beispiel,\n\nIhre Unterlagen vom 16.11.2026 sind am 18.11.2026 bei uns eingegangen.\n\nWir prüfen Ihre Angaben. Sie müssen derzeit nichts veranlassen und keine weiteren Unterlagen senden.\n\nDiese Eingangsbestätigung ist noch keine Entscheidung über Ihren Antrag. Über das Ergebnis informieren wir Sie gesondert.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Finanzamt Musterstadt - Teststelle",
+    "caseNumber": "FA-TEST-2107",
+    "letterDate": "2026-11-23",
+    "requirements": [],
+    "deadlines": []
+  },
+  "userMessage": "Значит, мой Antrag уже одобрен?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

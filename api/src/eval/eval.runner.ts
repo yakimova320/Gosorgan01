@@ -86,6 +86,8 @@ export interface EvalResult {
   callsUsed: number;
   partial: boolean;
   stoppedAt: string | null;
+  /** набор писем; в старых отчётах поля нет — это base */
+  set?: LetterSet;
   letters: LetterRun[];
   variants: LetterRun[];
 }
@@ -98,14 +100,25 @@ const emptyUsage = (): Usage => ({
   unknownUsageCalls: 0,
 });
 
+/**
+ * Наборы писем (#173): base — 01–15 (сравнимо с fixtures/eval-baseline.demo.json),
+ * new — 16–30 (pnpm eval --set new), all — все. По умолчанию base.
+ */
+export const LETTER_SETS = {
+  base: /^(0\d|1[0-5])_/,
+  new: /^(1[6-9]|2\d|30)_/,
+  all: /^\d{2}_/,
+} as const;
+export type LetterSet = keyof typeof LETTER_SETS;
+
 /** Основной файл логического письма: текстовый PDF или одно фото; сканы PDF — варианты. */
-export function plan(fixturesDir: string): {
+export function plan(fixturesDir: string, set: LetterSet = 'base'): {
   letters: { fx: Fixture; file: string }[];
   variants: { id: string; file: string; readable: boolean }[];
 } {
   const files = readdirSync(fixturesDir);
   const fixtures = files
-    .filter((f) => f.endsWith('.json'))
+    .filter((f) => f.endsWith('.json') && LETTER_SETS[set].test(f))
     .sort()
     .map((f) => JSON.parse(readFileSync(resolve(fixturesDir, f), 'utf8')) as Fixture);
   const letters: { fx: Fixture; file: string }[] = [];
@@ -129,6 +142,7 @@ export async function runEval(options: {
   maxCalls?: number;
   env?: NodeJS.ProcessEnv;
   only?: string[];
+  set?: LetterSet;
   log?: (line: string) => void;
 }): Promise<EvalResult & { schema: string }> {
   const maxCalls = options.maxCalls ?? DEFAULT_MAX_CALLS;
@@ -177,11 +191,12 @@ export async function runEval(options: {
       callsUsed: 0,
       partial: false,
       stoppedAt: null,
+      set: options.set ?? 'base',
       letters: [],
       variants: [],
     };
 
-    const { letters, variants } = plan(options.fixturesDir);
+    const { letters, variants } = plan(options.fixturesDir, options.set);
     const wanted = (id: string) => !options.only || options.only.includes(id);
     let n = 0;
 

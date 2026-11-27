@@ -1,0 +1,23 @@
+{
+  "id": "25_vermieter_zutritt",
+  "synthetic": true,
+  "file": "25_vermieter_zutritt.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Hausverwaltung Musterhof - fiktiv\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 24.11.2026\nAktenzeichen: HV-TEST-2110\n\nBetreff: Termin zur Prüfung des Wasserzählers\n\nSehr geehrte Person Beispiel,\n\nDie Prüfung des Wasserzählers ist für den 09.12.2026 zwischen 09:00 und 12:00 Uhr vorgesehen.\n\nBitte ermöglichen Sie in diesem Zeitraum den Zugang zum Wasserzähler.\n\nFalls Sie verhindert sind, teilen Sie uns dies bitte bis zum 02.12.2026 mit, damit wir einen Ersatztermin vereinbaren können.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Hausverwaltung Musterhof - fiktiv",
+    "caseNumber": "HV-TEST-2110",
+    "letterDate": "2026-11-24",
+    "requirements": [
+      "Bitte ermöglichen Sie in diesem Zeitraum den Zugang zum Wasserzähler.",
+      "Falls Sie verhindert sind, teilen Sie uns dies bitte bis zum 02.12.2026 mit, damit wir einen Ersatztermin vereinbaren können."
+    ],
+    "deadlines": [
+      "2026-12-02"
+    ]
+  },
+  "userMessage": "Я буду дома, перенос не нужен.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

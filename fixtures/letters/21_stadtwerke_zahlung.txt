@@ -1,0 +1,23 @@
+Stadtwerke Musterlicht - fiktiv
+Musterweg 10, 00000 Musterstadt
+
+An: Alex Beispiel
+Beispielallee 12, 00000 Beispielhausen
+
+Datum: 20.11.2026
+Aktenzeichen: SW-TEST-2106
+
+Betreff: Erinnerung an eine offene Rechnung
+
+Sehr geehrte Person Beispiel,
+
+Zu Ihrer Rechnung vom 02.11.2026 ist nach unserem aktuellen Stand ein Betrag von 84,70 EUR offen.
+
+Bitte begleichen Sie den offenen Betrag bis zum 04.12.2026 unter Angabe des Aktenzeichens.
+
+Falls Sie bereits gezahlt haben, senden Sie uns bitte stattdessen einen Zahlungsnachweis. Für diesen Nachweis gilt ebenfalls der 04.12.2026.
+
+Dieses Testschreiben enthält bewusst keine Bankverbindung.
+
+Mit freundlichen Grüßen
+Ihre Sachbearbeitung

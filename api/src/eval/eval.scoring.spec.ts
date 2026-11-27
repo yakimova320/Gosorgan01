@@ -159,6 +159,15 @@ describe('B14 оценка: объяснение и черновик (Q1, Q2)', 
     expect(bad.inventedAmounts).toHaveLength(1);
     expect(bad.unconfirmedAsFact).toHaveLength(1);
   });
+
+  it('черновик: дата внутри подтверждённого требования из письма не считается выдуманной', () => {
+    const req = 'Bitte reichen Sie die Mietbescheinigung bis zum 03.12.2026 ein.';
+    const draft = { germanText: `Sie baten: „${req}“`, russianText: '', claimIds: ['q'], status: 'VERIFIED', verification: { passed: true } };
+    const ok = scoreLetter({ ...base, claims: [...CLAIMS, claim('q', 'REQUIREMENT', req, req)], draft });
+    expect(ok.inventedDates).toEqual([]);
+    const bad = scoreLetter({ ...base, claims: [...CLAIMS, claim('q', 'REQUIREMENT', req, req, 'UNCONFIRMED')], draft });
+    expect(bad.inventedDates).toHaveLength(1);
+  });
 });
 
 describe('B14 оценка: помощники', () => {

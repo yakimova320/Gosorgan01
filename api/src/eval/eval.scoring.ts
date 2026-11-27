@@ -213,6 +213,8 @@ export function scoreLetter(input: {
     const allowedDates = new Set([
       input.draftToday,
       ...used.filter((c) => c.status === 'CONFIRMED' && DATE_KINDS.has(c.kind)).map((c) => c.value),
+      // #173: требование — дословный отрывок письма («… bis zum 03.12.2026 ein.»); его дата не выдумана
+      ...used.filter((c) => c.status === 'CONFIRMED' && c.kind === 'REQUIREMENT').flatMap((c) => datesInAny(c.value)),
     ]);
     const allowedAmounts = new Set(
       used

@@ -187,7 +187,9 @@ const pct = (r: Ratio) => (r.of ? `${r.ok} / ${r.of} (${Math.round((r.ok / r.of)
 export function toMarkdown(result: EvalResult, s: Summary): string {
   const demo = result.provider === 'demo';
   const out: string[] = [];
-  out.push('# Оценка Ja!sno на 15 синтетических письмах (B14)', '');
+  const set = result.set ?? 'base';
+  const title = { base: '15 синтетических письмах 01–15', new: '15 синтетических письмах 16–30', all: '30 синтетических письмах' }[set];
+  out.push(`# Оценка Ja!sno на ${title} (B14)`, '');
   out.push(`- Дата: ${result.at}`);
   out.push(`- Модель: ${result.provider} / ${result.model}`);
   out.push(`- Версии промптов: ${Object.entries(result.promptVersions).map(([k, v]) => `${k}.v${v.join(',v')}`).sort().join(', ') || '—'}`);
@@ -201,6 +203,8 @@ export function toMarkdown(result: EvalResult, s: Summary): string {
     );
   if (demo)
     out.push('> Demo-прогон проверяет механизм оценки, а не качество настоящей модели.', '');
+  if (demo && set !== 'base')
+    out.push('> Письма 16–30 в demo отвечают заранее подготовленным эталоном: эталон сравнивается сам с собой, качество модели это не измеряет.', '');
   out.push('> 15 писем не доказывают готовность к любому письму. Автоматические проверки не заменяют смысловую приёмку человеком.', '');
 
   out.push('## Итог по правилам', '', '| Правило | Что проверяется | Значение | Итог |', '|---|---|---|---|');
