@@ -1,0 +1,20 @@
+{
+  "id": "23_auslaenderstelle_terminaenderung_ocr",
+  "synthetic": true,
+  "file": "23_auslaenderstelle_terminaenderung_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Ausländerstelle Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 23.11.2026\nAktenzeichen: AB-TEST-2108\n\nBetreff: Änderung Ihres Termins\n\nSehr geehrte Person Beispiel,\n\nDer bisherige Termin am 01.12.2026 um 09:00 Uhr entfällt.\n\nIhr neuer Termin ist am 10.12.2026 um 14:15 Uhr, Raum 12, Musterweg 10, 00000 Musterstadt.\n\nBitte bringen Sie Ihren Reisepass und ein aktuelles biometrisches Foto zum neuen Termin mit. Eine gesonderte Terminbestätigung durch Sie ist nicht erforderlich.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Ausländerstelle Beispielhausen",
+    "caseNumber": "AB-TEST-2108",
+    "letterDate": "2026-11-23",
+    "requirements": [
+      "Bitte bringen Sie Ihren Reisepass und ein aktuelles biometrisches Foto zum neuen Termin mit."
+    ],
+    "deadlines": []
+  },
+  "userMessage": "Я записала старую дату в календарь.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

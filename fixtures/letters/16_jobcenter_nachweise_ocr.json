@@ -1,0 +1,22 @@
+{
+  "id": "16_jobcenter_nachweise_ocr",
+  "synthetic": true,
+  "file": "16_jobcenter_nachweise_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Jobcenter Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 18.11.2026\nAktenzeichen: JC-TEST-2101\n\nBetreff: Fehlende Nachweise zu Ihrem Antrag\n\nSehr geehrte Person Beispiel,\n\nZu Ihrem Antrag vom 04.11.2026 fehlen noch Unterlagen.\n\nBitte reichen Sie die Lohnabrechnungen für September und Oktober 2026 sowie den Nachweis über Ihre aktuelle Miethöhe ein.\n\nBitte senden Sie die Unterlagen bis zum 02.12.2026. Bereits eingereichte Kontoauszüge müssen Sie nicht erneut übermitteln.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Jobcenter Beispielhausen",
+    "caseNumber": "JC-TEST-2101",
+    "letterDate": "2026-11-18",
+    "requirements": [
+      "Bitte reichen Sie die Lohnabrechnungen für September und Oktober 2026 sowie den Nachweis über Ihre aktuelle Miethöhe ein."
+    ],
+    "deadlines": [
+      "2026-12-02"
+    ]
+  },
+  "userMessage": "Я загрузила расчётные листы, но справку об аренде ещё нет.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

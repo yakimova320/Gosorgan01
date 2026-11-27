@@ -1,0 +1,23 @@
+{
+  "id": "29_aktenzeichen_fehlt_ocr",
+  "synthetic": true,
+  "file": "29_aktenzeichen_fehlt_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Servicestelle Familienangebote - fiktiv\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 26.11.2026\n\nBetreff: Rückfrage zu Ihrer Anmeldung\n\nSehr geehrte Person Beispiel,\n\nWir haben Ihre Anmeldung zum Elternkurs erhalten.\n\nBitte teilen Sie uns bis zum 09.12.2026 mit, ob Sie am Vormittagskurs oder am Abendkurs teilnehmen möchten.\n\nNennen Sie in Ihrer Antwort Ihren Namen und das Datum Ihrer Anmeldung. Ein Aktenzeichen wurde für diesen Vorgang noch nicht vergeben.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Servicestelle Familienangebote - fiktiv",
+    "caseNumber": null,
+    "letterDate": "2026-11-26",
+    "requirements": [
+      "Bitte teilen Sie uns bis zum 09.12.2026 mit, ob Sie am Vormittagskurs oder am Abendkurs teilnehmen möchten.",
+      "Nennen Sie in Ihrer Antwort Ihren Namen und das Datum Ihrer Anmeldung."
+    ],
+    "deadlines": [
+      "2026-12-09"
+    ]
+  },
+  "userMessage": "Мне подходит вечерний курс.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

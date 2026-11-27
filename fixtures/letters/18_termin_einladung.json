@@ -1,0 +1,23 @@
+{
+  "id": "18_termin_einladung",
+  "synthetic": true,
+  "file": "18_termin_einladung.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Beratungsstelle Neustart - Teststelle\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 19.11.2026\nAktenzeichen: BS-TEST-2103\n\nBetreff: Einladung zum Beratungsgespräch\n\nSehr geehrte Person Beispiel,\n\nIhr Beratungsgespräch findet am 08.12.2026 um 10:30 Uhr im Raum 204, Musterweg 10, 00000 Musterstadt statt.\n\nBitte bringen Sie Ihren Lebenslauf und Ihre vorhandenen Abschlusszeugnisse zum Termin mit.\n\nBitte bestätigen Sie Ihre Teilnahme bis zum 01.12.2026. Falls Sie verhindert sind, bitten wir um eine Nachricht.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Beratungsstelle Neustart - Teststelle",
+    "caseNumber": "BS-TEST-2103",
+    "letterDate": "2026-11-19",
+    "requirements": [
+      "Bitte bringen Sie Ihren Lebenslauf und Ihre vorhandenen Abschlusszeugnisse zum Termin mit.",
+      "Bitte bestätigen Sie Ihre Teilnahme bis zum 01.12.2026."
+    ],
+    "deadlines": [
+      "2026-12-01"
+    ]
+  },
+  "userMessage": "В этот день я работаю и хочу перенести встречу.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

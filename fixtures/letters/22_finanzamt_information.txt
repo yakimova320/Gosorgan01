@@ -1,0 +1,21 @@
+Finanzamt Musterstadt - Teststelle
+Musterweg 10, 00000 Musterstadt
+
+An: Alex Beispiel
+Beispielallee 12, 00000 Beispielhausen
+
+Datum: 23.11.2026
+Aktenzeichen: FA-TEST-2107
+
+Betreff: Eingangsbestätigung Ihrer Unterlagen
+
+Sehr geehrte Person Beispiel,
+
+Ihre Unterlagen vom 16.11.2026 sind am 18.11.2026 bei uns eingegangen.
+
+Wir prüfen Ihre Angaben. Sie müssen derzeit nichts veranlassen und keine weiteren Unterlagen senden.
+
+Diese Eingangsbestätigung ist noch keine Entscheidung über Ihren Antrag. Über das Ergebnis informieren wir Sie gesondert.
+
+Mit freundlichen Grüßen
+Ihre Sachbearbeitung

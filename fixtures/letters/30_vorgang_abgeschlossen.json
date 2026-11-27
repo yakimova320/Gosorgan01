@@ -1,0 +1,18 @@
+{
+  "id": "30_vorgang_abgeschlossen",
+  "synthetic": true,
+  "file": "30_vorgang_abgeschlossen.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Wohngeldstelle Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 27.11.2026\nAktenzeichen: WG-TEST-2115\n\nBetreff: Bestätigung: Unterlagen vollständig\n\nSehr geehrte Person Beispiel,\n\nIhre Mietbescheinigung und Ihre Einkommensnachweise sind vollständig bei uns eingegangen.\n\nDie Aufforderung zur Nachreichung aus unserem Schreiben vom 12.11.2026 ist damit erledigt. Die dort genannte Frist zum 30.11.2026 gilt nicht mehr.\n\nSie müssen diese Unterlagen nicht erneut einreichen. Die Prüfung Ihres Wohngeldantrags läuft weiter; eine Entscheidung über den Antrag liegt noch nicht vor.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Wohngeldstelle Beispielhausen",
+    "caseNumber": "WG-TEST-2115",
+    "letterDate": "2026-11-27",
+    "requirements": [],
+    "deadlines": []
+  },
+  "userMessage": "Значит, всё дело уже закрыто и деньги одобрены?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

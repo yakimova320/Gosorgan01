@@ -1,0 +1,20 @@
+{
+  "id": "28_nachweis_ohne_frist_ocr",
+  "synthetic": true,
+  "file": "28_nachweis_ohne_frist_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Bürgerbüro Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 26.11.2026\nAktenzeichen: BB-TEST-2113\n\nBetreff: Unleserliche Kopie Ihrer Unterlage\n\nSehr geehrte Person Beispiel,\n\nDie eingereichte Kopie Ihrer Wohnungsgeberbestätigung ist am unteren Rand nicht lesbar.\n\nBitte senden Sie eine vollständige und gut lesbare Kopie der Wohnungsgeberbestätigung.\n\nIn diesem Schreiben wird kein konkreter Abgabetermin festgelegt. Bitte geben Sie bei der Übersendung das Aktenzeichen an.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Bürgerbüro Beispielhausen",
+    "caseNumber": "BB-TEST-2113",
+    "letterDate": "2026-11-26",
+    "requirements": [
+      "Bitte senden Sie eine vollständige und gut lesbare Kopie der Wohnungsgeberbestätigung."
+    ],
+    "deadlines": []
+  },
+  "userMessage": "У меня есть новое фото. Достаточно ли его?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

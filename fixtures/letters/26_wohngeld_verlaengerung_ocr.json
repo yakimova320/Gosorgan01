@@ -1,0 +1,22 @@
+{
+  "id": "26_wohngeld_verlaengerung_ocr",
+  "synthetic": true,
+  "file": "26_wohngeld_verlaengerung_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Wohngeldstelle Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 25.11.2026\nAktenzeichen: WG-TEST-2111\n\nBetreff: Verlängerung der Frist für Ihre Unterlagen\n\nSehr geehrte Person Beispiel,\n\nAuf Ihre Anfrage verlängern wir die Frist für die Vorlage der Einkommensbescheinigung.\n\nDie im Schreiben vom 10.11.2026 genannte Frist zum 27.11.2026 ist damit aufgehoben.\n\nBitte reichen Sie die Einkommensbescheinigung spätestens bis zum 18.12.2026 ein.\n\nWeitere Unterlagen werden mit diesem Schreiben nicht angefordert.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Wohngeldstelle Beispielhausen",
+    "caseNumber": "WG-TEST-2111",
+    "letterDate": "2026-11-25",
+    "requirements": [
+      "Bitte reichen Sie die Einkommensbescheinigung spätestens bis zum 18.12.2026 ein."
+    ],
+    "deadlines": [
+      "2026-12-18"
+    ]
+  },
+  "userMessage": "Мне продлили срок. Нужно ли всё ещё успеть до 27 ноября?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

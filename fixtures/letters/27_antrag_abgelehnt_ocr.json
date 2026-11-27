@@ -1,0 +1,22 @@
+{
+  "id": "27_antrag_abgelehnt_ocr",
+  "synthetic": true,
+  "file": "27_antrag_abgelehnt_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Förderstelle Lernstart - fiktiv\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 25.11.2026\nAktenzeichen: FL-TEST-2112\n\nBetreff: Entscheidung über Ihren Antrag auf Kursförderung\n\nSehr geehrte Person Beispiel,\n\nIhr Antrag auf Förderung des Kurses vom 05.11.2026 wurde abgelehnt. Grund: Die vorgelegte Kursbeschreibung enthält keinen Nachweis über den erforderlichen Stundenumfang.\n\nSie können uns bis zum 16.12.2026 eine ergänzende Kursbeschreibung mit Stundenumfang zur erneuten Prüfung senden. Dies ist freiwillig.\n\nOhne ergänzende Unterlagen bleibt die oben mitgeteilte Entscheidung bestehen. Dieses fiktive Schreiben bildet keine gesetzlichen Rechtsbehelfsfristen ab.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Förderstelle Lernstart - fiktiv",
+    "caseNumber": "FL-TEST-2112",
+    "letterDate": "2026-11-25",
+    "requirements": [
+      "Sie können uns bis zum 16.12.2026 eine ergänzende Kursbeschreibung mit Stundenumfang zur erneuten Prüfung senden. Dies ist freiwillig."
+    ],
+    "deadlines": [
+      "2026-12-16"
+    ]
+  },
+  "userMessage": "Я хочу, чтобы они пересмотрели отказ. Что нужно прислать?",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}
