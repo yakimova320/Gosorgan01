@@ -163,3 +163,15 @@ test('без горизонтальной прокрутки на 390, 768, 1280
       expect(await noHScroll(page), `${url} @ ${width}`).toBe(true);
     }
 });
+
+test('FAQ: цена и лимит совпадают с тарифами на главной (RU и DE)', async ({ page }) => {
+  await page.goto('/faq');
+  await page.getByText('Сколько стоит Ja!sno?').click();
+  await expect(page.getByText('Ja!sno Plus: 4,99 € в месяц. Разборы без лимита, архив, экспорт.')).toBeVisible();
+  await expect(page.getByText('Цена после запуска: не решено')).toHaveCount(0);
+  await page.getByText('Есть ли ограничение на число писем?').click();
+  await expect(page.getByText(/в тарифе «Старт» будет 3 разбора в месяц/)).toBeVisible();
+  await chooseLang(page, 'de');
+  await page.getByText('Was kostet Ja!sno?').click();
+  await expect(page.getByText('Familie: 12,99 € im Monat. Ein Konto für mehrere Personen.')).toBeVisible();
+});

@@ -196,11 +196,17 @@ Nein. Ja!sno arbeitet nur mit Briefen auf der Seite.
 
 ### Was kostet Ja!sno?
 
-Die Testversion ist kostenlos. Der Preis nach dem Start: noch nicht entschieden.
+Die Testversion ist kostenlos. Nach dem Start sind drei Preise geplant:
+
+- Start: 0 €. Briefe speichern, 3 Erklärungen im Monat, Kalender und Erinnerungen.
+- Ja!sno Plus: 4,99 € im Monat. Erklärungen ohne Limit, Archiv, Export.
+- Familie: 12,99 € im Monat. Ein Konto für mehrere Personen.
+
+Die bezahlten Angebote kommen später. Bezahlen auf der Seite geht noch nicht. Alle Preise stehen auf der Startseite unter „Preise“.
 
 ### Gibt es eine Grenze für die Zahl der Briefe?
 
-Noch nicht entschieden. Zurzeit läuft Ja!sno mit einem kostenlosen Gemini-Schlüssel. Der hat eine Tagesgrenze für Anfragen.
+In der Testversion gibt es keine Grenze durch den Preis. Aber Ja!sno läuft mit einem kostenlosen Gemini-Schlüssel. Der hat eine Tagesgrenze für Anfragen. Nach dem Start gibt es bei „Start“ 3 Erklärungen im Monat, bei Ja!sno Plus und „Familie“ ohne Limit.
 
 ### Gibt es Ja!sno auch in anderen Sprachen?
 
