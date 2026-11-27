@@ -1,0 +1,20 @@
+{
+  "id": "19_familienkasse_relative_frist_ocr",
+  "synthetic": true,
+  "file": "19_familienkasse_relative_frist_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Familienkasse Musterregion\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 19.11.2026\nAktenzeichen: FK-TEST-2104\n\nBetreff: Schulbescheinigung erforderlich\n\nSehr geehrte Person Beispiel,\n\nBitte reichen Sie eine aktuelle Schulbescheinigung für Ihr Kind ein.\n\nDie Unterlage muss innerhalb von 14 Kalendertagen nach Zugang dieses Schreibens bei uns eingehen.\n\nDas Datum, an dem Sie dieses Schreiben erhalten haben, ist uns nicht bekannt.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Familienkasse Musterregion",
+    "caseNumber": "FK-TEST-2104",
+    "letterDate": "2026-11-19",
+    "requirements": [
+      "Bitte reichen Sie eine aktuelle Schulbescheinigung für Ihr Kind ein."
+    ],
+    "deadlines": []
+  },
+  "userMessage": "Я не помню, в какой день получила письмо.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

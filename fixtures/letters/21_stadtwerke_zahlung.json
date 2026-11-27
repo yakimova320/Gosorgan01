@@ -1,0 +1,23 @@
+{
+  "id": "21_stadtwerke_zahlung",
+  "synthetic": true,
+  "file": "21_stadtwerke_zahlung.pdf",
+  "source": "TEXT_LAYER",
+  "readable": true,
+  "text": "Stadtwerke Musterlicht - fiktiv\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 20.11.2026\nAktenzeichen: SW-TEST-2106\n\nBetreff: Erinnerung an eine offene Rechnung\n\nSehr geehrte Person Beispiel,\n\nZu Ihrer Rechnung vom 02.11.2026 ist nach unserem aktuellen Stand ein Betrag von 84,70 EUR offen.\n\nBitte begleichen Sie den offenen Betrag bis zum 04.12.2026 unter Angabe des Aktenzeichens.\n\nFalls Sie bereits gezahlt haben, senden Sie uns bitte stattdessen einen Zahlungsnachweis. Für diesen Nachweis gilt ebenfalls der 04.12.2026.\n\nDieses Testschreiben enthält bewusst keine Bankverbindung.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Stadtwerke Musterlicht - fiktiv",
+    "caseNumber": "SW-TEST-2106",
+    "letterDate": "2026-11-20",
+    "requirements": [
+      "Bitte begleichen Sie den offenen Betrag bis zum 04.12.2026 unter Angabe des Aktenzeichens.",
+      "Falls Sie bereits gezahlt haben, senden Sie uns bitte stattdessen einen Zahlungsnachweis."
+    ],
+    "deadlines": [
+      "2026-12-04"
+    ]
+  },
+  "userMessage": "Я уже заплатила вчера, но квитанцию ещё не загрузила.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

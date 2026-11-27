@@ -1,0 +1,23 @@
+{
+  "id": "24_schule_einverstaendnis_ocr",
+  "synthetic": true,
+  "file": "24_schule_einverstaendnis_ocr.jpg",
+  "source": "OCR",
+  "readable": true,
+  "text": "Musterschule Beispielhausen\nMusterweg 10, 00000 Musterstadt\n\nAn: Alex Beispiel\nBeispielallee 12, 00000 Beispielhausen\n\nDatum: 24.11.2026\nAktenzeichen: SCH-TEST-2109\n\nBetreff: Einverständnis für den Klassenausflug\n\nSehr geehrte Person Beispiel,\n\nDer Klassenausflug findet am 15.12.2026 statt. Treffpunkt ist um 08:15 Uhr am Schuleingang.\n\nBitte geben Sie die unterschriebene Einverständniserklärung bis zum 08.12.2026 im Sekretariat ab.\n\nBitte teilen Sie uns auf dem Formular eine Telefonnummer für Rückfragen während des Ausflugs mit. Für den Ausflug entstehen keine Kosten.\n\nMit freundlichen Grüßen\nIhre Sachbearbeitung",
+  "expected": {
+    "authority": "Musterschule Beispielhausen",
+    "caseNumber": "SCH-TEST-2109",
+    "letterDate": "2026-11-24",
+    "requirements": [
+      "Bitte geben Sie die unterschriebene Einverständniserklärung bis zum 08.12.2026 im Sekretariat ab.",
+      "Bitte teilen Sie uns auf dem Formular eine Telefonnummer für Rückfragen während des Ausflugs mit."
+    ],
+    "deadlines": [
+      "2026-12-08"
+    ]
+  },
+  "userMessage": "Я подписала согласие, но ребёнок ещё не отдал его в школе.",
+  "expectedUserBasis": "USER",
+  "expectedUserStatus": "UNCONFIRMED"
+}

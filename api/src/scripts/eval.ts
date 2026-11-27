@@ -1,5 +1,7 @@
 /**
- * pnpm --dir api eval — оценка на 15 синтетических письмах (B14). Модель из api/.env (LLM_MODE).
+ * pnpm --dir api eval — оценка на 15 синтетических письмах 01–15 (B14). Модель из api/.env (LLM_MODE).
+ * --set new — письма 16–30 (#173), --set all — все 30. По умолчанию base (01–15): так результат
+ * сравним с fixtures/eval-baseline.demo.json и укладывается в предел 50 обращений.
  * Пишет reports/eval-latest.json и reports/eval-latest.md в корне проекта.
  * Своя временная схема PostgreSQL и хранилище, удаляются и при ошибке. Ключ модели не выводится.
  * Параметры: --max-calls N (предел обращений к модели, по умолчанию 50), --only 01_jobcenter_request,04_buergeramt,
@@ -10,7 +12,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadEnvFiles } from '../config/load-env-files.js';
 import { summarize, toMarkdown } from '../eval/eval.report.js';
-import { DEFAULT_MAX_CALLS, runEval, type EvalResult } from '../eval/eval.runner.js';
+import { DEFAULT_MAX_CALLS, LETTER_SETS, runEval, type EvalResult, type LetterSet } from '../eval/eval.runner.js';
 
 const apiDir = resolve(import.meta.dirname, '..', '..');
 loadEnvFiles(apiDir);
@@ -31,6 +33,8 @@ if (process.argv.includes('--render-only')) {
 }
 const maxCalls = Number(arg('--max-calls') ?? DEFAULT_MAX_CALLS);
 if (!Number.isInteger(maxCalls) || maxCalls < 1) throw new Error('--max-calls: целое число больше 0');
+const set = (arg('--set') ?? 'base') as LetterSet;
+if (!(set in LETTER_SETS)) throw new Error('--set: base, new или all');
 const only = arg('--only')?.split(',').map((s) => s.trim()).filter(Boolean);
 
 const result = await runEval({
@@ -38,6 +42,7 @@ const result = await runEval({
   fixturesDir: resolve(apiDir, '..', 'fixtures', 'letters'),
   maxCalls,
   only,
+  set,
   log: (line) => console.log(line),
 });
 const { schema: _schema, ...report } = result;
