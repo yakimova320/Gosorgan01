@@ -1,5 +1,5 @@
 import { Icon } from '../../components/Icon';
-import { Illustration } from '../../components/Watercolor';
+import { Illustration, type IllustrationName } from '../../components/Watercolor';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useSession } from '../../store';
@@ -35,14 +35,17 @@ const FACTS = CARDS.filter((c) => c.topic === 'hot' && !c.draft);
 /** Сколько тем видно сразу, остальные по кнопке «Ещё актуальные темы». */
 const FACTS_SHOWN = 4;
 
-const TOPIC_BLOBS = [
-  '#FBE3D6',
-  '#F6D2D0',
-  '#FCEFC9',
-  '#DDEFEC',
-  '#FBE3D6',
-  '#F6D2D0',
-];
+/**
+ * UX 27.11 (#172): картинка темы по id (не по порядку) на акварельном пятне того же тона.
+ * Файл ensurance.webp назван так в макете, имя не меняем.
+ */
+const TOPIC_ART: Record<string, { illu: IllustrationName; blob: string }> = {
+  children: { illu: 'family', blob: '#FBE3D6' },
+  housing: { illu: 'living', blob: '#F6D2D0' },
+  insurance: { illu: 'ensurance', blob: '#FCEFC9' },
+  health: { illu: 'health', blob: '#DDEFEC' },
+};
+const HOME_TOPICS = TOPICS.filter((topic) => topic.id in TOPIC_ART);
 
 export function StartPage() {
   const { token } = useSession();
@@ -197,25 +200,19 @@ export function StartPage() {
 
         <FactsBlock />
 
-        <div className="grid-2 cards-4">
-          {TOPICS.filter((t) => t.id !== 'hot').slice(0, 4).map((t, i) => {
-            const first = CARDS.find((c) => c.topic === t.id);
+        <div className="grid-2 cards-4" data-testid="home-topics">
+          {HOME_TOPICS.map((topic) => {
+            const first = CARDS.find((c) => c.topic === topic.id);
+            const art = TOPIC_ART[topic.id];
             return (
               <Link
-                key={t.id}
-                to={`/blog?topic=${t.id}`}
-                className="card stack-s"
-                style={{ borderRadius: 22 }}
+                key={topic.id}
+                to={`/blog?topic=${topic.id}`}
+                className="card stack-s topic-card"
+                data-topic={topic.id}
               >
-                <span
-                  style={{
-                    width: 40,
-                    height: 8,
-                    borderRadius: 4,
-                    background: TOPIC_BLOBS[i],
-                  }}
-                />
-                <h3>{t.title}</h3>
+                <Illustration name={art.illu} height={120} blob={art.blob} />
+                <h3>{topic.title}</h3>
                 <span className="muted" style={{ fontSize: 12 }}>
                   {first?.title}
                 </span>
@@ -225,35 +222,61 @@ export function StartPage() {
         </div>
       </section>
 
-      <div style={{ marginTop: 12 }}>
-        <section
-          className="card card--teal stack"
-          style={{ borderRadius: 28 }}
-        >
-          <Illustration
-            name="consult"
-            height={190}
-            blob="#BFE0DB"
-            alt={t('Двое разбирают письмо за столом')}
-          />
-          <h2 style={{ fontSize: 20 }}>
+      {/* UX 27.11 (#172): от 768 px две колонки — слева крупный заголовок и кнопка, справа рисунок */}
+      <section className="card card--teal consult" aria-labelledby="consult-title" data-testid="consult">
+        <div className="stack consult__text">
+          <h2 id="consult-title" className="consult__title">
             {t('Сложный случай? Подскажем, куда обратиться')}
           </h2>
-          <p className="small" style={{ color: '#2F4A52' }}>
+          <p className="small" style={{ color: '#2F4A52', margin: 0 }}>
             {t('Если нужно возражение (Widerspruch) или совет юриста, Ja!sno назовёт, где получить консультацию.')}
           </p>
-          <Link
-            to="/beratung"
-            className="btn btn--teal btn--small"
-            style={{ alignSelf: 'flex-start' }}
-          >
+          <Link to="/beratung" className="btn btn--teal" style={{ alignSelf: 'flex-start' }}>
             {t('Найти консультацию')}
           </Link>
-        </section>
-      </div>
+        </div>
+        <div className="consult__art">
+          <Illustration name="consult" height={280} blob="#BFE0DB" alt={t('Двое разбирают письмо за столом')} />
+        </div>
+      </section>
 
       <GoodToKnow />
+      <Prices />
     </>
+  );
+}
+
+/**
+ * UX 27.11 (#172): тарифы. Оплаты на сайте нет: у платных пометка «скоро», кнопок покупки нет,
+ * лимит разборов в коде не вводится. Тексты подтвердила Настя 27.11.
+ */
+const PLANS = [
+  { id: 'start', name: t('Старт'), price: '0 €', text: t('Хранение писем, 3 разбора в месяц, календарь и напоминания.'), paid: false },
+  { id: 'plus', name: 'Ja!sno Plus', price: '4,99 €', text: t('Разборы без лимита, архив, экспорт.'), paid: true },
+  { id: 'family', name: t('Семья'), price: '12,99 €', text: t('Один аккаунт на несколько человек.'), paid: true },
+] as const;
+
+function Prices() {
+  return (
+    <section id="preise" className="stack" style={{ paddingTop: 12, scrollMarginTop: 16 }} aria-labelledby="preise-title" data-testid="prices">
+      <h2 id="preise-title">{t('Тарифы')}</h2>
+      <ul className="list-reset pricing">
+        {PLANS.map((p) => (
+          <li key={p.id} className={p.id === 'plus' ? 'price price--featured' : 'price'} data-plan={p.id}>
+            <h3 className="price__name">{p.name}</h3>
+            <p className="price__value">
+              <span className="price__amount">{p.price}</span>
+              {p.paid && <span className="price__per"> {t('в месяц')}</span>}
+            </p>
+            <p className="price__text">{p.text}</p>
+            {p.paid && <span className="price__soon">{t('скоро')}</span>}
+          </li>
+        ))}
+      </ul>
+      <p className="small text-2" style={{ margin: 0 }}>
+        {t('Тестовая версия бесплатная')}.
+      </p>
+    </section>
   );
 }
 

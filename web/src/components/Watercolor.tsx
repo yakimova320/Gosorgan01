@@ -42,7 +42,18 @@ export function WatercolorBlob({
   );
 }
 
-export type IllustrationName = 'worried' | 'scan' | 'talk' | 'relief' | 'mailbox' | 'consult';
+export type IllustrationName =
+  | 'worried'
+  | 'scan'
+  | 'talk'
+  | 'relief'
+  | 'mailbox'
+  | 'consult'
+  // UX 27.11 (#172): картинки тем блога на главной
+  | 'family'
+  | 'living'
+  | 'ensurance'
+  | 'health';
 
 /**
  * Акварельная иллюстрация из web/public/illustrations/<name>.webp на пятне.
