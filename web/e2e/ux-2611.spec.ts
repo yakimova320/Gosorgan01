@@ -100,9 +100,23 @@ test('кабинет 390 px: в шапке только логотип, меню
   const button = page.getByTestId('cabinet-menu-button');
   await button.click();
   const sheet = page.getByTestId('cabinet-menu');
+  await expect(sheet).toBeVisible();
+
+// Ждём окончания анимации открытия перед измерением.
+  await sheet.evaluate(async (element) => {
+    await Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+    );
+  });
+
   const sheetBox = await sheet.boundingBox();
   const navBox = await nav.boundingBox();
-  expect(sheetBox!.y + sheetBox!.height).toBeLessThanOrEqual(navBox!.y + 1); // над панелью
+
+  expect(sheetBox).not.toBeNull();
+  expect(navBox).not.toBeNull();
+  expect(sheetBox!.y + sheetBox!.height).toBeLessThanOrEqual(
+      navBox!.y + 1,
+  ); // над панелью
   for (const name of ['Главная', 'Мои дела', 'История', 'Спросить Ja!sno', 'Написать письмо', 'Блог', 'Глоссарий', 'Профиль'])
     await expect(sheet.getByRole('link', { name })).toBeVisible();
   await expect(sheet.getByTestId('lang-switcher')).toBeVisible();
